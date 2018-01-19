@@ -1,2 +1,2 @@
 # stats-nba
-Python script to get data from the NBA and insert into Azure
+Cool set of python scripts working with NBA data. statflows.com - coming soon
