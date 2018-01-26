@@ -18,7 +18,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqlconnector://uid:pwd@host/dbn
 
 db = SQLAlchemy(app)
 
-# test class
+# test class when i run locally
 class HelloWorld(Resource):
     def get(self):
         return {'hello': 'world!'}
@@ -49,7 +49,51 @@ class Games(db.Model):
     Date = db.Column(db.DateTime, nullable=False)
 
 
-# We use marshmallow Schema to serialize our database records
+class PlayerGameSummary(db.Model):
+    __tablename__ = 'PlayerGameSummary'
+    Ast = db.Column(db.Integer)
+    Blk = db.Column(db.Integer)
+    Blka = db.Column(db.Integer)
+    Court = db.Column(db.Integer)
+    Dreb = db.Column(db.Integer)
+    Fbpts = db.Column(db.Integer)
+    Fbptsa = db.Column(db.Integer)
+    Fbptsm = db.Column(db.Integer)
+    Fga = db.Column(db.Integer)
+    Fgm = db.Column(db.Integer)
+    Fn = db.Column(db.Text)
+    Fta = db.Column(db.Integer)
+    Ftm = db.Column(db.Integer)
+    GameID = db.Column(db.Integer, primary_key=True, nullable=False)
+    Ln = db.Column(db.Text)
+    Memo = db.Column(db.Text)
+    Mid = db.Column(db.Integer)
+    Min = db.Column(db.Integer)
+    Num = db.Column(db.Text)
+    Oreb = db.Column(db.Integer)
+    Pf = db.Column(db.Integer)
+    PlayerID = db.Column(db.Integer, primary_key=True, nullable=False)
+    Pip = db.Column(db.Integer)
+    Pipa = db.Column(db.Integer)
+    Pipm = db.Column(db.Integer)
+    Pm = db.Column(db.Integer)
+    Pos = db.Column(db.Text)
+    Pts = db.Column(db.Integer)
+    Reb = db.Column(db.Integer)
+    Sec = db.Column(db.Integer)
+    Status = db.Column(db.Text)
+    Stl = db.Column(db.Integer)
+    Ta = db.Column(db.Text)
+    Tf = db.Column(db.Integer)
+    TeamID = db.Column(db.Integer, nullable=False)
+    Totsec = db.Column(db.Integer)
+    Tov = db.Column(db.Integer)
+    Tpa = db.Column(db.Integer)
+    Tpm = db.Column(db.Integer)
+    Id = db.Column(db.Text)
+
+
+
 class PlayersSchema(Schema):
     class Meta:
         fields = ('PlayerID', 'LastName', 'FirstName')
@@ -66,8 +110,13 @@ class GamesSchema(Schema):
 
 
 
-players_schema = PlayersSchema()                # Single object
-many_players_schema = PlayersSchema(many=True)  # List of objects
+class PlayerGameSummarySchema(Schema):
+    class Meta:
+        fields = ('Ast', 'Blk', 'Blka', 'Court', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fn', 'Fta', 'Ftm', 'GameID', 'Ln', 'Memo', 'Mid', 'Min', 'Num', 'Oreb', 'Pf', 'PlayerID', 'Pip', 'Pipa', 'Pipm', 'Pm', 'Pos', 'Pts', 'Reb', 'Sec', 'Status', 'Stl', 'Ta', 'Tf', 'TeamID', 'Totsec', 'Tov', 'Tpa', 'Tpm', 'Id')
+
+
+players_schema = PlayersSchema()                
+many_players_schema = PlayersSchema(many=True) 
 class players_call():
     @app.route('/api/players/', methods=['GET'])
     def players_query(PlayerID = None):
@@ -92,8 +141,8 @@ class players_call():
 
 
 
-teams_schema = TeamsSchema()                # Single object
-many_teams_schema = TeamsSchema(many=True)  # List of objects
+teams_schema = TeamsSchema()                
+many_teams_schema = TeamsSchema(many=True)  
 class teams_call():
     @app.route('/api/teams/', methods=['GET'])
     def teams_query(TeamID = None):
@@ -102,8 +151,8 @@ class teams_call():
             if item is None:
                 return jsonify({'err_msg': ["We could not find item '{}'".format(TeamID)]}), 404
             else:
-                result = teams_schema.dump(item)  # Serialize object
-                return jsonify(result.data)  # Uses simplejson 
+                result = teams_schema.dump(item)  
+                return jsonify(result.data)  
         else:
             items = Teams.query.all() 
             result = many_teams_schema.dump(items)  
@@ -118,8 +167,8 @@ class teams_call():
 
  
 
-games_schema = GamesSchema()               # Single object
-many_games_schema = GamesSchema(many=True)  # List of objects
+games_schema = GamesSchema()              
+many_games_schema = GamesSchema(many=True)
 class games_query():
     @app.route('/api/games/', methods=['GET'])
     def games_query(GameID = None):
@@ -128,8 +177,8 @@ class games_query():
             if item is None:
                 return jsonify({'err_msg': ["We could not find item '{}'".format(GameID)]}), 404
             else:
-                result = games_schema.dump(item)  # Serialize object
-                return jsonify(result.data)  # Uses simplejson 
+                result = games_schema.dump(item)  
+                return jsonify(result.data)  
         else:
             items = Games.query.all() 
             result = many_games_schema.dump(items)  
@@ -144,6 +193,35 @@ class games_query():
 
 
 
+gamestats_schema = PlayerGameSummarySchema()               
+many_gamestats_schema = PlayerGameSummarySchema(many=True)  
+class gamestats_query():
+    @app.route('/api/games/stats/', methods=['GET'])
+    def gamestats_query(GameID = None):
+        if GameID:
+            item = PlayerGameSummary.query.with_entities(PlayerGameSummary.GameID)
+            item = item.distinct()
+            if item is None:
+                return jsonify({'err_msg': ["We could not find item '{}'".format(GameID)]}), 404
+            else:
+                result = gamestats_schema.dump(item)  
+                return jsonify(result.data)  
+        else:
+            items = PlayerGameSummary.query.with_entities(PlayerGameSummary.GameID)
+            items = items.distinct()
+            result = many_gamestats_schema.dump(items)
+            return jsonify(result.data)
+
+
+    @app.route('/api/games/stats/<int:game_id>', methods=['GET'])
+    def gamestats_filter_query(game_id):
+        item = PlayerGameSummary.query.filter_by(GameID=game_id)
+        result = many_gamestats_schema.dump(item)
+        return jsonify(result.data)
+
+
+    
+    
 if __name__ == '__main__':
     app.config['DEBUG'] = True
     app.config['SQLALCHEMY_POOL_TIMEOUT'] = int(600)
