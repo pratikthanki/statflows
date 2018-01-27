@@ -14,11 +14,11 @@ from flask.views import View
 app = flask.Flask(__name__)
 api = Api(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqlconnector://uid:pwd@host/dbname"
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqlconnector://myuser:mypwd@host/dbname"
 
 db = SQLAlchemy(app)
 
-# test class when i run locally
+# test class
 class HelloWorld(Resource):
     def get(self):
         return {'hello': 'world!'}
@@ -94,14 +94,43 @@ class PlayerGameSummary(db.Model):
 
 
 
+class GamePlays(db.Model):
+    __tablename__ = 'GamePlays'
+    ClockTime = db.Column(db.Text)
+    Description = db.Column(db.Text)
+    EPId = db.Column(db.Text)
+    EType = db.Column(db.Integer)
+    Evt = db.Column(db.Integer)
+    GameID = db.Column(db.Integer, primary_key=True, nullable=False)
+    HS = db.Column(db.Integer)
+    LocationX = db.Column(db.Integer)
+    LocationY = db.Column(db.Integer)
+    MId = db.Column(db.Integer)
+    MType = db.Column(db.Integer)
+    OftId = db.Column(db.Integer)
+    OpId = db.Column(db.Text)
+    Opt1 = db.Column(db.Integer, primary_key=True, nullable=False)
+    Opt2 = db.Column(db.Integer)
+    Ord = db.Column(db.Integer)
+    Period = db.Column(db.Integer)
+    PlayerID = db.Column(db.Integer, primary_key=True, nullable=False)
+    TeamID = db.Column(db.Integer, primary_key=True, nullable=False)
+    Vs = db.Column(db.Integer)
+    Id = db.Column(db.Text)
+
+
+
+# We use marshmallow Schema to serialize our database records
 class PlayersSchema(Schema):
     class Meta:
         fields = ('PlayerID', 'LastName', 'FirstName')
 
 
+
 class TeamsSchema(Schema):
     class Meta:
         fields = ('TeamID', 'TeamCode')
+
 
 
 class GamesSchema(Schema):
@@ -115,8 +144,15 @@ class PlayerGameSummarySchema(Schema):
         fields = ('Ast', 'Blk', 'Blka', 'Court', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fn', 'Fta', 'Ftm', 'GameID', 'Ln', 'Memo', 'Mid', 'Min', 'Num', 'Oreb', 'Pf', 'PlayerID', 'Pip', 'Pipa', 'Pipm', 'Pm', 'Pos', 'Pts', 'Reb', 'Sec', 'Status', 'Stl', 'Ta', 'Tf', 'TeamID', 'Totsec', 'Tov', 'Tpa', 'Tpm', 'Id')
 
 
+
+class GamePlaysSchema(Schema):
+    class Meta:
+        fields = ('ClockTime', 'Description', 'EPId', 'EType', 'Evt', 'GameID', 'HS', 'LocationX', 'LocationY', 'MId', 'MType', 'OftId', 'OpId', 'Opt1', 'Opt2', 'Ord', 'Period', 'PlayerID', 'TeamID', 'Vs', 'Id')
+
+
+
 players_schema = PlayersSchema()                
-many_players_schema = PlayersSchema(many=True) 
+many_players_schema = PlayersSchema(many=True)  
 class players_call():
     @app.route('/api/players/', methods=['GET'])
     def players_query(PlayerID = None):
@@ -125,8 +161,8 @@ class players_call():
             if item is None:
                 return jsonify({'err_msg': ["We could not find item '{}'".format(PlayerID)]}), 404
             else:
-                result = players_schema.dump(item)  # Serialize object
-                return jsonify(result.data)  # Uses simplejson 
+                result = players_schema.dump(item)  
+                return jsonify(result.data)  
         else:
             items = Players.query.all() 
             result = many_players_schema.dump(items)  
@@ -167,8 +203,8 @@ class teams_call():
 
  
 
-games_schema = GamesSchema()              
-many_games_schema = GamesSchema(many=True)
+games_schema = GamesSchema()               
+many_games_schema = GamesSchema(many=True) 
 class games_query():
     @app.route('/api/games/', methods=['GET'])
     def games_query(GameID = None):
@@ -220,8 +256,34 @@ class gamestats_query():
         return jsonify(result.data)
 
 
-    
-    
+
+gameplays_schema = GamePlaysSchema()               
+many_gameplays_schema = GamePlaysSchema(many=True) 
+class gamestats_query():
+    @app.route('/api/games/plays/', methods=['GET'])
+    def gameplays_query(GameID = None):
+        if GameID:
+            item = GamePlays.query.with_entities(GamePlays.GameID)
+            item = item.distinct()
+            if item is None:
+                return jsonify({'err_msg': ["We could not find item '{}'".format(GameID)]}), 404
+            else:
+                result = gameplays_schema.dump(item)  
+                return jsonify(result.data)  
+        else:
+            items = GamePlays.query.with_entities(GamePlays.GameID)
+            items = items.distinct()
+            result = many_gameplays_schema.dump(items)
+            return jsonify(result.data)
+
+
+    @app.route('/api/games/plays/<int:game_id>', methods=['GET'])
+    def gameplays_filter_query(game_id):
+        item = GamePlays.query.filter_by(GameID=game_id)
+        result = many_gameplays_schema.dump(item)
+        return jsonify(result.data)
+
+
 if __name__ == '__main__':
     app.config['DEBUG'] = True
     app.config['SQLALCHEMY_POOL_TIMEOUT'] = int(600)
