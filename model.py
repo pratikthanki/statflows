@@ -14,7 +14,10 @@ from flask.views import View
 app = flask.Flask(__name__)
 api = Api(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqlconnector://myuser:mypwd@host/dbname"
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqlconnector://user:pwd@host/dbname"
+#app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc://user:pwd@dbname"
+
+
 
 db = SQLAlchemy(app)
 
@@ -47,6 +50,8 @@ class Games(db.Model):
     GameCode = db.Column(db.String(30), nullable=False)
     DateString = db.Column(db.String(10), nullable=False)
     Date = db.Column(db.DateTime, nullable=False)
+    Season = db.Column(db.String(10))
+    SeasonPhase = db.Column(db.String(45))
 
 
 class PlayerGameSummary(db.Model):
@@ -135,7 +140,7 @@ class TeamsSchema(Schema):
 
 class GamesSchema(Schema):
     class Meta:
-        fields = ('GameID', 'Date', 'DateString', 'GameCode', 'Venue')
+        fields = ('GameID', 'Date', 'DateString', 'GameCode', 'Venue', 'Season', 'SeasonPhase')
 
 
 
@@ -152,7 +157,7 @@ class GamePlaysSchema(Schema):
 
 
 players_schema = PlayersSchema()                
-many_players_schema = PlayersSchema(many=True)  
+many_players_schema = PlayersSchema(many=True)
 class players_call():
     @app.route('/api/players/', methods=['GET'])
     def players_query(PlayerID = None):
@@ -167,7 +172,6 @@ class players_call():
             items = Players.query.all() 
             result = many_players_schema.dump(items)  
             return jsonify(result.data)
-
 
     @app.route('/api/players/<int:player_id>', methods=['GET'])
     def player_filter_query(player_id):
@@ -194,17 +198,18 @@ class teams_call():
             result = many_teams_schema.dump(items)  
             return jsonify(result.data)
 
-
     @app.route('/api/teams/<int:team_id>', methods=['GET'])
     def team_filter_query(team_id):
         item = Teams.query.filter_by(TeamID=team_id)
-        result = many_teams_schema.dump(item)  
+        result = many_teams_schema.dump(item)
         return jsonify(result.data)
+
 
  
 
-games_schema = GamesSchema()               
-many_games_schema = GamesSchema(many=True) 
+games_schema = GamesSchema()
+season_games_schema = GamesSchema(many=True)
+many_games_schema = GamesSchema(many=True)
 class games_query():
     @app.route('/api/games/', methods=['GET'])
     def games_query(GameID = None):
@@ -220,6 +225,11 @@ class games_query():
             result = many_games_schema.dump(items)  
             return jsonify(result.data)
 
+    @app.route('/api/games/<season>', methods=['GET'])
+    def game_season_query(season):
+        item = Games.query.filter_by(Season=season)
+        result = season_games_schema.dump(item)  
+        return jsonify(result.data)
 
     @app.route('/api/games/<int:game_id>', methods=['GET'])
     def game_filter_query(game_id):
@@ -248,7 +258,6 @@ class gamestats_query():
             result = many_gamestats_schema.dump(items)
             return jsonify(result.data)
 
-
     @app.route('/api/games/stats/<int:game_id>', methods=['GET'])
     def gamestats_filter_query(game_id):
         item = PlayerGameSummary.query.filter_by(GameID=game_id)
@@ -276,7 +285,6 @@ class gamestats_query():
             result = many_gameplays_schema.dump(items)
             return jsonify(result.data)
 
-
     @app.route('/api/games/plays/<int:game_id>', methods=['GET'])
     def gameplays_filter_query(game_id):
         item = GamePlays.query.filter_by(GameID=game_id)
@@ -290,3 +298,4 @@ if __name__ == '__main__':
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'False'
     app.config['SQLALCHEMY_ECHO'] = True  # Show SQL commands created
     app.run()
+
