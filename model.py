@@ -18,7 +18,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqlconnector://user:pwd@host/db
 #app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc://user:pwd@dbname"
 
 
-
 db = SQLAlchemy(app)
 
 # test class
@@ -52,6 +51,20 @@ class Games(db.Model):
     Date = db.Column(db.DateTime, nullable=False)
     Season = db.Column(db.String(10))
     SeasonPhase = db.Column(db.String(45))
+
+
+class Games_BoxScore(db.Model):
+    __tablename__ = 'Games_BoxScore'
+    Game = db.Column(db.String(50))
+    GameID = db.Column(db.Integer, primary_key=True, nullable=False)
+    BoxScoreBreakdown = db.Column(db.String(500))
+    HomeTeamCode = db.Column(db.String(5))
+    HomeTeamName = db.Column(db.String(50))
+    HomeTeamNickname = db.Column(db.String(50))
+    AwayTeamCode = db.Column(db.String(5))
+    AwayTeamName = db.Column(db.String(50))
+    AwayTeamNickname = db.Column(db.String(50))
+
 
 
 class PlayerGameSummary(db.Model):
@@ -142,6 +155,10 @@ class GamesSchema(Schema):
     class Meta:
         fields = ('GameID', 'Date', 'DateString', 'GameCode', 'Venue', 'Season', 'SeasonPhase')
 
+
+class GameBoxScoreSchema(Schema):
+    class Meta:
+        fields = ('Game', 'GameID', 'BoxScoreBreakdown', 'HomeTeamCode', 'HomeTeamName', 'HomeTeamNickname', 'AwayTeamCode', 'AwayTeamName', 'AwayTeamNickname')
 
 
 class PlayerGameSummarySchema(Schema):
@@ -291,6 +308,33 @@ class gamestats_query():
         result = many_gameplays_schema.dump(item)
         return jsonify(result.data)
 
+
+
+
+gameBoxScore_schema = GameBoxScoreSchema()               
+many_BoxScore_schema = GameBoxScoreSchema(many=True) 
+class gamestats_query():
+    #@app.route('/api/games/boxscore/<season>', methods=['GET'])
+    #def game_boxScore_query(GameID = None):
+    #    if GameID:
+    #        item = Games_BoxScore.query.with_entities(Games_BoxScore.GameID)
+    #        item = item.distinct()
+    #        if item is None:
+    #            return jsonify({'err_msg': ["We could not find item '{}'".format(GameID)]}), 404
+    #        else:
+    #            result = gameBoxScore_schema.dump(item)  
+    #            return jsonify(result.data)  
+    #    else:
+    #        items = Games_BoxScore.query.with_entities(Games_BoxScore.GameID)
+    #        items = items.distinct()
+    #        result = many_BoxScore_schema.dump(items)
+    #        return jsonify(result.data)
+
+    @app.route('/api/games/boxscore/<int:game_id>', methods=['GET'])
+    def game_boxScore_filter_query(game_id):
+        item = Games_BoxScore.query.filter_by(GameID=game_id)
+        result = many_BoxScore_schema.dump(item)
+        return jsonify(result.data)
 
 if __name__ == '__main__':
     app.config['DEBUG'] = True
