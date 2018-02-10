@@ -14,8 +14,9 @@ from flask.views import View
 app = flask.Flask(__name__)
 api = Api(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqlconnector://user:pwd@host/dbname"
-#app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc://user:pwd@dbname"
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqlconnector://###:###@###"
+#app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc://###:###@###"
+
 
 
 db = SQLAlchemy(app)
@@ -246,6 +247,12 @@ class games_query():
     def game_season_query(season):
         item = Games.query.filter_by(Season=season)
         result = season_games_schema.dump(item)  
+        return jsonify(result.data)
+
+    @app.route('/api/games/<season>/<string:SeasonPhase>', methods=['GET'])
+    def game_seasonPhase_query(season, SeasonPhase):
+        item = Games.query.filter_by(Season=season, SeasonPhase=SeasonPhase)
+        result = season_games_schema.dump(item)
         return jsonify(result.data)
 
     @app.route('/api/games/<int:game_id>', methods=['GET'])
