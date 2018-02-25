@@ -6,6 +6,8 @@ import pandas as pd
 import numpy as np
 import pyodbc
 from Links import *
+import re
+
 
 
 from sqlalchemy import create_engine
@@ -24,23 +26,17 @@ yesterday = datetime.today() - timedelta(days=1)
 yesterday = datetime.strptime(yesterday.strftime("%Y-%m-%d"), "%Y-%m-%d")
 
 
-
-ms_sql = ms_sql
 # engine = create_engine('mssql+pyodbc://' + ms_sql)
 
-
-mysql = mysql
-# engine = create_engine('mysql+mysqlconnector://' + mysql)
-
-
+engine = create_engine('mysql+mysqlconnector://' + str(my_sql))
 cursor = engine.connect()
 
 
 
 
 # Create dataframe from sql table in database
-Players = pd.read_sql("select * from [dbo].[Players]", conn)
-Teams = pd.read_sql("select * from [dbo].[Teams]", conn)
+Players = pd.read_sql("select * from Players", engine)
+Teams = pd.read_sql("select * from Teams", engine)
 
 PlayerId = Players['PlayerID']
 
@@ -49,8 +45,11 @@ for i in Teams['TeamID']:
     if int(len(str(i))) == 10:
         TeamsId.append(i)
 
+def parseColumns(cols):
+    new_cols = re.findall(r"'([^']*)'", cols)
+    return new_cols
 
-headers = headers
+
 
 # --------------------------- Player stats by season ---------------------------
 
@@ -85,8 +84,10 @@ def parseWrite(dbTableName):
     headersList = []
     seasonStats(dbTableName, playerStats, resultList, headersList)
     resultList = pd.DataFrame(resultList)
-    resultList.columns = [headersList[0]]
-    resultList.to_sql(dbTableName, engine, flavor=None, schema='dbo', if_exists='replace', index=None, chunksize=1000)
+    # temp = [headersList[0]]
+    # resultList.columns = [parseColumns(c) for c in temp]
+    resultList.columns = headersList[0]
+    resultList.to_sql(dbTableName, engine, flavor=None, schema='nbadata', if_exists='replace', index=None, chunksize=1000)
 
 parseWrite('SeasonTotalsRegularSeason')
 parseWrite('CareerTotalsRegularSeason')

@@ -9,7 +9,7 @@ import uuid
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError 
 from Links import *
-
+import mysql.connector
 
 
 
@@ -22,25 +22,19 @@ yesterday = datetime.today() - timedelta(days=1)
 yesterday = datetime.strptime(yesterday.strftime("%Y-%m-%d"), "%Y-%m-%d")
 
 import datetime
-minDate = datetime.datetime(2018, 1, 31, 0, 0)
-maxDate = datetime.datetime(2018, 2, 7, 0, 0)
+minDate = datetime.datetime(2018, 2, 9, 0, 0)
+#maxDate = datetime.datetime(2018, 2, 7, 0, 0)
 
 
 # --------------------------- Connecting to the database ---------------------------
 # connection to ms sql using sqlalchemy 
 
-ms_sql = ms_sql
+# ms_sql = ms_sql
 # engine = create_engine('mssql+pyodbc://' + ms_sql)
 
 
-mysql = mysql
-# engine = create_engine('mysql+mysqlconnector://' + mysql)
-
-
+engine = create_engine('mysql+mysqlconnector://' + str(my_sql))
 cursor = engine.connect()
-
-
-
 
 
 # initial GET request for full season schedule for the 2017 season
@@ -98,7 +92,6 @@ for i in gameDetails['GameID']:
     except ValueError:
         print(i + ' - Game caused decoding fail')
 
-#print(gameSummaryStats) # list
 
 # condensed version using function to call game stats for vls and hls
 def getSummary(prop, summaries, gameList, idList):
@@ -115,7 +108,6 @@ def getSummary(prop, summaries, gameList, idList):
                     c['ta'] = b[prop]['ta']
                     idList.append(str(uuid.uuid4()))
                     gameList.append(c)
-
 
 
 game_vls = []
@@ -237,56 +229,54 @@ gameBoxScore = gameBoxScore.rename(columns={0: 'Game', 1: 'GameID', 2: 'BoxScore
 # --------------------------- Writing to the database ---------------------------
 
 
-#players.to_sql('Staging_Players', engine, flavor=None, schema='dbo', if_exists='append', index=None, chunksize=10000)
+players.to_sql('Staging_Players', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
 
-#cursor.execute('''INSERT INTO [Players]([PlayerID],[FirstName],[LastName]) 
-#	SELECT [PlayerID],[FirstName],[LastName] FROM [Staging_Players] 
-#		WHERE NOT EXISTS (SELECT [PlayerID],[FirstName],[LastName] FROM [dbo].[Players] 
-#			WHERE [Staging_Players].[PlayerID]=[Players].[PlayerID])''')
-
-
-#cursor.execute('DELETE FROM Staging_Players')
-#conn.commit()
+cursor.execute('''INSERT INTO Players (PlayerID, FirstName, LastName) 
+	SELECT PlayerID, FirstName, LastName FROM Staging_Players 
+		WHERE NOT EXISTS (SELECT PlayerID, FirstName, LastName FROM Players 
+			WHERE Staging_Players.PlayerID=Players.PlayerID)''')
 
 
+cursor.execute('DELETE FROM Staging_Players')
+cursor.execute('COMMIT;')
 
 
-#teams.to_sql('Staging_Teams', engine, flavor=None, schema='dbo', if_exists='append', index=None, chunksize=10000)
-#cursor.execute('''INSERT INTO [Teams]([TeamID],[TeamCode]) 
-#	SELECT [TeamID],[TeamCode] FROM [Staging_Teams] 
-#		WHERE NOT EXISTS (SELECT [TeamID],[TeamCode] FROM [dbo].[Teams] 
-#			WHERE [Staging_Teams].[TeamID]=[Teams].[TeamID])''')
+teams.to_sql('Staging_Teams', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
+cursor.execute('''INSERT INTO Teams(TeamID,TeamCode) 
+	SELECT TeamID,TeamCode FROM Staging_Teams 
+		WHERE NOT EXISTS (SELECT TeamID,TeamCode FROM Teams 
+			WHERE Staging_Teams.TeamID=Teams.TeamID)''')
 
 
-#cursor.execute('DELETE FROM Staging_Teams')
-#conn.commit()
+cursor.execute('DELETE FROM Staging_Teams')
+cursor.execute('COMMIT;')
 
 
 # --------------------------- Game Summary per Player per Game ---------------------------
 
-#playergameSummary.to_sql('Staging_PlayerGameSummary', engine, flavor=None, schema='dbo', if_exists='append', index=None, chunksize=10000)
+# playergameSummary.to_sql('Staging_PlayerGameSummary', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
 
-#cursor.execute('''INSERT INTO [PlayerGameSummary]( [Ast],[Blk],[Blka],[Court],[Dreb],[Fbpts],[Fbptsa],[Fbptsm],[Fga],[Fgm],[Fn],[Fta],[Ftm],[GameID],[Ln],[Memo],[Mid],[Min],[Num],[Oreb],[Pf],[PlayerID],[Pip],[Pipa],[Pipm],[Pm],[Pos],[Pts],[Reb],[Sec],[Status],[Stl],[Ta],[Tf],[TeamID],[Totsec],[Tov],[Tpa],[Tpm]) 
-#	SELECT [Ast],[Blk],[Blka],[Court],[Dreb],[Fbpts],[Fbptsa],[Fbptsm],[Fga],[Fgm],[Fn],[Fta],[Ftm],[GameID],[Ln],[Memo],[Mid],[Min],[Num],[Oreb],[Pf],[PlayerID],[Pip],[Pipa],[Pipm],[Pm],[Pos],[Pts],[Reb],[Sec],[Status],[Stl],[Ta],[Tf],[TeamID],[Totsec],[Tov],[Tpa],[Tpm] FROM [Staging_PlayerGameSummary] 
-#		WHERE NOT EXISTS ( SELECT [Ast],[Blk],[Blka],[Court],[Dreb],[Fbpts],[Fbptsa],[Fbptsm],[Fga],[Fgm],[Fn],[Fta],[Ftm],[GameID],[Ln],[Memo],[Mid],[Min],[Num],[Oreb],[Pf],[PlayerID],[Pip],[Pipa],[Pipm],[Pm],[Pos],[Pts],[Reb],[Sec],[Status],[Stl],[Ta],[Tf],[TeamID],[Totsec],[Tov],[Tpa],[Tpm] FROM [dbo].[PlayerGameSummary] 
-#			WHERE [Staging_PlayerGameSummary].[GameID]=[PlayerGameSummary].[GameID] AND [Staging_PlayerGameSummary].[PlayerID]=[PlayerGameSummary].[PlayerID] AND [Staging_PlayerGameSummary].[TeamID]=[PlayerGameSummary].[TeamID])''')
+# cursor.execute('''INSERT INTO PlayerGameSummary( Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm) 
+# 	SELECT Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm FROM Staging_PlayerGameSummary 
+# 		WHERE NOT EXISTS ( SELECT Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm FROM PlayerGameSummary 
+# 			WHERE Staging_PlayerGameSummary.GameID=PlayerGameSummary.GameID AND Staging_PlayerGameSummary.PlayerID=PlayerGameSummary.PlayerID AND Staging_PlayerGameSummary.TeamID=PlayerGameSummary.TeamID)''')
 
-#cursor.execute('DELETE FROM Staging_PlayerGameSummary')
-#conn.commit()
+# cursor.execute('DELETE FROM Staging_PlayerGameSummary')
+# cursor.execute('COMMIT;')
 
 
 
 # --------------------------- Game Plays ---------------------------
 
-#gamePlays.to_sql('Staging_GamePlays', engine, flavor=None, schema='dbo', if_exists='append', index=None, chunksize=10000)
+# gamePlays.to_sql('Staging_GamePlays', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
 
-#cursor.execute('''INSERT INTO [GamePlays]([ClockTime],[Description],[EPId],[EType],[Evt],[GameID],[HS],[LocationX],[LocationY],[MId],[MType],[OftId],[OpId],[Opt1],[Opt2],[Ord],[Period],[PlayerID],[TeamID],[Vs]) 
-#	SELECT [ClockTime],[Description],[EPId],[EType],[Evt],[GameID],[HS],[LocationX],[LocationY],[MId],[MType],[OftId],[OpId],[Opt1],[Opt2],[Ord],[Period],[PlayerID],[TeamID],[Vs] FROM [Staging_GamePlays] 
-#		WHERE NOT EXISTS (SELECT [ClockTime],[Description],[EPId],[EType],[Evt],[GameID],[HS],[LocationX],[LocationY],[MId],[MType],[OftId],[OpId],[Opt1],[Opt2],[Ord],[Period],[PlayerID],[TeamID],[Vs] FROM [dbo].[GamePlays] 
-#			WHERE [Staging_GamePlays].[TeamID]=[GamePlays].[TeamID] AND [Staging_GamePlays].[GameID]=[GamePlays].[GameID] AND [Staging_GamePlays].[PlayerID]=[GamePlays].[PlayerID] AND [Staging_GamePlays].[Evt]=[GamePlays].[Evt])''')
+# cursor.execute('''INSERT INTO GamePlays(ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs) 
+# 	SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM Staging_GamePlays 
+# 		WHERE NOT EXISTS (SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM GamePlays 
+# 			WHERE Staging_GamePlays.TeamID=GamePlays.TeamID AND Staging_GamePlays.GameID=GamePlays.GameID AND Staging_GamePlays.PlayerID=GamePlays.PlayerID AND Staging_GamePlays.Evt=GamePlays.Evt)''')
 
 
-#cursor.execute('DELETE FROM Staging_GamePlays')
-#conn.commit()
+# cursor.execute('DELETE FROM Staging_GamePlays')
+# cursor.execute('COMMIT;')
 
 

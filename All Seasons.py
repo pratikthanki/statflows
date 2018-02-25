@@ -18,8 +18,8 @@ ms_sql = ms_sql
 # engine = create_engine('mssql+pyodbc://' + ms_sql)
 
 
-mysql = mysql
-# engine = create_engine('mysql+mysqlconnector://' + mysql)
+mysql = my_sql
+# engine = create_engine('mysql+mysqlconnector://' + my_sql)
 
 
 cursor = engine.connect()

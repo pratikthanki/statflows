@@ -22,11 +22,8 @@ headers = headers
 
 """
 League ID: NBA = 00     ABA = 01
-
 Season: Format: NNNN-NN (eg. 2016-17)
-
 Season Type: One of - "Regular Season", "Pre Season", "Playoffs", "All-Star", "All Star", "Preseason"
-
 """
 
 # --------------------------- Draft Pick History ---------------------------
@@ -51,17 +48,11 @@ draft.columns = [drafthistoryHeaders]
 
 # --------------------------- Connecting & writing to database ---------------------------
 
-ms_sql = ms_sql
 # engine = create_engine('mssql+pyodbc://' + ms_sql)
-
-
-mysql = mysql
-# engine = create_engine('mysql+mysqlconnector://' + mysql)
-
-
+engine = create_engine('mysql+mysqlconnector://' + str(my_sql))
 cursor = engine.connect()
 
-draft.to_sql('draftcombine_results', engine, flavor=None, schema='dbo', if_exists='replace', index=None, chunksize=1000)
+draft.to_sql('Draft_Results', engine, flavor=None, schema='nbadata', if_exists='replace', index=None, chunksize=1000)
 
 
 # --------------------------- Combine Activities Request ---------------------------
@@ -79,22 +70,23 @@ def combineResults(paramName, emptyList):
         print(s + ' ' + str(drillRequest.status_code))
         drillRequest = drillRequest.json()
         emptyList.append(drillRequest)
+        time.sleep(1)
 
 
 draftcombinedrillresults = []
-combineResults('draftcombine_drillresults', draftcombinedrillresults)
+combineResults('draftcombinedrillresults', draftcombinedrillresults)
 
 draftcombinenonstationaryshooting = []
-combineResults('draftcombine_nonstationaryshooting', draftcombinenonstationaryshooting)
+combineResults('draftcombinenonstationaryshooting', draftcombinenonstationaryshooting)
 
 draftcombineplayeranthro = []
-combineResults('draftcombine_playeranthro', draftcombineplayeranthro)
+combineResults('draftcombineplayeranthro', draftcombineplayeranthro)
 
 draftcombinespotshooting = []
-combineResults('draftcombine_spotshooting', draftcombinespotshooting)
+combineResults('draftcombinespotshooting', draftcombinespotshooting)
 
 draftcombinestats = []
-combineResults('draftcombine_stats', draftcombinestats)
+combineResults('draftcombinestats', draftcombinestats)
 
 
 # --------------------------- Combine Activities Parse ---------------------------
@@ -114,11 +106,11 @@ def parseWrite(dbTableName, combineList):
     combineStats(dbTableName, combineList, resultList, headersList)
     resultList = pd.DataFrame(resultList)
     resultList.columns = [headersList[0]]
-    resultList.to_sql(dbTableName, engine, flavor=None, schema='dbo', if_exists='replace', index=None, chunksize=1000)
+    resultList.to_sql(dbTableName, engine, flavor=None, schema='nbadata', if_exists='replace', index=None, chunksize=1000)
 
-parseWrite('DraftCombineDrillResults', draftcombinedrillresults)
-parseWrite('DraftCombineNonStationaryShooting', draftcombinenonstationaryshooting)
-parseWrite('DraftCombinePlayerAnthro', draftcombineplayeranthro)
-parseWrite('DraftCombineSpotShooting', draftcombinespotshooting)
-parseWrite('DraftCombineStats', draftcombinestats)
 
+parseWrite('Draft_DrillResults', draftcombinedrillresults)
+parseWrite('Draft_NonStationaryShooting', draftcombinenonstationaryshooting)
+parseWrite('Draft_PlayerAnthro', draftcombineplayeranthro)
+parseWrite('Draft_SpotShooting', draftcombinespotshooting)
+parseWrite('Draft_Stats', draftcombinestats)
