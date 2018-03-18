@@ -60,7 +60,8 @@ gameDate = []
 from datetime import datetime, timedelta
 for i in scheduleRequest['lscd']:
     for j in i['mscd']['g']:
-        if datetime.strptime(j['gdte'], "%Y-%m-%d") >= minDate and datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
+        # if datetime.strptime(j['gdte'], "%Y-%m-%d") >= minDate and datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
+        if datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
             gameIDs.append(j['gid'])
             gameCode.append(j['gcode'])
             venue.append(j['an'])
@@ -229,27 +230,38 @@ gameBoxScore = gameBoxScore.rename(columns={0: 'Game', 1: 'GameID', 2: 'BoxScore
 # --------------------------- Writing to the database ---------------------------
 
 
-players.to_sql('Staging_Players', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
+# players.to_sql('Staging_Players', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
 
-cursor.execute('''INSERT INTO Players (PlayerID, FirstName, LastName) 
-	SELECT PlayerID, FirstName, LastName FROM Staging_Players 
-		WHERE NOT EXISTS (SELECT PlayerID, FirstName, LastName FROM Players 
-			WHERE Staging_Players.PlayerID=Players.PlayerID)''')
+# cursor.execute('''INSERT INTO Players (PlayerID, FirstName, LastName) 
+# 	SELECT PlayerID, FirstName, LastName FROM Staging_Players 
+# 		WHERE NOT EXISTS (SELECT PlayerID, FirstName, LastName FROM Players 
+# 			WHERE Staging_Players.PlayerID=Players.PlayerID)''')
 
-
-cursor.execute('DELETE FROM Staging_Players')
-cursor.execute('COMMIT;')
+# cursor.execute('DELETE FROM Staging_Players')
 
 
-teams.to_sql('Staging_Teams', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
-cursor.execute('''INSERT INTO Teams(TeamID,TeamCode) 
-	SELECT TeamID,TeamCode FROM Staging_Teams 
-		WHERE NOT EXISTS (SELECT TeamID,TeamCode FROM Teams 
-			WHERE Staging_Teams.TeamID=Teams.TeamID)''')
 
 
-cursor.execute('DELETE FROM Staging_Teams')
-cursor.execute('COMMIT;')
+# teams.to_sql('Staging_Teams', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
+
+# cursor.execute('''INSERT INTO Teams(TeamID,TeamCode) 
+# 	SELECT TeamID,TeamCode FROM Staging_Teams 
+# 		WHERE NOT EXISTS (SELECT TeamID,TeamCode FROM Teams 
+# 			WHERE Staging_Teams.TeamID=Teams.TeamID)''')
+
+# cursor.execute('DELETE FROM Staging_Teams')
+
+
+
+
+# gameDetails.to_sql('Staging_Games', engine, flavor=None, schema='nbadata', if_exists='append', index=None)
+
+# cursor.execute('''INSERT INTO Games(GameID, Date, DateString, GameCode, Venue) 
+# 	SELECT GameID, Date, DateString, GameCode, Venue FROM Staging_Games 
+#         WHERE NOT EXISTS (SELECT GameID, Date, DateString, GameCode, Venue FROM Games 
+#             WHERE Staging_Games.GameID=Games.GameID)''')
+
+# cursor.execute('DELETE FROM Staging_Games')
 
 
 # --------------------------- Game Summary per Player per Game ---------------------------
@@ -262,8 +274,6 @@ cursor.execute('COMMIT;')
 # 			WHERE Staging_PlayerGameSummary.GameID=PlayerGameSummary.GameID AND Staging_PlayerGameSummary.PlayerID=PlayerGameSummary.PlayerID AND Staging_PlayerGameSummary.TeamID=PlayerGameSummary.TeamID)''')
 
 # cursor.execute('DELETE FROM Staging_PlayerGameSummary')
-# cursor.execute('COMMIT;')
-
 
 
 # --------------------------- Game Plays ---------------------------
@@ -275,8 +285,8 @@ cursor.execute('COMMIT;')
 # 		WHERE NOT EXISTS (SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM GamePlays 
 # 			WHERE Staging_GamePlays.TeamID=GamePlays.TeamID AND Staging_GamePlays.GameID=GamePlays.GameID AND Staging_GamePlays.PlayerID=GamePlays.PlayerID AND Staging_GamePlays.Evt=GamePlays.Evt)''')
 
-
 # cursor.execute('DELETE FROM Staging_GamePlays')
+
 # cursor.execute('COMMIT;')
 
 
