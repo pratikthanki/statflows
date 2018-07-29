@@ -8,10 +8,17 @@ import pyodbc
 import uuid
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError 
-from Links import *
 import mysql.connector
+from pandas import ExcelWriter
+
+os.chdir('C:\\Users\\PratikThanki\\OneDrive - EDGE10 (UK) Ltd\\Pratik\\Python\\statflows-nba')
+from Settings import *
 
 
+
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 700)
 
 # get today's date, for use later when getting Id's
 import time
@@ -29,11 +36,8 @@ minDate = datetime.datetime(2018, 4, 28, 0, 0)
 # --------------------------- Connecting to the database ---------------------------
 # connection to ms sql using sqlalchemy 
 
-# ms_sql = ms_sql
-# engine = create_engine('mssql+pyodbc://' + ms_sql)
-
-
-engine = create_engine('mysql+mysqlconnector://' + str(my_sql))
+engine = create_engine(str(ms_sql))
+#engine = create_engine(str(my_sql))
 cursor = engine.connect()
 
 
@@ -43,8 +47,6 @@ try:
     scheduleRequest = requests.get(url1).json()
 except ValueError:
     print('JSON decoding failed')
-
-type(scheduleRequest)
 
 
 
@@ -121,17 +123,16 @@ getSummary('hls', gameSummaryStats, game_hls, hls_Id)
 game_vls = pd.DataFrame(game_vls)
 game_hls = pd.DataFrame(game_hls)
 
-vls_Id = pd.DataFrame(vls_Id)
-hls_Id = pd.DataFrame(hls_Id)
 
-game_vls['Id'] = vls_Id
-game_hls['Id'] = hls_Id
+#vls_Id = pd.DataFrame(vls_Id)
+#hls_Id = pd.DataFrame(hls_Id)
+#game_vls['Id'] = vls_Id
+#game_hls['Id'] = hls_Id
 
 
 gameStaging = [game_vls, game_hls]
 playergameSummary = pd.concat(gameStaging) # final dataframe
-playergameSummary.dtypes
-
+playergameSummary['Id'] = None
 
 playergameSummary.columns = ['Ast','Blk', 'Blka', 'Court', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fn', 'Fta', 'Ftm', 'GameID', 'Ln', 'Memo', 'Mid', 'Min', 'Num', 'Oreb', 'Pf', 'PlayerID', 'Pip', 'Pipa', 'Pipm', 'Pm', 'Pos', 'Pts', 'Reb', 'Sec', 'Status', 'Stl', 'Ta', 'Tf', 'TeamID', 'Totsec', 'Tov', 'Tpa', 'Tpm', 'Id']
 
@@ -175,7 +176,6 @@ for i in gamePlaybyPlay:
 
 gamePlays = pd.DataFrame(PlaybyPlay) # final dataframe
 gamePlays['Id'] = idList
-gamePlays.dtypes
 
 gamePlays.columns = ['ClockTime', 'Description', 'EPId', 'EType', 'Evt', 'GameID', 'HS', 'LocationX', 'LocationY', 'MId', 'MType', 'OftId', 'OpId', 'Opt1', 'Opt2', 'Ord', 'Period', 'PlayerID', 'TeamID', 'Vs', 'Id']
 
@@ -229,8 +229,7 @@ gameBoxScore = gameBoxScore.rename(columns={0: 'Game', 1: 'GameID', 2: 'BoxScore
 
 # --------------------------- Writing to the database ---------------------------
 
-
-players.to_sql('Staging_Players', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
+players.to_sql('Staging_Players', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
 
 cursor.execute('''INSERT INTO Players (PlayerID, FirstName, LastName) 
 	SELECT PlayerID, FirstName, LastName FROM Staging_Players 
@@ -239,7 +238,7 @@ cursor.execute('''INSERT INTO Players (PlayerID, FirstName, LastName)
 
 
 
-teams.to_sql('Staging_Teams', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
+teams.to_sql('Staging_Teams', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
 
 cursor.execute('''INSERT INTO Teams(TeamID,TeamCode) 
 	SELECT TeamID,TeamCode FROM Staging_Teams 
@@ -248,7 +247,7 @@ cursor.execute('''INSERT INTO Teams(TeamID,TeamCode)
 
 
 
-gameDetails.to_sql('Staging_Games', engine, flavor=None, schema='nbadata', if_exists='append', index=None)
+gameDetails.to_sql('Staging_Games', engine, schema='dbo', if_exists='append', index=None)
 
 cursor.execute('''INSERT INTO Games(GameID, Date, DateString, GameCode, Venue) 
 	SELECT GameID, Date, DateString, GameCode, Venue FROM Staging_Games 
@@ -257,11 +256,10 @@ cursor.execute('''INSERT INTO Games(GameID, Date, DateString, GameCode, Venue)
 
 
 
-gameBoxScore.to_sql('Staging_GameBoxScore', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
+gameBoxScore.to_sql('GameBoxScore', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
 
 
-
-playergameSummary.to_sql('Staging_PlayerGameSummary', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
+playergameSummary.to_sql('Staging_PlayerGameSummary', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
 
 cursor.execute('''INSERT INTO PlayerGameSummary( Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm) 
 	SELECT Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm FROM Staging_PlayerGameSummary 
@@ -269,9 +267,7 @@ cursor.execute('''INSERT INTO PlayerGameSummary( Ast,Blk,Blka,Court,Dreb,Fbpts,F
 			WHERE Staging_PlayerGameSummary.GameID=PlayerGameSummary.GameID AND Staging_PlayerGameSummary.PlayerID=PlayerGameSummary.PlayerID AND Staging_PlayerGameSummary.TeamID=PlayerGameSummary.TeamID)''')
 
 
-
-
-gamePlays.to_sql('Staging_GamePlays', engine, flavor=None, schema='nbadata', if_exists='append', index=None, chunksize=10000)
+gamePlays.to_sql('Staging_GamePlays', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
 
 cursor.execute('''INSERT INTO GamePlays(ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs) 
 	SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM Staging_GamePlays 
@@ -279,13 +275,10 @@ cursor.execute('''INSERT INTO GamePlays(ClockTime,Description,EPId,EType,Evt,Gam
 			WHERE Staging_GamePlays.TeamID=GamePlays.TeamID AND Staging_GamePlays.GameID=GamePlays.GameID AND Staging_GamePlays.PlayerID=GamePlays.PlayerID AND Staging_GamePlays.Evt=GamePlays.Evt)''')
 
 
-
-
 cursor.execute('DELETE FROM Staging_Players')
 cursor.execute('DELETE FROM Staging_Teams')
 cursor.execute('DELETE FROM Staging_Games')
 cursor.execute('DELETE FROM Staging_GamePlays')
 cursor.execute('DELETE FROM Staging_PlayerGameSummary')
-cursor.execute('COMMIT;')
 
 
