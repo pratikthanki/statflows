@@ -57,9 +57,7 @@ drafthistoryHeaders = drafthistoryRequest['resultSets'][0]['headers']
 drafthistoryHeaders = [item.replace("'", ' ') for item in drafthistoryHeaders]
 draft.columns = [drafthistoryHeaders]
 
-<<<<<<< HEAD
 #draft.to_sql('draftcombine_results', engine, flavor=None, schema='dbo', if_exists='replace', index=None, chunksize=1000)
-=======
 
 # --------------------------- Connecting & writing to database ---------------------------
 
@@ -68,7 +66,6 @@ engine = create_engine('mysql+mysqlconnector://' + str(my_sql))
 cursor = engine.connect()
 
 draft.to_sql('Draft_Results', engine, flavor=None, schema='nbadata', if_exists='replace', index=None, chunksize=1000)
->>>>>>> 563a793dcf76c684e84ad6f47f4f7b9f42862f36
 
 
 # --------------------------- Combine Activities Request ---------------------------
@@ -83,21 +80,18 @@ url2 = Draft_Combine_url2
 def combineResults(paramName):
     emptyList = []
     for s in seasons:
-<<<<<<< HEAD
         drillRequest = requests.get(url2 + str(paramName) + '?LeagueID=00&SeasonYear=' + str(s), headers=headers)
         print(s, str(drillRequest.status_code))
         emptyList.append(drillRequest.json())
-=======
+
         drillRequest = requests.get(url2 + str(paramName) + '?LeagueID=00&SeasonYear=' + s, headers=headers)
         print(s + ' ' + str(drillRequest.status_code))
         drillRequest = drillRequest.json()
         emptyList.append(drillRequest)
         time.sleep(1)
->>>>>>> 563a793dcf76c684e84ad6f47f4f7b9f42862f36
 
     return emptyList
 
-<<<<<<< HEAD
 
 drillresults = combineResults('draftcombinedrillresults')
 stationaryshooting = combineResults('draftcombinenonstationaryshooting')
@@ -108,7 +102,6 @@ stats = combineResults('draftcombinestats')
 
 # --------------------------- Combine Activities Parse ---------------------------
 
-=======
 draftcombinedrillresults = []
 combineResults('draftcombinedrillresults', draftcombinedrillresults)
 
@@ -123,7 +116,6 @@ combineResults('draftcombinespotshooting', draftcombinespotshooting)
 
 draftcombinestats = []
 combineResults('draftcombinestats', draftcombinestats)
->>>>>>> 563a793dcf76c684e84ad6f47f4f7b9f42862f36
 
 def convert(word):
         import re
@@ -144,7 +136,6 @@ def parseWrite(dbTableName, combineList):
     headersList = []
     combineStats(dbTableName, combineList, resultList, headersList)
     resultList = pd.DataFrame(resultList)
-<<<<<<< HEAD
 
     h = []
     if len(headersList) > 0:
@@ -161,11 +152,9 @@ parseWrite('NonStationaryShooting', stationaryshooting)
 parseWrite('PlayerAnthro', playeranthro)
 parseWrite('SpotShooting', spotshooting)
 parseWrite('Stats', stats)
-=======
-    resultList.columns = [headersList[0]]
-    resultList.to_sql(dbTableName, engine, flavor=None, schema='nbadata', if_exists='replace', index=None, chunksize=1000)
 
->>>>>>> 563a793dcf76c684e84ad6f47f4f7b9f42862f36
+resultList.columns = [headersList[0]]
+resultList.to_sql(dbTableName, engine, flavor=None, schema='nbadata', if_exists='replace', index=None, chunksize=1000)
 
 parseWrite('Draft_DrillResults', draftcombinedrillresults)
 parseWrite('Draft_NonStationaryShooting', draftcombinenonstationaryshooting)
