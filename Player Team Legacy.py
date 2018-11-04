@@ -8,8 +8,6 @@ import pyodbc
 from Links import *
 import re
 
-
-
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy import *
@@ -26,12 +24,8 @@ yesterday = datetime.today() - timedelta(days=1)
 yesterday = datetime.strptime(yesterday.strftime("%Y-%m-%d"), "%Y-%m-%d")
 
 
-# engine = create_engine('mssql+pyodbc://' + ms_sql)
-
-engine = create_engine('mysql+mysqlconnector://' + str(my_sql))
+engine = create_engine('mssql+pyodbc://' + ms_sql)
 cursor = engine.connect()
-
-
 
 
 # Create dataframe from sql table in database
@@ -50,9 +44,7 @@ def parseColumns(cols):
     return new_cols
 
 
-
 # --------------------------- Player stats by season ---------------------------
-
 
 url1 = Player_Team_Legacy_url1
 playerStats = []

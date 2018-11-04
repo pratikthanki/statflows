@@ -2,18 +2,11 @@ from sqlalchemy import create_engine
 import pandas as pd
 import json
 
-
 ms_sql = ms_sql
 # engine = create_engine('mssql+pyodbc://' + ms_sql)
 
 
-mysql = mysql
-# engine = create_engine('mysql+mysqlconnector://' + mysql)
-
-
 cursor = engine.connect()
-
-
 
 TEAMS = {
     'ATL': {
@@ -379,6 +372,4 @@ TEAMS = {
     }
 }
 
-
 teams = pd.DataFrame(TEAMS)
-

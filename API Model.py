@@ -10,7 +10,7 @@ from flask import Flask, request, jsonify
 from flask import jsonify
 from flask.views import View
 
-from Links import *
+from Settings import *
 
 # Create the Flask application and the Flask-SQLAlchemy object.
 app = flask.Flask(__name__)

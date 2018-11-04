@@ -8,7 +8,6 @@ import numpy as np
 import pyodbc
 from sqlalchemy import create_engine
 
-
 os.chdir('C:\\Users\\PratikThanki\\OneDrive - EDGE10 (UK) Ltd\\Pratik\\Python\\statflows-nba')
 from Links import *
 
@@ -16,9 +15,7 @@ from Links import *
 
 #engine = create_engine(ms_sql)
 engine = create_engine(my_sql)
-
 cursor = engine.connect()
-
 
 
 # get today's date, for use later when getting Id's
@@ -39,7 +36,6 @@ Season Type: One of - "Regular Season", "Pre Season", "Playoffs", "All-Star", "A
 """
 
 # --------------------------- Draft Pick History ---------------------------
-
 
 url1 = Draft_Combine_url1
 drafthistoryRequest = requests.get(url1, headers=headers).json()

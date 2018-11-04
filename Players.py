@@ -8,14 +8,7 @@ from Links import *
 
 ms_sql = ms_sql
 # engine = create_engine('mssql+pyodbc://' + ms_sql)
-
-
-mysql = mysql
-# engine = create_engine('mysql+mysqlconnector://' + mysql)
-
-
 cursor = engine.connect()
-
 
 
 # Create dataframe from sql table in database

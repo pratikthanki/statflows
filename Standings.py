@@ -32,7 +32,6 @@ standings.columns = ['Abbr', 'Conference', 'Team ID', 'Team Name', 'Conf Rank', 
 
 # team request to get player data for all players at team X
 
-
 teamData = []
 url2 = Standings_url2
 for i in standings['Team Name']:
@@ -53,19 +52,9 @@ for i in teamData:
         print(j)
 
 
-
 # Writing to the database 
 ms_sql = ms_sql
-# engine = create_engine('mssql+pyodbc://' + ms_sql)
-
-
-mysql = mysql
-# engine = create_engine('mysql+mysqlconnector://' + mysql)
-
-
+engine = create_engine('mssql+pyodbc://' + ms_sql)
 cursor = engine.connect()
 
-
 standings.to_sql('LeagueStandings', engine, flavor=None, schema='dbo', if_exists='replace', index=None)
-
-
