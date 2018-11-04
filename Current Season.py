@@ -7,39 +7,28 @@ import numpy as np
 import pyodbc
 import uuid
 from sqlalchemy import create_engine
-from sqlalchemy.exc import IntegrityError 
-import mysql.connector
-from pandas import ExcelWriter
+import time
+from datetime import datetime, timedelta
 
 os.chdir('C:\\Users\\PratikThanki\\OneDrive - EDGE10 (UK) Ltd\\Pratik\\Python\\statflows-nba')
 from Settings import *
-
-
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 700)
 
-# get today's date, for use later when getting Id's
-import time
-from datetime import datetime, timedelta
-
 now = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")
-yesterday = datetime.today() - timedelta(days=1)
-yesterday = datetime.strptime(yesterday.strftime("%Y-%m-%d"), "%Y-%m-%d")
+dateOffset = now - timedelta(days=14)
 
-import datetime
-minDate = datetime.datetime(2018, 4, 28, 0, 0)
+#yesterday = datetime.today() - timedelta(days=1)
+#yesterday = datetime.strptime(yesterday.strftime("%Y-%m-%d"), "%Y-%m-%d")
+
+#minDate = datetime.datetime(2018, 10, 10, 0, 0)
 # maxDate = datetime.datetime(2018, 2, 7, 0, 0)
 
-
 # --------------------------- Connecting to the database ---------------------------
-# connection to ms sql using sqlalchemy 
-
 engine = create_engine(str(ms_sql))
-#engine = create_engine(str(my_sql))
 cursor = engine.connect()
-
 
 # initial GET request for full season schedule for the 2017 season
 url1 = Current_Season_url1
@@ -49,21 +38,18 @@ except ValueError:
     print('JSON decoding failed')
 
 
-
 # --------------------------- General Game Data for use in other calls ---------------------------
-
 # empty lists to append empty lists with general game details
 gameIDs = []
 gameCode = []
 venue = []
 gameDate = []
 
+print('Looking back since', dateOffset)
 
-from datetime import datetime, timedelta
 for i in scheduleRequest['lscd']:
     for j in i['mscd']['g']:
-        if datetime.strptime(j['gdte'], "%Y-%m-%d") >= minDate and datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
-        # if datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
+        if datetime.strptime(j['gdte'], "%Y-%m-%d") >= dateOffset and datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
             gameIDs.append(j['gid'])
             gameCode.append(j['gcode'])
             venue.append(j['an'])
@@ -76,24 +62,23 @@ for line in gameCode:
 
 # pandas dataframe with all game general data
 gameDetails = pd.DataFrame({'GameID':gameIDs, 'GameCode':gameCode, 'Venue':venue, 'Date':gameDate, 'DateString': dateSTR}) # final dataframe
-print(str(len(gameIDs)) + ' Game IDs Found')
+print(str(len(gameIDs)), 'Game IDs Found')
 
 
 
 # --------------------------- Game Summary per Player per Game ---------------------------
-
 # game summary data by player by game, looping through all gameIDs up till today
 gameSummaryStats = []
 url2 = Current_Season_url2
 for i in gameDetails['GameID']:
     try:
         gamedetailRequest = requests.get(url2 + i + '_gamedetail.json')
-        print(i + ' - ' + str(gamedetailRequest.status_code))
+        print(i, str(gamedetailRequest.status_code))
         #gamedetailRequest.raise_for_status()
         gamedetailRequest = gamedetailRequest.json()
         gameSummaryStats.append(gamedetailRequest)
     except ValueError:
-        print(i + ' - Game caused decoding fail')
+        print(i, 'Game caused decoding fail')
 
 
 # condensed version using function to call game stats for vls and hls
@@ -101,7 +86,7 @@ def getSummary(prop, summaries, gameList, idList):
     for a in gameSummaryStats:
         for b in [a['g']]:
             if 'pstsg' not in b[prop]:
-                print('issue with game: ' + b['gid'])
+                print('issue with game:', b['gid'])
                 pass
             else:
                 for c in b[prop]['pstsg']:
@@ -123,12 +108,10 @@ getSummary('hls', gameSummaryStats, game_hls, hls_Id)
 game_vls = pd.DataFrame(game_vls)
 game_hls = pd.DataFrame(game_hls)
 
-
 #vls_Id = pd.DataFrame(vls_Id)
 #hls_Id = pd.DataFrame(hls_Id)
 #game_vls['Id'] = vls_Id
 #game_hls['Id'] = hls_Id
-
 
 gameStaging = [game_vls, game_hls]
 playergameSummary = pd.concat(gameStaging) # final dataframe
@@ -136,9 +119,7 @@ playergameSummary['Id'] = None
 
 playergameSummary.columns = ['Ast','Blk', 'Blka', 'Court', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fn', 'Fta', 'Ftm', 'GameID', 'Ln', 'Memo', 'Mid', 'Min', 'Num', 'Oreb', 'Pf', 'PlayerID', 'Pip', 'Pipa', 'Pipm', 'Pm', 'Pos', 'Pts', 'Reb', 'Sec', 'Status', 'Stl', 'Ta', 'Tf', 'TeamID', 'Totsec', 'Tov', 'Tpa', 'Tpm', 'Id']
 
-
 # --------------------------- Game Plays - full event breakdown in the game ---------------------------
-
 # game summary data by player by game, looping through all gameIDs up till today
 
 gamePlaybyPlay = []
@@ -146,17 +127,14 @@ url3 = Current_Season_url3
 for i in gameDetails['GameID']:
     try:
         gamePlotRequest = requests.get(url3 + i + '_full_pbp.json')
-        print(i + ' - ' + str(gamePlotRequest.status_code))
+        print(i, str(gamePlotRequest.status_code))
         #gamePlotRequest.raise_for_status()
         gamePlotRequest = gamePlotRequest.json()
         gamePlaybyPlay.append(gamePlotRequest)
         pass
     except ValueError:
-        print(i + ' - Game caused decoding fail')
+        print(i, 'Game caused decoding fail')
 
-    
-#print(gamePlaybyPlay) # list
-#gamePlaybyPlay[0]['g']['pd'][0]['p']
 
 PlaybyPlay = []
 idList = []
@@ -164,7 +142,7 @@ for i in gamePlaybyPlay:
     for j in i['g']['pd']:
         for k in j['pla']:
             if 'pla' not in j:
-                print('issue with game: ' + i['g']['gid'])
+                print('issue with game:', i['g']['gid'])
                 pass
             else:
                 k['period'] = j['p']
@@ -179,9 +157,6 @@ gamePlays['Id'] = idList
 
 gamePlays.columns = ['ClockTime', 'Description', 'EPId', 'EType', 'Evt', 'GameID', 'HS', 'LocationX', 'LocationY', 'MId', 'MType', 'OftId', 'OpId', 'Opt1', 'Opt2', 'Ord', 'Period', 'PlayerID', 'TeamID', 'Vs', 'Id']
 
-
-
-
 # --------------------------- Create Player Team DF ---------------------------
 
 players = pd.DataFrame({'PlayerID': playergameSummary['PlayerID'], 'LastName': playergameSummary['Ln'], 'FirstName': playergameSummary['Fn']})
@@ -191,13 +166,11 @@ players = players.drop_duplicates(['PlayerID'], keep='first')
 teams = pd.DataFrame({'TeamID': playergameSummary['TeamID'], 'TeamCode': playergameSummary['Ta']})
 teams = teams.drop_duplicates(['TeamID'], keep='first')
 
-   
 # --------------------------- Game Box Score ---------------------------
-
 
 # game box score descriptons by game, looping through all gameIDs up till today
 dateSTR = sorted(set(dateSTR))
-print(str(len(dateSTR)) + ' matchdays found')
+print(str(len(dateSTR)), 'matchdays found')
 
 
 gameBoxScore_staging = []
@@ -205,16 +178,14 @@ url4 = Current_Season_url4
 for i in dateSTR:
     try:
         gameBoxScoreRequest = requests.get(url4 + str(i) + '.json')
-        print(i + ' - ' + str(gameBoxScoreRequest.status_code))
+        print(i, str(gameBoxScoreRequest.status_code))
         #gameBoxScoreRequest.raise_for_status()
         gameBoxScoreRequest = gameBoxScoreRequest.json()
         gameBoxScore_staging.append(gameBoxScoreRequest)
     except ValueError:
-        print(i + ' - Game caused decoding fail')
+        print(i, 'Game caused decoding fail')
 
     
-#print(gameBoxScore_staging) # list
-
 gameBoxScore = []
 for i in gameBoxScore_staging:
     if int(i['result_count']) > 0:
@@ -228,6 +199,7 @@ gameBoxScore = gameBoxScore.rename(columns={0: 'Game', 1: 'GameID', 2: 'BoxScore
 
 
 # --------------------------- Writing to the database ---------------------------
+print('Writing to NBA database')
 
 players.to_sql('Staging_Players', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
 
@@ -258,6 +230,8 @@ cursor.execute('''INSERT INTO Games(GameID, Date, DateString, GameCode, Venue)
 
 gameBoxScore.to_sql('GameBoxScore', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
 
+print('Players, Teams and Games written')
+
 
 playergameSummary.to_sql('Staging_PlayerGameSummary', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
 
@@ -266,6 +240,7 @@ cursor.execute('''INSERT INTO PlayerGameSummary( Ast,Blk,Blka,Court,Dreb,Fbpts,F
 		WHERE NOT EXISTS ( SELECT Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm FROM PlayerGameSummary 
 			WHERE Staging_PlayerGameSummary.GameID=PlayerGameSummary.GameID AND Staging_PlayerGameSummary.PlayerID=PlayerGameSummary.PlayerID AND Staging_PlayerGameSummary.TeamID=PlayerGameSummary.TeamID)''')
 
+print('Player Game Summary written')
 
 gamePlays.to_sql('Staging_GamePlays', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
 
@@ -274,6 +249,8 @@ cursor.execute('''INSERT INTO GamePlays(ClockTime,Description,EPId,EType,Evt,Gam
 		WHERE NOT EXISTS (SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM GamePlays 
 			WHERE Staging_GamePlays.TeamID=GamePlays.TeamID AND Staging_GamePlays.GameID=GamePlays.GameID AND Staging_GamePlays.PlayerID=GamePlays.PlayerID AND Staging_GamePlays.Evt=GamePlays.Evt)''')
 
+print('Game Plays written')
+
 
 cursor.execute('DELETE FROM Staging_Players')
 cursor.execute('DELETE FROM Staging_Teams')
@@ -281,4 +258,4 @@ cursor.execute('DELETE FROM Staging_Games')
 cursor.execute('DELETE FROM Staging_GamePlays')
 cursor.execute('DELETE FROM Staging_PlayerGameSummary')
 
-
+print('All Staging data deleted')
