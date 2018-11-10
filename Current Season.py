@@ -1,5 +1,3 @@
-import os
-import sys
 import requests
 import json
 import pandas as pd
@@ -9,8 +7,6 @@ import uuid
 from sqlalchemy import create_engine
 import time
 from datetime import datetime, timedelta
-
-os.chdir('C:\\Users\\PratikThanki\\OneDrive - EDGE10 (UK) Ltd\\Pratik\\Python\\statflows-nba')
 from Settings import *
 
 pd.set_option('display.max_rows', 500)

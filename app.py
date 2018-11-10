@@ -2,15 +2,9 @@ import os
 import pandas as pd
 import numpy as np
 import pyodbc
-import time
-from datetime import datetime, timedelta
-import colorlover as cl
 import requests
 import base64
 from sqlalchemy import create_engine
-
-import plotly
-import plotly.graph_objs as go
 
 import dash
 from dash.dependencies import Input, Output, State
@@ -19,6 +13,7 @@ import dash_html_components as html
 import dash_table_experiments as dt
 
 from Settings import *
+from Queries import *
 
 pd.set_option('display.max_columns', 20)
 pd.set_option('display.width', 500)
@@ -28,7 +23,6 @@ app = dash.Dash()
 server = app.server
 app.scripts.config.serve_locally = True
 dcc._js_dist[0]['external_url'] = 'https://cdn.plot.ly/plotly-finance-1.28.0.min.js'
-colorscale = cl.scales['9']['qual']['Paired']
 
 
 # Establish database connection to Write Records
@@ -59,55 +53,13 @@ def loadData(query):
     return df
 
 
-teamsQuery = '''
-SELECT DISTINCT
-CAST(t.PlayerID as varchar)
-,CAST(t.TeamID as varchar)
-,t.TeamCode
-,t.FirstName
-,t.LastName
-,t.FullName
-,t.TeamLogo
-,'https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/'+CAST(t.TeamID as varchar)+'/2018/260x190/'+CAST(t.PlayerID as varchar)+'.png' as PlayerImg
-
-FROM (
-
-SELECT
-      PlayerGameSummary.[GameID]
-      ,PlayerGameSummary.[PlayerID]
-      ,Players.FirstName
-      ,Players.LastName
-      ,Players.FirstName + ' ' + Players.LastName as FullName
-      ,PlayerGameSummary.[TeamID]
-      ,PlayerLogo
-      ,Games.Date
-      ,TeamCode
-      ,TeamLogo
-  FROM [dbo].[PlayerGameSummary]
-
-  JOIN Games ON Games.GameID = PlayerGameSummary.GameID
-  JOIN Teams ON Teams.TeamID = PlayerGameSummary.TeamID
-  JOIN Players ON Players.PlayerID = PlayerGameSummary.PlayerID
-
-WHERE GAMES.DATE > '2018-09-01' ) t
-
-WHERE t.TeamLogo != ''
-
-ORDER BY t.TeamCode
-'''
-
-teams = loadData(teamsQuery)
-teams.columns = ['PlayerId', 'TeamId', 'TeamCode',
-                 'FirstName', 'LastName', 'FullName', 'TeamLogo', 'PlayerImg']
-
-
-def parseTeams():
+def parseTeams(df):
     teamdict = {}
-    cols = teams['TeamId'].unique()
+    cols = df['TeamId'].unique()
 
     for team in cols:
         teamdict[team] = np.array(
-            teams.loc[teams['TeamId'] == team, 'PlayerId'])
+            df.loc[df['TeamId'] == team, 'PlayerId'])
 
     teamdf = pd.DataFrame(dict([(k, pd.Series(v))
                                 for k, v in teamdict.items()]))
@@ -129,7 +81,7 @@ headerstyle = {'align': 'center',
                'background-color': '#0f6db5',
                'text-align': 'center',
                'font-size': '22px',
-               'padding': '10px',
+               'padding': '5px',
                'color': '#ffffff'}
 
 tablestyle = {'display': 'table',
@@ -143,15 +95,29 @@ rowstyle = {'color': 'black',
             'text-align': 'center',
             'font-size': '40px'}
 
+tabs_styles = {
+    'height': '50px'
+}
+tab_style = {
+    'borderBottom': '1px solid #d6d6d6',
+    'padding': '5px',
+    'font-size': '18px'
+}
+
+tab_selected_style = {
+    'borderTop': '1px solid #d6d6d6',
+    'borderBottom': '1px solid #d6d6d6',
+    'backgroundColor': '#119DFF',
+    'fontWeight': 'bold',
+    'color': 'white',
+    'padding': '5px',
+    'font-size': '22px'
+}
 
 def localImg(image):
     encoded_image = base64.b64encode(
         open(os.getcwd() + '/TeamLogos/' + image, 'rb').read())
     return 'data:image/png;base64,{}'.format(encoded_image)
-
-
-teams.loc[teams['PlayerId'] == '1626147', 'PlayerImg'].iloc[0]
-teams.loc[teams['TeamId'] == '1610612737', 'TeamLogo'].iloc[0]
 
 
 def getPlayerImage(player):
@@ -160,7 +126,7 @@ def getPlayerImage(player):
         name = teams.loc[teams['PlayerId'] == player, 'FullName'].iloc[0]
 
         return html.Div(children=[
-            html.Img(src=str(img), style={'height': '120px'}),
+            html.Img(src=str(img), style={'height': '100px'}),
             html.Div(html.H4(str(name),
                              style={'font-size': '20px',
                                     'text-align': 'center'}))
@@ -171,7 +137,7 @@ def getTeamImage(team):
     img = teams.loc[teams['TeamId'] == team, 'TeamLogo'].iloc[0]
 
     return html.Div(children=[
-        html.Img(src=str(img), style={'height': '70px'})
+        html.Img(src=str(img), style={'height': '90px'})
     ])
 
 
@@ -194,15 +160,23 @@ def get_data_object(df):
         [html.Tr([html.Th(getTeamImage(col), style=headerstyle) for col in df.columns])] + rows, style=tablestyle)
 
 
-Atlantic = ['BOS', 'BKN', 'NYK', 'PHI', 'TOR']
-Central = ['CHI', 'CLE', 'DET', 'IND', 'MIL']
-Southeast = ['ATL', 'CHA', 'MIA', 'ORL', 'WAS']
-Northwest = ['DEN', 'MIN', 'OKC', 'POR', 'UTA']
-Pacific = ['GSW', 'LAC', 'LAL', 'PHX', 'SAC']
-Southwest = ['DAL', 'HO', 'MEM', 'NOP', 'SAS']
+# Atlantic = ['BOS', 'BKN', 'NYK', 'PHI', 'TOR']
+# Central = ['CHI', 'CLE', 'DET', 'IND', 'MIL']
+# Southeast = ['ATL', 'CHA', 'MIA', 'ORL', 'WAS']
+# Northwest = ['DEN', 'MIN', 'OKC', 'POR', 'UTA']
+# Pacific = ['GSW', 'LAC', 'LAL', 'PHX', 'SAC']
+# Southwest = ['DAL', 'HO', 'MEM', 'NOP', 'SAS']
 
-teamdf = parseTeams()
+teamsQuery = 'SELECT * FROM TeamRosters2018'
+teams = loadData(teamsQuery)
+teams.columns = ['PlayerId', 'TeamId', 'TeamCode', 'FirstName', 'LastName', 'FullName', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+teamdf = parseTeams(teams)
 get_data_object(teamdf)
+
+
+latestGame = loadData(latestGameQuery)
+latestGame.columns = ['LatestDate', 'Venue', 'TeamID', 'PlayerID', 'FullName', 'JerseyNum', 'Pos', 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Stl', 'Tov', 'Pf', 'Pip', 'Pipa', 'Pipm']
+
 
 
 def update_layout():
@@ -222,15 +196,15 @@ def update_layout():
         html.P('This is some text', style={'text-align': 'center',
                                            'padding': '10px'}),
 
-        dcc.Tabs(id="conf-tabs", value='Atlantic', children=[
-            dcc.Tab(label='ATLANTIC', value='Atlantic'),
-            dcc.Tab(label='CENTRAL', value='Central'),
-            dcc.Tab(label='SOUTHEAST', value='Southeast'),
+        dcc.Tabs(id="div-tabs", value='Atlantic', children=[
+            dcc.Tab(label='ATLANTIC', value='Atlantic', style=tab_style, selected_style=tab_selected_style),
+            dcc.Tab(label='CENTRAL', value='Central', style=tab_style, selected_style=tab_selected_style),
+            dcc.Tab(label='SOUTHEAST', value='Southeast', style=tab_style, selected_style=tab_selected_style),
 
-            dcc.Tab(label='NORTHWEST', value='Northwest'),
-            dcc.Tab(label='PACIFIC', value='Pacific'),
-            dcc.Tab(label='SOUTHWEST', value='Southwest'),
-        ]),
+            dcc.Tab(label='NORTHWEST', value='Northwest', style=tab_style, selected_style=tab_selected_style),
+            dcc.Tab(label='PACIFIC', value='Pacific', style=tab_style, selected_style=tab_selected_style),
+            dcc.Tab(label='SOUTHWEST', value='Southwest', style=tab_style, selected_style=tab_selected_style),
+        ], style=tabs_styles),
 
         # html.Button('Refresh Dashboard', id='my-button'),
 
@@ -246,14 +220,13 @@ app.layout = update_layout()
 
 @app.callback(
     Output('table-container', 'children'),
-    [Input('conf-tabs', 'value')])
+    [Input('div-tabs', 'value')])
 
 def update_graph(value):
     teams = loadData(teamsQuery)
-    teams.columns = ['PlayerId', 'TeamId', 'TeamCode',
-                     'FirstName', 'LastName', 'FullName', 'TeamLogo', 'PlayerImg']
-
-    teamdf = parseTeams()
+    teams.columns = ['PlayerId', 'TeamId', 'TeamCode', 'FirstName', 'LastName', 'FullName', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+    teams = teams[teams['Division'] == value]
+    teamdf = parseTeams(teams)
 
     return get_data_object(teamdf)
 
@@ -261,7 +234,8 @@ def update_graph(value):
 external_css = [
     "https://codepen.io/chriddyp/pen/bWLwgP.css",
     "https://codepen.io/chriddyp/pen/brPBPO.css",
-    "https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i"]
+    "https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i"
+]
 
 for css in external_css:
     app.css.append_css({"external_url": css})
