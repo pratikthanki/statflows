@@ -16,51 +16,13 @@ from Settings import *
 from Queries import *
 
 
-app = dash.Dash()
+app = dash.Dash(__name__)
 server = app.server
 app.scripts.config.serve_locally = True
 dcc._js_dist[0]['external_url'] = 'https://cdn.plot.ly/plotly-finance-1.28.0.min.js'
 
-app.head = [
-    ('''
-
-    <style type="text/css">
-
-    .overlay {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 100%;
-        width: 100%;
-        opacity: 0;
-        transition: .5s ease;
-        background-color: #0f6db5;
-    }
-
-    .container:hover .overlay {
-        opacity: .9;
-    }
-
-    .text {
-        color: white;
-        font-size: 20px;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        -webkit-transform: translate(-50%, -50%);
-        -ms-transform: translate(-50%, -50%);
-        transform: translate(-50%, -50%);
-        text-align: center;
-    }
-     </style>
-
-    ''')
-]
 
 # Establish database connection to Write Records
-
 
 def SQLServerConnection(config):
     conn_str = (
@@ -121,6 +83,7 @@ headerstyle = {
     'padding': '5px',
     'color': '#ffffff'}
 
+
 tablestyle = {
     'display': 'table',
     'border-cllapse': 'separate',
@@ -128,21 +91,25 @@ tablestyle = {
     'font-weight': '30',
     'border-collapse': 'separate'}
 
+
 rowstyle = {
     'color': 'black',
     'align': 'center',
     'text-align': 'center',
     'font-size': '40px'}
 
+
 tabs_styles = {
     'height': '50px'
 }
+
 
 tab_style = {
     'borderBottom': '1px solid #d6d6d6',
     'padding': '5px',
     'font-size': '18px'
 }
+
 
 tab_selected_style = {
     'borderTop': '1px solid #d6d6d6',
@@ -154,28 +121,17 @@ tab_selected_style = {
     'font-size': '22px'
 }
 
+
 ulstyle = {
     'list-style-type': 'none',
-    'columnCount': '2',
-    'column-width': '40px'
+    'columnCount': '3',
+    'columnWidth': '20px'
 }
+
 
 styleP = {
-    'font-size': '10px',
+    'font-size': '12px',
     'text-align': 'center'
-}
-
-overlay_style = {
-    # 'position': 'absolute',
-    # 'top': '0',
-    # 'bottom': '0',
-    # 'left': '0',
-    # 'right': '0',
-    # 'height': '100%',
-    # 'width': '100%',
-    # 'opacity': '0',
-    # 'transition': '.5s ease',
-    # 'background-color': '#0f6db5'
 }
 
 
@@ -189,39 +145,43 @@ latest_df = loadData(latestGame)
 latest_df.columns = ['LatestDate', 'Venue', 'TeamID', 'PlayerID', 'FullName', 'JerseyNum', 'Pos', 'Min',
                      'Pts', 'Ast', 'Blk', 'Reb', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Stl', 'Tov', 'Pf', 'Pip', 'Pipa', 'Pipm']
 
-latest_df['FG%'] = (latest_df['Fgm'] / latest_df['Fga']) * 100
-latest_df['FT%'] = (latest_df['Ftm'] / latest_df['Fta']) * 100
-latest_df['Pip%'] = (latest_df['Pipm'] / latest_df['Pipa']) * 100
+latest_df['FG%'] = ((latest_df['Fgm'] / latest_df['Fga']) * 100).round(2)
+latest_df['FT%'] = ((latest_df['Ftm'] / latest_df['Fta']) * 100).round(2)
+latest_df['Pip%'] = ((latest_df['Pipm'] / latest_df['Pipa']) * 100).round(2)
 
 
 def playerInfo(player):
     row = []
     cols = ['LatestDate', 'Min', 'Pts', 'Ast',
-            'Blk', 'Reb', 'Stl', 'FG%', 'FT%', 'Pip%']
+            'Blk', 'Reb', 'Stl', 'Tov', 'Pf', 'FG%', 'FT%', 'Pip%']
 
     df = latest_df.loc[latest_df['PlayerID'] == int(player)]
 
     for col in df.columns:
         if any(col in c for c in cols) and col != 'Pip':
-            text = col + ': ' + str(df.iloc[0][col])
+            if col == 'LatestDate':
+                text = str(df.iloc[0][col])
+            else:
+                text = col + ': ' + str(df.iloc[0][col])
+
             P = html.P(text, style=styleP)
             row.append(html.Li(P))
 
     return html.Div(html.Ul(row, style=ulstyle), className='text')
 
 
-def getPlayerImage(player):
+def playerImage(player):
     if player != '':
         img = teams.loc[teams['PlayerId'] == player, 'PlayerImg'].iloc[0]
         name = teams.loc[teams['PlayerId'] == player, 'FullName'].iloc[0]
 
         return html.Div(children=[
             html.Img(src=str(img), style={
-                     'height': '100px'}, className='image'),
+                     'height': '130px'}, className='image'),
             html.Div(html.H4(str(name),
                              style={'font-size': '20px',
                                     'text-align': 'center'})),
-            html.Div(playerInfo(player), className='overlay', style=overlay_style)],
+            html.Div(playerInfo(player), className='overlay')],
             className='container', style={'width': '100%', 'position': 'relative'})
 
 
@@ -229,7 +189,7 @@ def getTeamImage(team):
     img = teams.loc[teams['TeamId'] == team, 'TeamLogo'].iloc[0]
 
     return html.Div(children=[
-        html.Img(src=str(img), style={'height': '90px'})
+        html.Img(src=str(img), style={'height': '100px'})
     ])
 
 
@@ -238,8 +198,8 @@ def get_data_object(df):
     for i in range(len(df)):
         row = []
         for col in df.columns:
-            value = getPlayerImage(df.iloc[i][col])
-            style = {'align': 'center', 'padding': '7px',
+            value = playerImage(df.iloc[i][col])
+            style = {'align': 'center', 'padding': '5px',
                      'text-align': 'center', 'font-size': '25px'}
             row.append(html.Td(value, style=style))
 
