@@ -40,8 +40,13 @@ def loadData(query):
     conn = SQLServerConnection(sqlconfig)
 
     cursor = conn.cursor()
-    cursor.execute(query)
-    rows = cursor.fetchall()
+
+    try: 
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        pass
+    except Exception as e:
+        rows = pd.read_sql(query, conn)
 
     for row in rows:
         sqlData.append(list(row))
@@ -142,17 +147,17 @@ def localImg(image):
 
 
 latest_df = loadData(latestGame)
-latest_df.columns = ['LatestDate', 'Venue', 'TeamID', 'PlayerID', 'FullName', 'JerseyNum', 'Pos', 'Min',
-                     'Pts', 'Ast', 'Blk', 'Reb', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Stl', 'Tov', 'Pf', 'Pip', 'Pipa', 'Pipm']
+latest_df.columns = ['LatestDate', 'TeamID', 'Opposition', 'PlayerID', 'FullName', 'JerseyNum', 'Pos',
+                     'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Stl', 'Tov', 'Pf', 'Pip', 'Pipa', 'Pipm']
 
-latest_df['FG%'] = ((latest_df['Fgm'] / latest_df['Fga']) * 100).round(2)
-latest_df['FT%'] = ((latest_df['Ftm'] / latest_df['Fta']) * 100).round(2)
-latest_df['Pip%'] = ((latest_df['Pipm'] / latest_df['Pipa']) * 100).round(2)
+latest_df['FG%'] = ((latest_df['Fgm'] / latest_df['Fga']) * 100).round(1)
+latest_df['FT%'] = ((latest_df['Ftm'] / latest_df['Fta']) * 100).round(1)
+latest_df['Pip%'] = ((latest_df['Pipm'] / latest_df['Pipa']) * 100).round(1)
 
 
 def playerInfo(player):
     row = []
-    cols = ['LatestDate', 'Min', 'Pts', 'Ast',
+    cols = ['Opposition', 'LatestDate', 'Min', 'Pts', 'Ast',
             'Blk', 'Reb', 'Stl', 'Tov', 'Pf', 'FG%', 'FT%', 'Pip%']
 
     df = latest_df.loc[latest_df['PlayerID'] == int(player)]

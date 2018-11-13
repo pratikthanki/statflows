@@ -1,8 +1,8 @@
 latestGame = '''
 SELECT 
-CAST(g.[Date] as [date]) as LatestDate
-,g.[Venue]
+SUBSTRING(gb.Game,CHARINDEX('(',gb.Game)+1,CHARINDEX(')',gb.Game)-CHARINDEX('(',gb.Game)-1) as LatestDate
 ,p.[TeamID]
+,CASE WHEN l.Ta = gb.[AwayTeamCode] THEN gb.[HomeTeamCode] ELSE gb.[AwayTeamCode] END as Opposition
 ,p.[PlayerID]
 ,p.[Fn] + ' ' + p.[Ln] as FullName
 ,p.[Num]
@@ -24,23 +24,21 @@ CAST(g.[Date] as [date]) as LatestDate
 ,p.[Pipm]
 FROM [dbo].[PlayerGameSummary] p
 
-JOIN Games g ON g.GameID = p.GameID
+JOIN GameBoxScore gb ON gb.GameID = p.GameID
 
 INNER JOIN (
 SELECT 
 MAX(Games.[Date]) as LatestDate
 ,[TeamID]
+,[Ta]
 ,[PlayerID]
 FROM [dbo].[PlayerGameSummary]
 JOIN Games ON Games.GameID = PlayerGameSummary.GameID
-GROUP BY [TeamID], [PlayerID]
+GROUP BY [TeamID], [PlayerID], [Ta]
 HAVING MAX(Games.[Date]) > '2018-09-01' AND LEN([TeamID]) = 10 ) l 
 
-ON l.LatestDate = g.[Date] and l.PlayerID = p.PlayerID
+ON l.TeamID = p.TeamID and l.PlayerID = p.PlayerID
 
-ORDER BY p.TeamID, g.[Date]
-
--- ['LatestDate', 'Venue', 'TeamID', 'PlayerID', 'FullName', 'JerseyNum', 'Pos', 'Min', 'Pts', 'Ast', Blk, Reb, Fga, Fgm, Fta, Ftm, Stl, Tov, Pf, Pip, Pipa, Pipm]
 '''
 
 teamRosters = 'SELECT * FROM TeamRosters2018'
