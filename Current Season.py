@@ -203,7 +203,7 @@ gameBoxScore = gameBoxScore.rename(columns={0: 'Game', 1: 'GameID', 2: 'BoxScore
 
 
 # --------------------------- Writing to the database ---------------------------
-print('Writing to NBA database')
+print('---------- Writing to NBA database ----------')
 
 # players.to_sql('Staging_Players', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
 # teams.to_sql('Staging_Teams', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
@@ -246,7 +246,7 @@ cursor.execute('''INSERT INTO GameBoxScore([Game],[GameID],[BoxScoreBreakdown],[
             WHERE Staging_GameBoxScore.GameID = GameBoxScore.GameID)''')
 
 
-print('Players, Teams and Games written')
+print('---------- Players, Teams and Games written ----------')
 
 
 cursor.executemany('INSERT INTO Staging_PlayerGameSummary(Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm,Id) VALUES(?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?)', playergameSummary.values.tolist())
@@ -257,7 +257,7 @@ cursor.execute('''INSERT INTO PlayerGameSummary( Ast,Blk,Blka,Court,Dreb,Fbpts,F
 			WHERE Staging_PlayerGameSummary.GameID=PlayerGameSummary.GameID AND Staging_PlayerGameSummary.PlayerID=PlayerGameSummary.PlayerID AND Staging_PlayerGameSummary.TeamID=PlayerGameSummary.TeamID)''')
 
 
-print('Player Game Summary written')
+print('---------- Player Game Summary written ----------')
 
 
 cursor.executemany('INSERT INTO Staging_GamePlays(ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs,Id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', gamePlays.values.tolist())
@@ -268,7 +268,7 @@ cursor.execute('''INSERT INTO GamePlays(ClockTime,Description,EPId,EType,Evt,Gam
 			WHERE Staging_GamePlays.TeamID=GamePlays.TeamID AND Staging_GamePlays.GameID=GamePlays.GameID AND Staging_GamePlays.PlayerID=GamePlays.PlayerID AND Staging_GamePlays.Evt=GamePlays.Evt)''')
 
 
-print('Game Plays written')
+print('---------- Game Plays written ----------')
 
 cursor.execute('DELETE FROM Staging_Players')
 cursor.execute('DELETE FROM Staging_Teams')
@@ -277,4 +277,4 @@ cursor.execute('DELETE FROM Staging_GamePlays')
 cursor.execute('DELETE FROM Staging_PlayerGameSummary')
 
 conn.commit()
-print('All Staging data deleted')
+print('---------- All Staging data deleted ----------')
