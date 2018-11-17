@@ -4,6 +4,7 @@ import numpy as np
 import pyodbc
 import requests
 import base64
+import time
 from sqlalchemy import create_engine
 
 import dash
@@ -41,7 +42,7 @@ def loadData(query):
 
     cursor = conn.cursor()
 
-    try: 
+    try:
         cursor.execute(query)
         rows = cursor.fetchall()
         pass
@@ -147,32 +148,41 @@ def localImg(image):
 
 
 latest_df = loadData(latestGame)
-latest_df.columns = ['LatestDate', 'TeamID', 'Opposition', 'PlayerID', 'FullName', 'JerseyNum', 'Pos',
-                     'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Stl', 'Tov', 'Pf', 'Pip', 'Pipa', 'Pipm']
-
-latest_df['FG%'] = ((latest_df['Fgm'] / latest_df['Fga']) * 100).round(1)
-latest_df['FT%'] = ((latest_df['Ftm'] / latest_df['Fta']) * 100).round(1)
-latest_df['Pip%'] = ((latest_df['Pipm'] / latest_df['Pipa']) * 100).round(1)
+latest_df.columns = ['LatestDate', 'TeamID', 'OppositionId', 'OppositionTeamCode', 'OppositionTeamLogo', 'PlayerID', 'FullName',
+                     'Num', 'Pos', 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Stl', 'Tov', 'Pf', 'Pip', 'Pipa', 'Pipm']
 
 
 def playerInfo(player):
     row = []
-    cols = ['Opposition', 'LatestDate', 'Min', 'Pts', 'Ast',
-            'Blk', 'Reb', 'Stl', 'Tov', 'Pf', 'FG%', 'FT%', 'Pip%']
+    rows = []
+    cols = ['LatestDate', 'OppositionTeamLogo', 'Pos', 'Min', 'Pts', 'Ast', 'Blk',
+            'Reb', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Stl', 'Tov', 'Pf', 'Pip', 'Pipa', 'Pipm']
 
-    df = latest_df.loc[latest_df['PlayerID'] == int(player)]
+    df = latest_df[latest_df['PlayerID'] == int(player)]
+    df = df.head(1)
 
     for col in df.columns:
-        if any(col in c for c in cols) and col != 'Pip':
-            if col == 'LatestDate':
-                text = str(df.iloc[0][col])
+        if col in cols:
+            if col not in ['LatestDate', 'OppositionTeamLogo']:
+                value = col + ': ' + str(df.iloc[0][col])
+                style = {'font-size': '12px'}
+                row.append(html.P(value, style=style))
+
+            elif col == 'OppositionTeamLogo':
+                value = html.Div(
+                    html.Img(src=str(df.iloc[0][col]),
+                             style={'height': '40px'})
+                )
+                row.append(value)
+
             else:
-                text = col + ': ' + str(df.iloc[0][col])
+                value = df.iloc[0][col]
+                style = {'font-size': '15px'}
+                row.append(html.P(value, style=style))
 
-            P = html.P(text, style=styleP)
-            row.append(html.Li(P))
+    rows.append(html.Li(row))
 
-    return html.Div(html.Ul(row, style=ulstyle), className='text')
+    return html.Div(html.Ul(rows, style=ulstyle), className='text')
 
 
 def playerImage(player):
