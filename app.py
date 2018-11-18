@@ -171,7 +171,7 @@ def playerInfo(player):
             elif col == 'OppositionTeamLogo':
                 value = html.Div(
                     html.Img(src=str(df.iloc[0][col]),
-                             style={'height': '40px'})
+                             style={'height': '70px'})
                 )
                 row.append(value)
 
