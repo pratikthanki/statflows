@@ -301,7 +301,7 @@ court_shapes.append(res_area_shape)
 def get_layout():
     return html.Div([
         dcc.Graph(
-            id='missed-shots',
+            id='shot-plot',
             figure={
                 'data': [
                     go.Scatter(
@@ -338,6 +338,17 @@ def get_layout():
 
 
 app.layout = get_layout()
+
+
+# @app.callback(
+#     Output('shot-plot', 'children'),
+#     [Input('player-tabs', 'value')])
+# def update_graph(value):
+#     shots_Data = loadData(shot_Query + '''WHERE [PlayerID] = '201939' ''')
+#     shots_Data.columns = ['ClockTime', 'Description', 'EPId', 'EType', 'Evt', 'GameID', 'HS', 'LocationX',
+#                           'LocationY', 'MId', 'MType', 'OftId', 'OpId', 'Opt1', 'Opt2', 'Ord', 'Period', 'PlayerID', 'TeamID', 'Vs', 'Id']
+
+#     return get_layout(shots_Data)
 
 
 external_css = [
