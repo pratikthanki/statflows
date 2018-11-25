@@ -298,8 +298,22 @@ res_area_shape = dict(
 court_shapes.append(res_area_shape)
 
 
+def localImg(image):
+    encoded_image = base64.b64encode(
+        open(os.getcwd() + '/TeamLogos/' + image, 'rb').read())
+    return 'data:image/png;base64,{}'.format(encoded_image)
+
+
 def get_layout():
     return html.Div([
+        html.Div([
+            html.Img(src=localImg('nba.png'),
+                     style={
+                         'height': '145px',
+                         'float': 'right'},
+                     ),
+        ]),
+
         dcc.Graph(
             id='shot-plot',
             figure={
@@ -308,17 +322,35 @@ def get_layout():
                         x=shots_Data[shots_Data['EType'] == 1]['LocationX'],
                         y=shots_Data[shots_Data['EType'] == 1]['LocationY'],
                         mode='markers',
-                        opacity=0.7
+                        name='Made Shot',
+                        opacity=0.7,
+                        marker=dict(
+                            size=5,
+                            color='rgba(0, 200, 100, .8)',
+                            line=dict(
+                                width=1,
+                                color='rgb(0, 0, 0, 1)'
+                            )
+                        )
                     ),
                     go.Scatter(
                         x=shots_Data[shots_Data['EType'] == 2]['LocationX'],
                         y=shots_Data[shots_Data['EType'] == 2]['LocationY'],
                         mode='markers',
-                        opacity=0.7
+                        name='Missed Shot',
+                        opacity=0.7,
+                        marker=dict(
+                            size=5,
+                            color='rgba(255, 255, 0, .8)',
+                            line=dict(
+                                width=1,
+                                color='rgb(0, 0, 0, 1)'
+                            )
+                        )
                     )
                 ],
                 'layout': go.Layout(
-                    title='Missed Shots',
+                    title='Made & Missed Shots',
                     showlegend=True,
                     xaxis=dict(
                         showgrid=False,
