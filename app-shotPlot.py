@@ -12,6 +12,7 @@ from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table_experiments as dt
+import plotly.graph_objs as go
 
 from Settings import *
 from Queries import *
@@ -36,9 +37,11 @@ def SQLServerConnection(config):
     return conn
 
 
+conn = SQLServerConnection(sqlconfig)
+
+
 def loadData(query):
     sqlData = []
-    conn = SQLServerConnection(sqlconfig)
 
     cursor = conn.cursor()
 
@@ -57,265 +60,284 @@ def loadData(query):
     return df
 
 
+shot_Query = '''
+SELECT [ClockTime]
+      ,[Description]
+      ,[EPId]
+      ,[EType]
+      ,[Evt]
+      ,[GameID]
+      ,[HS]
+      ,[LocationX]
+      ,[LocationY]
+      ,[MId]
+      ,[MType]
+      ,[OftId]
+      ,[OpId]
+      ,[Opt1]
+      ,[Opt2]
+      ,[Ord]
+      ,[Period]
+      ,[PlayerID]
+      ,[TeamID]
+      ,[Vs]
+      ,[Id]
+  FROM [dbo].[GamePlays]
+'''
+
+shots_Data = loadData(shot_Query + '''WHERE [PlayerID] = '201939' ''')
+shots_Data.columns = ['ClockTime', 'Description', 'EPId', 'EType', 'Evt', 'GameID', 'HS', 'LocationX',
+                      'LocationY', 'MId', 'MType', 'OftId', 'OpId', 'Opt1', 'Opt2', 'Ord', 'Period', 'PlayerID', 'TeamID', 'Vs', 'Id']
+
+
 # ---------- list containing all the shapes ----------
 # ---------- OUTER LINES ----------
 court_shapes = []
- 
+
 outer_lines_shape = dict(
-  type='rect',
-  xref='x',
-  yref='y',
-  x0='-250',
-  y0='-47.5',
-  x1='250',
-  y1='422.5',
-  line=dict(
-      color='rgba(10, 10, 10, 1)',
-      width=1
-  )
+    type='rect',
+    xref='x',
+    yref='y',
+    x0='-250',
+    y0='-47.5',
+    x1='250',
+    y1='422.5',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    )
 )
- 
+
 court_shapes.append(outer_lines_shape)
 
 # ---------- BASKETBALL HOOP ----------
 hoop_shape = dict(
-  type='circle',
-  xref='x',
-  yref='y',
-  x0='7.5',
-  y0='7.5',
-  x1='-7.5',
-  y1='-7.5',
-  line=dict(
-    color='rgba(10, 10, 10, 1)',
-    width=1
-  )
+    type='circle',
+    xref='x',
+    yref='y',
+    x0='7.5',
+    y0='7.5',
+    x1='-7.5',
+    y1='-7.5',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    )
 )
- 
+
 court_shapes.append(hoop_shape)
 
 # ---------- BASKET BACKBOARD ----------
 backboard_shape = dict(
-  type='rect',
-  xref='x',
-  yref='y',
-  x0='-30',
-  y0='-7.5',
-  x1='30',
-  y1='-6.5',
-  line=dict(
-    color='rgba(10, 10, 10, 1)',
-    width=1
-  ),
-  fillcolor='rgba(10, 10, 10, 1)'
+    type='rect',
+    xref='x',
+    yref='y',
+    x0='-30',
+    y0='-7.5',
+    x1='30',
+    y1='-6.5',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    ),
+    fillcolor='rgba(10, 10, 10, 1)'
 )
- 
+
 court_shapes.append(backboard_shape)
 
 # ---------- OUTER BOX OF THREE-SECOND AREA ----------
 outer_three_sec_shape = dict(
-  type='rect',
-  xref='x',
-  yref='y',
-  x0='-80',
-  y0='-47.5',
-  x1='80',
-  y1='143.5',
-  line=dict(
-      color='rgba(10, 10, 10, 1)',
-      width=1
-  )
+    type='rect',
+    xref='x',
+    yref='y',
+    x0='-80',
+    y0='-47.5',
+    x1='80',
+    y1='143.5',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    )
 )
- 
+
 court_shapes.append(outer_three_sec_shape)
 
 # ---------- INNER BOX OF THREE-SECOND AREA ----------
 inner_three_sec_shape = dict(
-  type='rect',
-  xref='x',
-  yref='y',
-  x0='-60',
-  y0='-47.5',
-  x1='60',
-  y1='143.5',
-  line=dict(
-      color='rgba(10, 10, 10, 1)',
-      width=1
-  )
+    type='rect',
+    xref='x',
+    yref='y',
+    x0='-60',
+    y0='-47.5',
+    x1='60',
+    y1='143.5',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    )
 )
- 
+
 court_shapes.append(inner_three_sec_shape)
 
 # ---------- THREE-POINT LINE (LEFT) ----------
 left_line_shape = dict(
-  type='line',
-  xref='x',
-  yref='y',
-  x0='-220',
-  y0='-47.5',
-  x1='-220',
-  y1='92.5',
-  line=dict(
-      color='rgba(10, 10, 10, 1)',
-      width=1
-  )
+    type='line',
+    xref='x',
+    yref='y',
+    x0='-220',
+    y0='-47.5',
+    x1='-220',
+    y1='92.5',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    )
 )
- 
+
 court_shapes.append(left_line_shape)
 
 # ---------- THREE-POINT LINE (RIGHT) ----------
 right_line_shape = dict(
-  type='line',
-  xref='x',
-  yref='y',
-  x0='220',
-  y0='-47.5',
-  x1='220',
-  y1='92.5',
-  line=dict(
-      color='rgba(10, 10, 10, 1)',
-      width=1
-  )
+    type='line',
+    xref='x',
+    yref='y',
+    x0='220',
+    y0='-47.5',
+    x1='220',
+    y1='92.5',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    )
 )
- 
+
 court_shapes.append(right_line_shape)
 
 # ---------- THREE-POINT ARC ----------
 three_point_arc_shape = dict(
-  type='path',
-  xref='x',
-  yref='y',
-  path='M -220 92.5 C -70 300, 70 300, 220 92.5',
-  line=dict(
-      color='rgba(10, 10, 10, 1)',
-      width=1
-  )
+    type='path',
+    xref='x',
+    yref='y',
+    path='M -220 92.5 C -70 300, 70 300, 220 92.5',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    )
 )
- 
+
 court_shapes.append(three_point_arc_shape)
 
 # ---------- CENTER CIRCLE ----------
-center_circe_shape = dict(
-  type='circle',
-  xref='x',
-  yref='y',
-  x0='60',
-  y0='482.5',
-  x1='-60',
-  y1='362.5',
-  line=dict(
-      color='rgba(10, 10, 10, 1)',
-      width=1
-  )
+center_circle_shape = dict(
+    type='circle',
+    xref='x',
+    yref='y',
+    x0='60',
+    y0='482.5',
+    x1='-60',
+    y1='362.5',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    )
 )
- 
+
 court_shapes.append(center_circle_shape)
 
 # ---------- RESTRAINING CIRCE ----------
 res_circle_shape = dict(
-  type='circle',
-  xref='x',
-  yref='y',
-  x0='20',
-  y0='442.5',
-  x1='-20',
-  y1='402.5',
-  line=dict(
-      color='rgba(10, 10, 10, 1)',
-      width=1
-  )
+    type='circle',
+    xref='x',
+    yref='y',
+    x0='20',
+    y0='442.5',
+    x1='-20',
+    y1='402.5',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    )
 )
- 
+
 court_shapes.append(res_circle_shape)
 
 # ---------- FREE-THROW CIRCLE ----------
 free_throw_circle_shape = dict(
-  type='circle',
-  xref='x',
-  yref='y',
-  x0='60',
-  y0='200',
-  x1='-60',
-  y1='80',
-  line=dict(
-      color='rgba(10, 10, 10, 1)',
-      width=1
-  )
+    type='circle',
+    xref='x',
+    yref='y',
+    x0='60',
+    y0='200',
+    x1='-60',
+    y1='80',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1
+    )
 )
- 
+
 court_shapes.append(free_throw_circle_shape)
 
 
 # ---------- RESTRICTED AREA ----------
 res_area_shape = dict(
-  type='circle',
-  xref='x',
-  yref='y',
-  x0='40',
-  y0='40',
-  x1='-40',
-  y1='-40',
-  line=dict(
-    color='rgba(10, 10, 10, 1)',
-    width=1,
-    dash='dot'
-  )
+    type='circle',
+    xref='x',
+    yref='y',
+    x0='40',
+    y0='40',
+    x1='-40',
+    y1='-40',
+    line=dict(
+        color='rgba(10, 10, 10, 1)',
+        width=1,
+        dash='dot'
+    )
 )
- 
+
 court_shapes.append(res_area_shape)
 
 
-# ---------- CHARTING THE SHOTS ----------
-missed_shot_trace = go.Scatter(
-    x = shots_df[shots_df['EVENT_TYPE'] == 'Missed Shot']['LOC_X'],
-    y = shots_df[shots_df['EVENT_TYPE'] == 'Missed Shot']['LOC_Y'],
-    mode = 'markers',
-    name = 'Missed Shot',
-    marker = dict(
-        size = 5,
-        color = 'rgba(255, 255, 0, .8)',
-        line = dict(
-            width = 1,
-            color = 'rgb(0, 0, 0, 1)'
+def get_layout():
+    return html.Div([
+        dcc.Graph(
+            id='missed-shots',
+            figure={
+                'data': [
+                    go.Scatter(
+                        x=shots_Data[shots_Data['EType'] == 1]['LocationX'],
+                        y=shots_Data[shots_Data['EType'] == 1]['LocationY'],
+                        mode='markers',
+                        opacity=0.7
+                    ),
+                    go.Scatter(
+                        x=shots_Data[shots_Data['EType'] == 2]['LocationX'],
+                        y=shots_Data[shots_Data['EType'] == 2]['LocationY'],
+                        mode='markers',
+                        opacity=0.7
+                    )
+                ],
+                'layout': go.Layout(
+                    title='Missed Shots',
+                    showlegend=True,
+                    xaxis=dict(
+                        showgrid=False,
+                        range=[-300, 300]
+                    ),
+                    yaxis=dict(
+                        showgrid=False,
+                        range=[-100, 500]
+                    ),
+                    height=600,
+                    width=650,
+                    shapes=court_shapes
+                )
+            }
         )
-    )
-)
- 
-made_shot_trace = go.Scatter(
-    x = shots_df[shots_df['EVENT_TYPE'] == 'Made Shot']['LOC_X'],
-    y = shots_df[shots_df['EVENT_TYPE'] == 'Made Shot']['LOC_Y'],
-    mode = 'markers',
-    name = 'Made Shot',
-    marker = dict(
-        size = 5,
-        color = 'rgba(0, 200, 100, .8)',
-        line = dict(
-            width = 1,
-            color = 'rgb(0, 0, 0, 1)'
-        )
-    )
-)
- 
-data = [missed_shot_trace, made_shot_trace]
- 
-layout = go.Layout(
-    title='Shots by Stephen Curry in NBA session 2015-16',
-    showlegend=True,
-    xaxis=dict(
-        showgrid=False,
-        range=[-300, 300]
-    ),
-    yaxis=dict(
-        showgrid=False,
-        range=[-100, 500]
-    ),
-    height=600,
-    width=650,
-    shapes=court_shapes
-)
- 
-fig = go.Figure(data=data, layout=layout)
-iplot(fig)
+    ])
+
+
+app.layout = get_layout()
 
 
 external_css = [
