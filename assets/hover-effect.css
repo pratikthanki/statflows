@@ -27,3 +27,7 @@
     text-align: center;
     width: 100%
 }
+
+.modebar {
+    display: none !important;
+    }
