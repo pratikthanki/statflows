@@ -305,67 +305,72 @@ def localImg(image):
 
 
 def get_layout():
-    return html.Div([
-        html.Div([
+    return html.Div(children=[
+        html.Div(
             html.Img(src=localImg('nba.png'),
                      style={
                          'height': '145px',
-                         'float': 'right'},
+                         'float': 'left'},
                      ),
-        ]),
+        ),
 
-        dcc.Graph(
-            id='shot-plot',
-            figure={
-                'data': [
-                    go.Scatter(
-                        x=shots_Data[shots_Data['EType'] == 1]['LocationX'],
-                        y=shots_Data[shots_Data['EType'] == 1]['LocationY'],
-                        mode='markers',
-                        name='Made Shot',
-                        opacity=0.7,
-                        marker=dict(
-                            size=5,
-                            color='rgba(0, 200, 100, .8)',
-                            line=dict(
-                                width=1,
-                                color='rgb(0, 0, 0, 1)'
+        html.Div(
+            dcc.Graph(
+                id='shot-plot',
+                figure={
+                    'data': [
+                        go.Scatter(
+                            x=shots_Data[shots_Data['EType']
+                                         == 1]['LocationX'],
+                            y=shots_Data[shots_Data['EType']
+                                         == 1]['LocationY'],
+                            mode='markers',
+                            name='Made Shot',
+                            opacity=0.7,
+                            marker=dict(
+                                size=5,
+                                color='rgba(0, 200, 100, .8)',
+                                line=dict(
+                                    width=1,
+                                    color='rgb(0, 0, 0, 1)'
+                                )
+                            )
+                        ),
+                        go.Scatter(
+                            x=shots_Data[shots_Data['EType']
+                                         == 2]['LocationX'],
+                            y=shots_Data[shots_Data['EType']
+                                         == 2]['LocationY'],
+                            mode='markers',
+                            name='Missed Shot',
+                            opacity=0.7,
+                            marker=dict(
+                                size=5,
+                                color='rgba(255, 255, 0, .8)',
+                                line=dict(
+                                    width=1,
+                                    color='rgb(0, 0, 0, 1)'
+                                )
                             )
                         )
-                    ),
-                    go.Scatter(
-                        x=shots_Data[shots_Data['EType'] == 2]['LocationX'],
-                        y=shots_Data[shots_Data['EType'] == 2]['LocationY'],
-                        mode='markers',
-                        name='Missed Shot',
-                        opacity=0.7,
-                        marker=dict(
-                            size=5,
-                            color='rgba(255, 255, 0, .8)',
-                            line=dict(
-                                width=1,
-                                color='rgb(0, 0, 0, 1)'
-                            )
-                        )
+                    ],
+                    'layout': go.Layout(
+                        title='Made & Missed Shots',
+                        showlegend=True,
+                        xaxis=dict(
+                            showgrid=False,
+                            range=[-300, 300]
+                        ),
+                        yaxis=dict(
+                            showgrid=False,
+                            range=[-100, 500]
+                        ),
+                        height=600,
+                        width=650,
+                        shapes=court_shapes
                     )
-                ],
-                'layout': go.Layout(
-                    title='Made & Missed Shots',
-                    showlegend=True,
-                    xaxis=dict(
-                        showgrid=False,
-                        range=[-300, 300]
-                    ),
-                    yaxis=dict(
-                        showgrid=False,
-                        range=[-100, 500]
-                    ),
-                    height=600,
-                    width=650,
-                    shapes=court_shapes
-                )
-            }
-        )
+                }
+            ), style={'float': 'right'})
     ])
 
 
