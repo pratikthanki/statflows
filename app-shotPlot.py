@@ -83,9 +83,10 @@ SELECT [ClockTime]
       ,[Vs]
       ,[Id]
   FROM [dbo].[GamePlays]
+  WHERE [PlayerID] = '201939'
 '''
 
-shots_Data = loadData(shot_Query + '''WHERE [PlayerID] = '201939' ''')
+shots_Data = loadData(shot_Query)
 shots_Data.columns = ['ClockTime', 'Description', 'EPId', 'EType', 'Evt', 'GameID', 'HS', 'LocationX',
                       'LocationY', 'MId', 'MType', 'OftId', 'OpId', 'Opt1', 'Opt2', 'Ord', 'Period', 'PlayerID', 'TeamID', 'Vs', 'Id']
 

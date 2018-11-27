@@ -69,15 +69,24 @@ SELECT
 ,[LocationX]
 ,[LocationY]
 ,[Period]
-,[PlayerID]
-,[TeamID]
+,[GamePlays].TeamID
+,t.[TeamCode]
+,[GamePlays].[PlayerID]
+,p.FirstName + ' ' + p.LastName as Player
+,s.Num
 FROM [dbo].[GamePlays]
-WHERE GameID = 21800285
+JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
+JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
+JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
+WHERE [GamePlays].GameID = 21800285
 ORDER BY Evt
 '''
 
 game_locations = loadData(game_Query)
-game_locations.columns = ['ClockTime' ,'Description' ,'EType' ,'Evt' ,'LocationX' ,'LocationY' ,'Period' ,'PlayerID' ,'TeamID']
+game_locations.columns = ['ClockTime' ,'Description' ,'EType' ,'Evt' ,'LocationX' ,'LocationY' ,'Period' ,'TeamID' ,'TeamCode' ,'PlayerID' ,'Player', 'Num']
+
+game_list = game_locations.values.tolist()
+
 
 # outer boundary
 outer_shape = {
