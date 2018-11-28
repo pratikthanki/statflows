@@ -61,35 +61,53 @@ def loadData(query):
 
 
 shot_Query = '''
-SELECT [ClockTime]
-      ,[Description]
-      ,[EPId]
-      ,[EType]
-      ,[Evt]
-      ,[GameID]
-      ,[HS]
-      ,[LocationX]
-      ,[LocationY]
-      ,[MId]
-      ,[MType]
-      ,[OftId]
-      ,[OpId]
-      ,[Opt1]
-      ,[Opt2]
-      ,[Ord]
-      ,[Period]
-      ,[PlayerID]
-      ,[TeamID]
-      ,[Vs]
-      ,[Id]
-  FROM [dbo].[GamePlays]
-  WHERE [PlayerID] = '201939'
+SELECT 
+[ClockTime]
+,[Description]
+,[EType]
+,[Evt]
+,[LocationX]
+,[LocationY]
+,[Period]
+,[GamePlays].TeamID
+,t.[TeamCode]
+,[GamePlays].[PlayerID]
+,p.FirstName + ' ' + p.LastName as Player
+,s.Num
+,'<img src="' + t.TeamLogo + '">' as TeamImgHTML
+FROM [dbo].[GamePlays]
+JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
+JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
+JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
+WHERE [GamePlays].GameID = 21800285
+ORDER BY Evt
 '''
 
-shots_Data = loadData(shot_Query)
-shots_Data.columns = ['ClockTime', 'Description', 'EPId', 'EType', 'Evt', 'GameID', 'HS', 'LocationX',
-                      'LocationY', 'MId', 'MType', 'OftId', 'OpId', 'Opt1', 'Opt2', 'Ord', 'Period', 'PlayerID', 'TeamID', 'Vs', 'Id']
+shot_Plot = loadData(shot_Query)
+shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
+                     'LocationY', 'Period', 'TeamID', 'TeamCode', 'PlayerID', 'Player', 'Num', 'TeamImgHTML']
 
+shot_list = shot_Plot.values.tolist()
+
+
+event_definitions = [
+    {'EType': '0', 'Event': 'Game End'},
+    {'EType': '1', 'Event': 'Shot Made'},
+    {'EType': '2', 'Event': 'Shot Missed'},
+    {'EType': '3', 'Event': 'Free Throw'},
+    {'EType': '4', 'Event': 'Rebound'},
+    {'EType': '5', 'Event': 'Turnover'},
+    {'EType': '6', 'Event': 'Foul'},
+    {'EType': '7', 'Event': 'Violation'},
+    {'EType': '8', 'Event': 'Substitution'},
+    {'EType': '9', 'Event': 'Timeout'},
+    {'EType': '10', 'Event': 'Jump Ball'},
+    {'EType': '11', 'Event': 'Ejection'},
+    {'EType': '12', 'Event': 'Start Period'},
+    {'EType': '13', 'Event': 'End Period'},
+    {'EType': '18', 'Event': 'Instant Replay'},
+    {'EType': '20', 'Event': 'Stoppage: Out-of-Bounds'}
+]
 
 # ---------- list containing all the shapes ----------
 # ---------- OUTER LINES ----------
@@ -316,15 +334,39 @@ def get_layout():
         ),
 
         html.Div(
+            dcc.Dropdown(
+                id='team-dropdown',
+                options=[
+                    {'label': i, 'value': i} for i in shot_Plot.TeamCode.unique()
+                ],
+                placeholder="Team",),
+            style=dict(
+                width='10%',
+                display='table-cell',
+            ),),
+
+        html.Div(
+            dcc.Dropdown(
+                id='player-dropdown',
+                options=[
+                    {'label': i, 'value': i} for i in shot_Plot.Player.unique()
+                ],
+                placeholder="Select a Player",),
+            style=dict(
+                width='25%',
+                display='table-cell',
+            ),),
+
+        html.Div(
             dcc.Graph(
                 id='shot-plot',
                 figure={
                     'data': [
                         go.Scatter(
-                            x=shots_Data[shots_Data['EType']
-                                         == 1]['LocationX'],
-                            y=shots_Data[shots_Data['EType']
-                                         == 1]['LocationY'],
+                            x=shot_Plot[shot_Plot['EType']
+                                        == 1]['LocationX'],
+                            y=shot_Plot[shot_Plot['EType']
+                                        == 1]['LocationY'],
                             mode='markers',
                             name='Made Shot',
                             opacity=0.7,
@@ -338,10 +380,10 @@ def get_layout():
                             )
                         ),
                         go.Scatter(
-                            x=shots_Data[shots_Data['EType']
-                                         == 2]['LocationX'],
-                            y=shots_Data[shots_Data['EType']
-                                         == 2]['LocationY'],
+                            x=shot_Plot[shot_Plot['EType']
+                                        == 2]['LocationX'],
+                            y=shot_Plot[shot_Plot['EType']
+                                        == 2]['LocationY'],
                             mode='markers',
                             name='Missed Shot',
                             opacity=0.7,
@@ -382,11 +424,10 @@ app.layout = get_layout()
 #     Output('shot-plot', 'children'),
 #     [Input('player-tabs', 'value')])
 # def update_graph(value):
-#     shots_Data = loadData(shot_Query + '''WHERE [PlayerID] = '201939' ''')
-#     shots_Data.columns = ['ClockTime', 'Description', 'EPId', 'EType', 'Evt', 'GameID', 'HS', 'LocationX',
-#                           'LocationY', 'MId', 'MType', 'OftId', 'OpId', 'Opt1', 'Opt2', 'Ord', 'Period', 'PlayerID', 'TeamID', 'Vs', 'Id']
-
-#     return get_layout(shots_Data)
+#     shot_Plot = loadData(shot_Query)
+#     shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
+#                         'LocationY', 'Period', 'TeamID', 'TeamCode', 'PlayerID', 'Player', 'Num']
+#     return get_layout(shot_Plot)
 
 
 external_css = [
