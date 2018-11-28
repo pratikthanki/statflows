@@ -61,7 +61,7 @@ def loadData(query):
 
 
 shot_Query = '''
-SELECT 
+SELECT TOP 1000
 [ClockTime]
 ,[Description]
 ,[EType]
@@ -74,18 +74,15 @@ SELECT
 ,[GamePlays].[PlayerID]
 ,p.FirstName + ' ' + p.LastName as Player
 ,s.Num
-,'<img src="' + t.TeamLogo + '">' as TeamImgHTML
 FROM [dbo].[GamePlays]
 JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
 JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
 JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
-WHERE [GamePlays].GameID = 21800285
-ORDER BY Evt
 '''
 
 shot_Plot = loadData(shot_Query)
 shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-                     'LocationY', 'Period', 'TeamID', 'TeamCode', 'PlayerID', 'Player', 'Num', 'TeamImgHTML']
+                     'LocationY', 'Period', 'TeamID', 'TeamCode', 'PlayerID', 'Player', 'Num']
 
 shot_list = shot_Plot.values.tolist()
 
@@ -323,7 +320,7 @@ def localImg(image):
     return 'data:image/png;base64,{}'.format(encoded_image)
 
 
-def get_layout():
+def get_layout(data):
     return html.Div(children=[
         html.Div(
             html.Img(src=localImg('nba.png'),
@@ -349,7 +346,7 @@ def get_layout():
             dcc.Dropdown(
                 id='player-dropdown',
                 options=[
-                    {'label': i, 'value': i} for i in shot_Plot.Player.unique()
+                    {'label': i, 'value': i} for i in data.Player.unique()
                 ],
                 placeholder="Select a Player",),
             style=dict(
@@ -363,9 +360,9 @@ def get_layout():
                 figure={
                     'data': [
                         go.Scatter(
-                            x=shot_Plot[shot_Plot['EType']
+                            x=data[data['EType']
                                         == 1]['LocationX'],
-                            y=shot_Plot[shot_Plot['EType']
+                            y=data[data['EType']
                                         == 1]['LocationY'],
                             mode='markers',
                             name='Made Shot',
@@ -380,9 +377,9 @@ def get_layout():
                             )
                         ),
                         go.Scatter(
-                            x=shot_Plot[shot_Plot['EType']
+                            x=data[data['EType']
                                         == 2]['LocationX'],
-                            y=shot_Plot[shot_Plot['EType']
+                            y=data[data['EType']
                                         == 2]['LocationY'],
                             mode='markers',
                             name='Missed Shot',
@@ -420,14 +417,38 @@ def get_layout():
 app.layout = get_layout()
 
 
-# @app.callback(
-#     Output('shot-plot', 'children'),
-#     [Input('player-tabs', 'value')])
-# def update_graph(value):
-#     shot_Plot = loadData(shot_Query)
-#     shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-#                         'LocationY', 'Period', 'TeamID', 'TeamCode', 'PlayerID', 'Player', 'Num']
-#     return get_layout(shot_Plot)
+@app.callback(
+    Output('shot-plot', 'figure'),
+    [Input('player-dropdown', 'value')])
+
+def update_graph(value):
+    if value: 
+        shot_Query = '''
+        SELECT 
+        [ClockTime]
+        ,[Description]
+        ,[EType]
+        ,[Evt]
+        ,[LocationX]
+        ,[LocationY]
+        ,[Period]
+        ,[GamePlays].TeamID
+        ,t.[TeamCode]
+        ,[GamePlays].[PlayerID]
+        ,p.FirstName + ' ' + p.LastName as Player
+        ,s.Num
+        FROM [dbo].[GamePlays]
+        JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
+        JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
+        JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
+        WHERE p.FirstName + ' ' + p.LastName = '{}'
+        '''.format(value)
+
+        shot_Plot = loadData(shot_Query)
+        shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
+                            'LocationY', 'Period', 'TeamID', 'TeamCode', 'PlayerID', 'Player', 'Num']
+
+    return get_layout(shot_Plot)
 
 
 external_css = [
