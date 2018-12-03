@@ -95,7 +95,8 @@ tablestyle = {
     'border-cllapse': 'separate',
     'font': '15px Open Sans, Arial, sans-serif',
     'font-weight': '30',
-    'border-collapse': 'separate'}
+    'border-collapse': 'separate',
+    'width': '100%'}
 
 
 rowstyle = {
@@ -197,7 +198,7 @@ def playerImage(player):
                              style={'font-size': '20px',
                                     'text-align': 'center'})),
             html.Div(playerInfo(player), className='overlay')],
-            className='container', style={'width': '100%', 'position': 'relative'})
+            className='container', style={'width': '100%', 'height': '100%', 'position': 'relative'})
 
 
 def getTeamImage(team):
