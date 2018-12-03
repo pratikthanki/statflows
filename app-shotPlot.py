@@ -60,31 +60,56 @@ def loadData(query):
     return df
 
 
-shot_Query = '''
-SELECT TOP 1000
-[ClockTime]
-,[Description]
-,[EType]
-,[Evt]
-,[LocationX]
-,[LocationY]
-,[Period]
-,[GamePlays].TeamID
-,t.[TeamCode]
-,[GamePlays].[PlayerID]
-,p.FirstName + ' ' + p.LastName as Player
-,s.Num
-FROM [dbo].[GamePlays]
-JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
-JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
-JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
-'''
+def getShots(player):
+    if player:
+        shot_Query = '''
+        SELECT TOP 1000
+        [ClockTime]
+        ,[Description]
+        ,[EType]
+        ,[Evt]
+        ,[LocationX]
+        ,[LocationY]
+        ,[Period]
+        ,[GamePlays].TeamID
+        ,t.[TeamCode]
+        ,[GamePlays].[PlayerID]
+        ,p.FirstName + ' ' + p.LastName as Player
+        ,s.Num
+        FROM [dbo].[GamePlays]
+        JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
+        JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
+        JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
+        WHERE [GamePlays].[PlayerID] = %s '''.format(player)
+    
+    else:
+        shot_Query = '''
+        SELECT TOP 1000
+        [ClockTime]
+        ,[Description]
+        ,[EType]
+        ,[Evt]
+        ,[LocationX]
+        ,[LocationY]
+        ,[Period]
+        ,[GamePlays].TeamID
+        ,t.[TeamCode]
+        ,[GamePlays].[PlayerID]
+        ,p.FirstName + ' ' + p.LastName as Player
+        ,s.Num
+        FROM [dbo].[GamePlays]
+        JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
+        JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
+        JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
+        '''
 
-shot_Plot = loadData(shot_Query)
-shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-                     'LocationY', 'Period', 'TeamID', 'TeamCode', 'PlayerID', 'Player', 'Num']
+    shot_Plot = loadData(shot_Query)
+    shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
+                         'LocationY', 'Period', 'TeamID', 'TeamCode', 'PlayerID', 'Player', 'Num']
 
-shot_list = shot_Plot.values.tolist()
+    return shot_Plot
+
+# shot_list = shot_Plot.values.tolist()
 
 
 event_definitions = [
@@ -334,7 +359,7 @@ def get_layout(data):
             dcc.Dropdown(
                 id='team-dropdown',
                 options=[
-                    {'label': i, 'value': i} for i in shot_Plot.TeamCode.unique()
+                    {'label': i, 'value': i} for i in data.TeamCode.unique()
                 ],
                 placeholder="Team",),
             style=dict(
@@ -361,9 +386,9 @@ def get_layout(data):
                     'data': [
                         go.Scatter(
                             x=data[data['EType']
-                                        == 1]['LocationX'],
+                                   == 1]['LocationX'],
                             y=data[data['EType']
-                                        == 1]['LocationY'],
+                                   == 1]['LocationY'],
                             mode='markers',
                             name='Made Shot',
                             opacity=0.7,
@@ -378,9 +403,9 @@ def get_layout(data):
                         ),
                         go.Scatter(
                             x=data[data['EType']
-                                        == 2]['LocationX'],
+                                   == 2]['LocationX'],
                             y=data[data['EType']
-                                        == 2]['LocationY'],
+                                   == 2]['LocationY'],
                             mode='markers',
                             name='Missed Shot',
                             opacity=0.7,
@@ -414,41 +439,16 @@ def get_layout(data):
     ])
 
 
-app.layout = get_layout()
+app.layout = get_layout(getShots(None))
 
 
 @app.callback(
     Output('shot-plot', 'figure'),
     [Input('player-dropdown', 'value')])
-
 def update_graph(value):
-    if value: 
-        shot_Query = '''
-        SELECT 
-        [ClockTime]
-        ,[Description]
-        ,[EType]
-        ,[Evt]
-        ,[LocationX]
-        ,[LocationY]
-        ,[Period]
-        ,[GamePlays].TeamID
-        ,t.[TeamCode]
-        ,[GamePlays].[PlayerID]
-        ,p.FirstName + ' ' + p.LastName as Player
-        ,s.Num
-        FROM [dbo].[GamePlays]
-        JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
-        JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
-        JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
-        WHERE p.FirstName + ' ' + p.LastName = '{}'
-        '''.format(value)
-
-        shot_Plot = loadData(shot_Query)
-        shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-                            'LocationY', 'Period', 'TeamID', 'TeamCode', 'PlayerID', 'Player', 'Num']
-
-    return get_layout(shot_Plot)
+    if value:
+        data = getShots(value)
+        return get_layout(data)
 
 
 external_css = [
