@@ -1,7 +1,0 @@
-{
-	"scripts": {
-			"dokku": {
-					"predeploy": "chmod -R 755 /app/setup_pyodbc && /app/setup_pyodbc"
-			}
-	}
-}
