@@ -29,7 +29,7 @@ SELECT
 FROM [dbo].[PlayerGameSummary] p
     JOIN Schedule s ON s.GameID = p.GameID
     JOIN Teams t ON t.TeamID = CASE WHEN p.[TeamID] = s.HomeTeamID THEN s.AwayTeamID ELSE s.HomeTeamID END
-WHERE s.[Date] > '2018-09-01' AND p.[Min] > 0
+WHERE s.[Date] > '2018-09-01' --AND p.[Min] > 0
 ORDER BY CAST(s.[Date] as [date]) DESC
 
 '''
