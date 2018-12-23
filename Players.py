@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import pyodbc
 from sqlalchemy import create_engine
-from Links import *
+from Settings import *
 
 
 ms_sql = ms_sql

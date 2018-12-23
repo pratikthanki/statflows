@@ -21,3 +21,4 @@ RUN pip3 install -r requirements.txt
 EXPOSE 8050
 
 CMD ["python3", "app-playerGrid.py"]
+

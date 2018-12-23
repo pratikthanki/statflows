@@ -1,12 +1,14 @@
 latestGame = '''
 SELECT 
     CAST(s.[Date] as [date]) as LatestDate
+    ,FORMAT(CAST(s.[Date] as [date]), 'dd-MMM') as GameDate
     ,p.TeamID
     ,CASE WHEN p.[TeamID] = s.HomeTeamID THEN s.AwayTeamID ELSE s.HomeTeamID END as OppositionId
     ,t.TeamCode as OppositionTeamCode
     ,t.TeamLogo as OppositionTeamLogo
     ,p.PlayerID
     ,p.[Fn] + ' ' + p.[Ln] as FullName
+    ,p.[Fn] + ' ' + p.[Ln] + ' (' + p.[Pos] + ')' as FullNamePos
     ,p.[Num]
     ,p.[Pos]
     ,p.[Min]

@@ -6,7 +6,7 @@ import requests
 import base64
 import time
 from sqlalchemy import create_engine
-
+from flask import Flask
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
@@ -17,14 +17,14 @@ from Settings import *
 from Queries import *
 
 
-app = dash.Dash(__name__)
-server = app.server
-app.scripts.config.serve_locally = True
-dcc._js_dist[0]['external_url'] = 'https://cdn.plot.ly/plotly-finance-1.28.0.min.js'
+server = Flask(__name__)
+app = dash.Dash(name='app1', sharing=True, server=server, csrf_protect=False)
+
+# used for local development
+# server = app.server
 
 
 # Establish database connection to Write Records
-
 def SQLServerConnection(config):
     conn_str = (
         'DRIVER={driver};SERVER={server},{port};DATABASE={database};UID={username};PWD={password}')
@@ -131,8 +131,8 @@ tab_selected_style = {
 
 ulstyle = {
     'list-style-type': 'none',
-    'columnCount': '3',
-    'columnWidth': '20px'
+    'columnCount': '2',
+    'columnWidth': '30px'
 }
 
 
@@ -149,32 +149,32 @@ def localImg(image):
 
 
 latest_df = loadData(latestGame)
-latest_df.columns = ['LatestDate', 'TeamID', 'OppositionId', 'OppositionTeamCode', 'OppositionTeamLogo', 'PlayerID', 'FullName',
+latest_df.columns = ['LatestDate', 'GameDate', 'TeamID', 'OppositionId', 'OppositionTeamCode', 'OppositionTeamLogo', 'PlayerID', 'FullName', 'FullNamePos',
                      'Num', 'Pos', 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Stl', 'Tov', 'Pf', 'Pip', 'Pipa', 'Pipm']
 
 
 def playerInfo(player):
     row = []
     rows = []
-    cols = ['LatestDate', 'OppositionTeamLogo', 'Pos', 'Min', 'Pts', 'Ast', 'Blk',
-            'Reb', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Stl', 'Tov', 'Pf', 'Pip', 'Pipa', 'Pipm']
+    cols = ['GameDate', 'OppositionTeamLogo', 'FullNamePos',
+            'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']
 
     df = latest_df[latest_df['PlayerID'] == int(player)]
     df = df.head(1)
 
     for col in df.columns:
         if col in cols:
-            if col not in ['LatestDate', 'OppositionTeamLogo']:
-                value = col + ': ' + str(df.iloc[0][col])
-                style = {'font-size': '12px'}
-                row.append(html.P(value, style=style))
-
-            elif col == 'OppositionTeamLogo':
+            if col == 'OppositionTeamLogo':
                 value = html.Div(
                     html.Img(src=str(df.iloc[0][col]),
                              style={'height': '70px'})
                 )
                 row.append(value)
+
+            elif col in ['Pos', 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']:
+                value = col + ': ' + str(df.iloc[0][col])
+                style = {'font-size': '12px'}
+                row.append(html.P(value, style=style))
 
             else:
                 value = df.iloc[0][col]
@@ -245,19 +245,15 @@ get_data_object(teamdf)
 def update_layout():
     return html.Div(children=[
         html.Div([
-            html.Img(src=localImg('nba.png'),
+            html.Img(src='http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png',
                      style={
-                         'height': '145px',
+                         'height': '120px',
                          'float': 'left'},
                      ),
         ]),
 
-        html.H1("NBA League Analysis",
-                style={'text-align': 'center',
-                       'padding': '10px'}),
-
-        html.P('This is some text', style={'text-align': 'center',
-                                           'padding': '10px'}),
+        html.P('Latest match stats from teams across the league. Click on a division or hover over a player to see their latest stats', style={'text-align': 'center',
+                                                                                                                                               'padding': '10px'}),
 
         dcc.Tabs(id="div-tabs", value='Atlantic', children=[
             dcc.Tab(label='ATLANTIC', value='Atlantic',
@@ -301,20 +297,15 @@ def update_graph(value):
 
 
 external_css = [
-    "https://codepen.io/chriddyp/pen/bWLwgP.css",
-    "https://codepen.io/chriddyp/pen/brPBPO.css",
-    "https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i"
+    "https://codepen.io/chriddyp/pen/bWLwgP.css"
+    ,"https://codepen.io/chriddyp/pen/brPBPO.css"
+    ,"https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i"
 ]
+
 
 for css in external_css:
     app.css.append_css({"external_url": css})
 
 
-if 'DYNO' in os.environ:
-    app.scripts.append_script({
-        'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
-    })
-
-
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, host='0.0.0.0')
