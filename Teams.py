@@ -1,12 +1,4 @@
-from sqlalchemy import create_engine
 import pandas as pd
-import json
-
-ms_sql = ms_sql
-# engine = create_engine('mssql+pyodbc://' + ms_sql)
-
-
-cursor = engine.connect()
 
 TEAMS = {
     'ATL': {

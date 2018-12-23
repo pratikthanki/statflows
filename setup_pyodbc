@@ -1,4 +1,0 @@
-odbcinst -j
-env |grep 'ODBC'
-cp /app/odbc.ini /etc/odbc.ini
-cp /app/odbcinst.ini /etc/odbcinst.ini

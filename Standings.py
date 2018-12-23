@@ -3,7 +3,7 @@ import json
 import pandas as pd 
 import pyodbc
 from sqlalchemy import create_engine
-from Links import *
+from Settings import *
 
 
 # current league standing, always replace latest request with data in DB

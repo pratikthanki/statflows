@@ -6,7 +6,10 @@ import requests
 import base64
 import time
 from sqlalchemy import create_engine
+
 from flask import Flask
+from flask_caching import Cache
+
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
@@ -24,6 +27,14 @@ app = dash.Dash(name='app1', sharing=True, server=server, csrf_protect=False)
 # server = app.server
 
 
+TIMEOUT = 60
+
+cache = Cache(app.server, config={
+    'CACHE_TYPE': 'filesystem',
+    'CACHE_DIR': 'cache-directory'
+})
+
+
 # Establish database connection to Write Records
 def SQLServerConnection(config):
     conn_str = (
@@ -36,6 +47,7 @@ def SQLServerConnection(config):
     return conn
 
 
+@cache.memoize(timeout=TIMEOUT)
 def loadData(query):
     sqlData = []
     conn = SQLServerConnection(sqlconfig)
