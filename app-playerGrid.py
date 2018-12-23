@@ -168,8 +168,7 @@ latest_df.columns = ['LatestDate', 'GameDate', 'TeamID', 'OppositionId', 'Opposi
 def playerInfo(player):
     row = []
     rows = []
-    cols = ['GameDate', 'OppositionTeamLogo', 'FullNamePos',
-            'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']
+    cols = ['FullName', 'GameDate', 'OppositionTeamLogo', 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']
 
     df = latest_df[latest_df['PlayerID'] == int(player)]
     df = df.head(1)
@@ -183,8 +182,8 @@ def playerInfo(player):
                 )
                 row.append(value)
 
-            elif col in ['Pos', 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']:
-                value = col + ': ' + str(df.iloc[0][col])
+            elif col in [ 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']:
+                value = col.upper() + ': ' + str(df.iloc[0][col])
                 style = {'font-size': '12px'}
                 row.append(html.P(value, style=style))
 
