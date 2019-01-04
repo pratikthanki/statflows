@@ -34,4 +34,4 @@ ORDER BY CAST(s.[Date] as [date]) DESC
 
 '''
 
-teamRosters = 'SELECT * FROM TeamRosters2018'
+teamRosters = "EXEC [dbo].[sp_TeamRosters] '2018-09-01'"

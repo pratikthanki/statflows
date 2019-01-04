@@ -11,7 +11,7 @@ from Settings import *
 
 
 now = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")
-dateOffset = now - timedelta(days=50)
+dateOffset = now - timedelta(days=7)
 # yesterday = datetime.today() - timedelta(days=1)
 # yesterday = datetime.strptime(yesterday.strftime("%Y-%m-%d"), "%Y-%m-%d")
 # minDate = datetime.datetime(2018, 10, 10, 0, 0)

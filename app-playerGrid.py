@@ -168,7 +168,8 @@ latest_df.columns = ['LatestDate', 'GameDate', 'TeamID', 'OppositionId', 'Opposi
 def playerInfo(player):
     row = []
     rows = []
-    cols = ['FullName', 'GameDate', 'OppositionTeamLogo', 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']
+    cols = ['FullName', 'GameDate', 'OppositionTeamLogo',
+            'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']
 
     df = latest_df[latest_df['PlayerID'] == int(player)]
     df = df.head(1)
@@ -182,7 +183,7 @@ def playerInfo(player):
                 )
                 row.append(value)
 
-            elif col in [ 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']:
+            elif col in ['Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']:
                 value = col.upper() + ': ' + str(df.iloc[0][col])
                 style = {'font-size': '12px'}
                 row.append(html.P(value, style=style))
@@ -247,8 +248,8 @@ def get_data_object(df):
 # Southwest = ['DAL', 'HO', 'MEM', 'NOP', 'SAS']
 
 teams = loadData(teamRosters)
-teams.columns = ['PlayerId', 'TeamId', 'TeamCode', 'FirstName', 'LastName',
-                 'FullName', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+teams.columns = ['PlayerId', 'TeamId', 'TeamCode', 'TeamLogo', 'FirstName', 'LastName',
+                 'FullName', 'PlayerImg', 'Division', 'Conference']
 teamdf = parseTeams(teams)
 get_data_object(teamdf)
 
@@ -299,8 +300,8 @@ app.layout = update_layout()
     [Input('div-tabs', 'value')])
 def update_graph(value):
     teams = loadData(teamRosters)
-    teams.columns = ['PlayerId', 'TeamId', 'TeamCode', 'FirstName', 'LastName',
-                     'FullName', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+    teams.columns = ['PlayerId', 'TeamId', 'TeamCode', 'TeamLogo', 'FirstName',
+                     'LastName', 'FullName', 'PlayerImg', 'Division', 'Conference']
     teams = teams[teams['Division'] == value]
     teamdf = parseTeams(teams)
 
@@ -308,9 +309,7 @@ def update_graph(value):
 
 
 external_css = [
-    "https://codepen.io/chriddyp/pen/bWLwgP.css"
-    ,"https://codepen.io/chriddyp/pen/brPBPO.css"
-    ,"https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i"
+    "https://codepen.io/chriddyp/pen/bWLwgP.css", "https://codepen.io/chriddyp/pen/brPBPO.css", "https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i"
 ]
 
 
