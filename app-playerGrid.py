@@ -281,6 +281,9 @@ def update_layout():
                     selected_style=tab_selected_style),
             dcc.Tab(label='SOUTHWEST', value='Southwest',
                     style=tab_style, selected_style=tab_selected_style),
+
+            dcc.Tab(label='STANDINGS', value='Standings',
+                    style=tab_style, selected_style=tab_selected_style)
         ], style=tabs_styles),
 
         # html.Button('Refresh Dashboard', id='my-button'),
