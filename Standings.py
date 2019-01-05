@@ -1,22 +1,12 @@
 import requests
 import json
-import pandas as pd 
+import pandas as pd
 import pyodbc
-from sqlalchemy import create_engine
 from Settings import *
 
 
-# current league standing, always replace latest request with data in DB
-headers = headers
-
-
-url1 = Standings_url1
-try:
-    standingsRequest = requests.get(url1, headers=headers)
-    standingsRequest = standingsRequest.json()
-    pass
-except:
-    print('Request Failed')
+standingsRequest = requests.request('GET', Standings_url1, headers=headers)
+standingsRequest = standingsRequest.json()
 
 
 standings = []
@@ -24,37 +14,30 @@ for i in standingsRequest['payload']['standingGroups']:
     for j in i['teams']:
         standings.append([j['profile']['abbr']] + [j['profile']['conference']] + [j['profile']['id']] + [j['profile']['name']] + [j['standings']['confRank']] + [j['standings']['wins']] + [j['standings']['losses']] + [j['standings']['streak']] + [j['standings']['winPct']] + [j['standings']['divLoss']] + [j['standings']['divWin']] + [j['standings']['divRank']] + [j['standings']['last10']] + [j['standings']['homeWin']] + [j['standings']['homeLoss']] + [j['standings']['roadWin']] + [j['standings']['roadLoss']] + [j['standings']['roadStreak']] + [j['standings']['homeStreak']])
 
-            
 
 standings = pd.DataFrame(standings)
-standings.columns = ['Abbr', 'Conference', 'Team ID', 'Team Name', 'Conf Rank', 'Wins', 'Losses', 'Streak', 'Win %', 'Div Losses', 'Div Wins', 'Div Rank', 'Last 10', 'Home Wins', 'Home Losses', 'Road Wins', 'Road Losses', 'Road Streak', 'Home Streak']
+standings.columns = ['Abbr', 'Conference', 'TeamId', 'TeamName', 'ConfRank', 'Wins', 'Losses', 'Streak', 'Win%', 'DivLosses',
+                     'DivWins', 'DivRank', 'Last10', 'HomeWins', 'HomeLosses', 'RoadWins', 'RoadLosses', 'RoadStreak', 'HomeStreak']
 
 
-# team request to get player data for all players at team X
+# Writing to the database
+def SQLServerConnection(config):
+    conn_str = (
+        'DRIVER={driver};SERVER={server},{port};DATABASE={database};UID={username};PWD={password}')
 
-teamData = []
-url2 = Standings_url2
-for i in standings['Team Name']:
-    try:
-        teamRequest = requests.get(url2 + str(i), headers=headers)
-        teamRequest = teamRequest.json()
-        teamData.append(teamRequest)
-        print(i)
-    except ValueError:
-        print(i + ' - Decoding Error')
+    conn = pyodbc.connect(
+        conn_str.format(**config)
+    )
+
+    return conn
 
 
-teamData[0]['payload']['season']
+conn = SQLServerConnection(sqlconfig)
+cursor = conn.cursor()
 
+cursor.execute('DELETE FROM LeagueStandings')
 
-for i in teamData:
-    for j in i['payload']['leagueSeasonAverage']:
-        print(j)
+cursor.executemany(
+    'INSERT INTO LeagueStandings (Abbr, Conference, TeamId, TeamName, ConfRank, Wins, Losses, Streak, [Win%], DivLosses, DivWins, DivRank, Last10, HomeWins, HomeLosses, RoadWins, RoadLosses, RoadStreak, HomeStreak, LastUpdates) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, GETDATE())', standings.values.tolist())
 
-
-# Writing to the database 
-ms_sql = ms_sql
-engine = create_engine('mssql+pyodbc://' + ms_sql)
-cursor = engine.connect()
-
-standings.to_sql('LeagueStandings', engine, flavor=None, schema='dbo', if_exists='replace', index=None)
+conn.commit()

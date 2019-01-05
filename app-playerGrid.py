@@ -201,7 +201,7 @@ def playerInfo(player):
 def playerImage(player):
     if player != '':
         img = teams.loc[teams['PlayerId'] == player, 'PlayerImg'].iloc[0]
-        name = teams.loc[teams['PlayerId'] == player, 'FullName'].iloc[0]
+        name = teams.loc[teams['PlayerId'] == player, 'Player'].iloc[0]
 
         return html.Div(children=[
             html.Img(src=str(img), style={
@@ -248,8 +248,8 @@ def get_data_object(df):
 # Southwest = ['DAL', 'HO', 'MEM', 'NOP', 'SAS']
 
 teams = loadData(teamRosters)
-teams.columns = ['PlayerId', 'TeamId', 'TeamCode', 'TeamLogo', 'FirstName', 'LastName',
-                 'FullName', 'PlayerImg', 'Division', 'Conference']
+teams.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
+                    'BirthDate', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
 teamdf = parseTeams(teams)
 get_data_object(teamdf)
 
@@ -303,8 +303,9 @@ app.layout = update_layout()
     [Input('div-tabs', 'value')])
 def update_graph(value):
     teams = loadData(teamRosters)
-    teams.columns = ['PlayerId', 'TeamId', 'TeamCode', 'TeamLogo', 'FirstName',
-                     'LastName', 'FullName', 'PlayerImg', 'Division', 'Conference']
+    teams.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
+                     'BirthDate', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+
     teams = teams[teams['Division'] == value]
     teamdf = parseTeams(teams)
 
