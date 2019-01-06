@@ -37,7 +37,11 @@ cursor = conn.cursor()
 
 cursor.execute('DELETE FROM LeagueStandings')
 
+print('Writing to database')
+
 cursor.executemany(
     'INSERT INTO LeagueStandings (Abbr, Conference, TeamId, TeamName, ConfRank, Wins, Losses, Streak, [Win%], DivLosses, DivWins, DivRank, Last10, HomeWins, HomeLosses, RoadWins, RoadLosses, RoadStreak, HomeStreak, LastUpdates) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, GETDATE())', standings.values.tolist())
 
 conn.commit()
+
+print('Job completed successfully')

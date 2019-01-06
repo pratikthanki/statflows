@@ -107,7 +107,6 @@ tablestyle = {
     'border-cllapse': 'separate',
     'font': '15px Open Sans, Arial, sans-serif',
     'font-weight': '30',
-    'border-collapse': 'separate',
     'width': '100%'}
 
 
@@ -119,14 +118,15 @@ rowstyle = {
 
 
 tabs_styles = {
-    'height': '50px'
+    'height': '50px', 
+    'padding': '15px'
 }
 
 
 tab_style = {
     'borderBottom': '1px solid #d6d6d6',
-    'padding': '5px',
-    'font-size': '18px'
+    'padding': '10px',
+    'font-size': '15px'
 }
 
 
@@ -153,6 +153,8 @@ styleP = {
     'text-align': 'center'
 }
 
+nbaLogo = 'http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png'
+
 
 def localImg(image):
     encoded_image = base64.b64encode(
@@ -161,26 +163,48 @@ def localImg(image):
 
 
 latest_df = loadData(latestGame)
-latest_df.columns = ['GameDate', 'GameDateFormatted', 'GameID', 'TeamID', 'OppositionTeamId', 'PlayerID', 'FullName', 'Num', 'Pos', 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Stl', 'Tov', 'Pf', 'Pip', 'Pipa', 'Pipm']
+latest_df.columns = ['GameDate', 'GameDateFormatted', 'GameID', 'TeamID', 'OppositionTeamId', 'PlayerID', 'FullName', 'Num', 'Pos', 'Min', 'Ast', 'Blk', 'Blka',
+                     'Dreb', 'Oreb', 'Reb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fta', 'Ftm', 'Pf', 'Pip', 'Pipa', 'Pipm', 'Pm', 'Pts', 'Stl', 'Tf', 'Tov', 'Tpa', 'Tpm']
 
+latest_df = latest_df.where((pd.notnull(latest_df)), '')
 
 teams = loadData(teams)
 teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
 
 
+standings = loadData(standings)
+standings.columns = ['Conference', 'TeamId', 'Conf Record', 'Conf Rank', 'Streak', 'Win %', 'Last 10',
+                     'Div Record', 'Div Rank', 'Home Wins', 'Home Losses', 'Home Streak', 'Road Wins', 'Road Losses', 'Road Streak']
+
+
 def playerInfo(player):
     row = []
     rows = []
-    cols = ['GameDateFormatted', 'OppositionTeamId', 'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']
+    cols = ['GameDate', 'OppositionTeamId',
+            'Min', 'Pts', 'Ast', 'Blk', 'Reb', 'Stl']
 
-    df = latest_df[latest_df['PlayerID'] == int(player)]
+    df = latest_df[latest_df['PlayerID'] == int(player)]  # 1628979
 
     for col in df.columns:
         if col in cols:
             if col == 'OppositionTeamId':
+                oppImg = nbaLogo
+
+                if df.iloc[0][col] == '':
+                    oppImg = nbaLogo
+                    style = {'height': '40px'}
+                else:
+                    try:
+                        oppImg = teams.loc[teams['TeamID'] ==
+                                           df.iloc[0][col], 'TeamLogo'].iloc[0]
+                        style = {'height': '80px'}
+                        pass
+                    except IndexError as e:
+                        print(e, df.iloc[0]['PlayerID'])
+
                 value = html.Div(
-                    html.Img(src=teams.loc[teams['TeamID'] == df.iloc[0][col], 'TeamLogo'].iloc[0],
-                             style={'height': '70px'})
+                    html.Img(src=oppImg,
+                             style=style)
                 )
                 row.append(value)
 
@@ -199,6 +223,46 @@ def playerInfo(player):
     return html.Div(html.Ul(rows, style=ulstyle), className='text')
 
 
+def playerCard(player):
+    rows = []
+    df = rosters[rosters['PlayerId'] == str(player)]
+    df = df[['Height', 'Weight', 'Position', 'DoB',
+             'Age', 'Experience', 'School']].copy()
+    df = pd.DataFrame({'Metric': df.columns, 'Value': df.iloc[-1].values})
+
+    for i in range(len(df)):
+        row = []
+        for col in df.columns:
+            value = df.iloc[i][col]
+            style = {'align': 'center', 'padding': '5px', 'color': 'white',
+                     'border': 'white', 'text-align': 'center', 'font-size': '13px'}
+            row.append(html.Td(value, style=style))
+
+        rows.append(html.Tr(row))
+
+    return html.Table(rows, style=tablestyle)
+
+
+def teamCard(team):
+    rows = []
+    df = standings[standings['TeamId'] == str(team)]
+    df = df[['Conference', 'Conf Record', 'Conf Rank', 'Streak',
+             'Win %', 'Last 10', 'Div Record', 'Div Rank']].copy()
+    df = pd.DataFrame({'Metric': df.columns, 'Value': df.iloc[-1].values})
+
+    for i in range(len(df)):
+        row = []
+        for col in df.columns:
+            value = df.iloc[i][col]
+            style = {'align': 'center', 'padding': '3px', 'color': 'white',
+                     'border': 'white', 'text-align': 'center', 'font-size': '11px'}
+            row.append(html.Td(value, style=style))
+
+        rows.append(html.Tr(row))
+
+    return html.Table(rows, style=tablestyle)
+
+
 def playerImage(player):
     if player != '':
         img = rosters.loc[rosters['PlayerId'] == player, 'PlayerImg'].iloc[0]
@@ -210,7 +274,7 @@ def playerImage(player):
             html.Div(html.H4(str(name),
                              style={'font-size': '20px',
                                     'text-align': 'center'})),
-            html.Div(playerInfo(player), className='overlay')],
+            html.Div(playerCard(player), className='overlay')],
             className='container', style={'width': '100%', 'height': '100%', 'position': 'relative'})
 
 
@@ -218,8 +282,10 @@ def getTeamImage(team):
     img = rosters.loc[rosters['TeamId'] == team, 'TeamLogo'].iloc[0]
 
     return html.Div(children=[
-        html.Img(src=str(img), style={'height': '100px'})
-    ])
+        html.Img(src=str(img), style={
+            'height': '120px', 'padding': '10px'}),
+        html.Div(teamCard(team), className='overlay')], 
+        className='container', style={'width': '100%', 'height': '100%', 'position': 'relative'})
 
 
 def get_data_object(df):
@@ -240,9 +306,11 @@ def get_data_object(df):
     return html.Table(
         [html.Tr([html.Th(getTeamImage(col), style=headerstyle) for col in df.columns])] + rows, style=tablestyle)
 
+
 rosters = loadData(teamRosters)
 rosters.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
-                    'BirthDate', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+                   'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+
 teamdf = parseTeams(rosters)
 get_data_object(teamdf)
 
@@ -250,15 +318,15 @@ get_data_object(teamdf)
 def update_layout():
     return html.Div(children=[
         html.Div([
-            html.Img(src='http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png',
-                     style={
-                         'height': '120px',
-                         'float': 'left'},
-                     ),
+            # html.Img(src=nbaLogo,
+            #          style={
+            #              'height': '140px'
+            #             #  ,'float': 'left'
+            #              },
+            #          ),
         ]),
 
-        html.P('Latest match stats from teams across the league. Click on a division or hover over a player to see their latest stats', style={'text-align': 'center',
-                                                                                                                                               'padding': '10px'}),
+        # html.P('Latest match stats from teams across the league. Click on a division/ team or hover over a player to see their latest stats', style={'text-align': 'center', 'padding': '10px'}),
 
         dcc.Tabs(id="div-tabs", value='Atlantic', children=[
             dcc.Tab(label='ATLANTIC', value='Atlantic',
@@ -273,11 +341,7 @@ def update_layout():
             dcc.Tab(label='PACIFIC', value='Pacific', style=tab_style,
                     selected_style=tab_selected_style),
             dcc.Tab(label='SOUTHWEST', value='Southwest',
-                    style=tab_style, selected_style=tab_selected_style),
-
-            dcc.Tab(label='STANDINGS', value='Standings',
-                    style=tab_style, selected_style=tab_selected_style)
-        ], style=tabs_styles),
+                    style=tab_style, selected_style=tab_selected_style)], style=tabs_styles),
 
         # html.Button('Refresh Dashboard', id='my-button'),
 
@@ -297,7 +361,7 @@ app.layout = update_layout()
 def update_graph(value):
     rosters = loadData(teamRosters)
     rosters.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
-                     'BirthDate', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+                       'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
 
     rosters = rosters[rosters['Division'] == value]
     teamdf = parseTeams(rosters)
