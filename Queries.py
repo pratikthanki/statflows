@@ -2,6 +2,8 @@ latestGame = 'EXEC [sp_LatestPlayerApps]'
 teamRosters = "EXEC [dbo].[sp_TeamRosters] '2018'"
 teams = "SELECT [TeamID] ,[TeamCode] ,COALESCE([TeamLogo], 'http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png') as TeamLogo FROM [dbo].[Teams]"
 
+shotChart = 'EXEC [dbo].[sp_PlayerShotChart]'
+
 standings = '''
 SELECT 
 [Conference]

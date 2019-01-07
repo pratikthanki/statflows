@@ -62,54 +62,50 @@ def loadData(query):
 
 def getShots(player):
     if player:
-        shot_Query = '''
-        SELECT TOP 1000
-        [ClockTime]
-        ,[Description]
-        ,[EType]
-        ,[Evt]
-        ,[LocationX]
-        ,[LocationY]
-        ,[Period]
-        ,[GamePlays].TeamID
-        ,t.[TeamCode]
-        ,[GamePlays].[PlayerID]
-        ,p.FirstName + ' ' + p.LastName as Player
-        ,s.Num
-        FROM [dbo].[GamePlays]
-        JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
-        JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
-        JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
-        WHERE [GamePlays].[PlayerID] = %s '''.format(player)
+        shot_Query = shotChart + ' %s'
+        shot_Query = shot_Query.format(player)
     
     else:
-        shot_Query = '''
-        SELECT TOP 1000
-        [ClockTime]
-        ,[Description]
-        ,[EType]
-        ,[Evt]
-        ,[LocationX]
-        ,[LocationY]
-        ,[Period]
-        ,[GamePlays].TeamID
-        ,t.[TeamCode]
-        ,[GamePlays].[PlayerID]
-        ,p.FirstName + ' ' + p.LastName as Player
-        ,s.Num
-        FROM [dbo].[GamePlays]
-        JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
-        JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
-        JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
-        '''
+        shot_Query = shotChart.replace('SELECT', 'SELECT TOP 1000')
 
     shot_Plot = loadData(shot_Query)
     shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-                         'LocationY', 'Period', 'TeamID', 'TeamCode', 'PlayerID', 'Player', 'Num']
+                         'LocationY', 'Period', 'TeamID', 'PlayerID']
 
     return shot_Plot
 
-# shot_list = shot_Plot.values.tolist()
+tablestyle = {
+    'display': 'table',
+    'border-cllapse': 'separate',
+    'font': '15px Open Sans, Arial, sans-serif',
+    'font-weight': '30',
+    'width': '100%'}
+
+
+rosters = loadData(teamRosters)
+rosters.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
+                   'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+
+
+def playerCard(player):
+    rows = []
+    df = rosters[rosters['PlayerId'] == str(player)]
+    df = df[['Height', 'Weight', 'Position', 'DoB',
+             'Age', 'Experience', 'School']].copy()
+    df = pd.DataFrame({'Metric': df.columns, 'Value': df.iloc[-1].values})
+
+    for i in range(len(df)):
+        row = []
+        for col in df.columns:
+            value = df.iloc[i][col]
+            style = {'align': 'center', 'padding': '5px', 'color': 'white',
+                     'border': 'white', 'text-align': 'center', 'font-size': '13px'}
+            row.append(html.Td(value, style=style))
+
+        rows.append(html.Tr(row))
+
+    return html.Table(rows, style=tablestyle)
+
 
 
 event_definitions = [
@@ -356,30 +352,6 @@ def get_layout(data):
         ),
 
         html.Div(
-            dcc.Dropdown(
-                id='team-dropdown',
-                options=[
-                    {'label': i, 'value': i} for i in data.TeamCode.unique()
-                ],
-                placeholder="Team",),
-            style=dict(
-                width='10%',
-                display='table-cell',
-            ),),
-
-        html.Div(
-            dcc.Dropdown(
-                id='player-dropdown',
-                options=[
-                    {'label': i, 'value': i} for i in data.Player.unique()
-                ],
-                placeholder="Select a Player",),
-            style=dict(
-                width='25%',
-                display='table-cell',
-            ),),
-
-        html.Div(
             dcc.Graph(
                 id='shot-plot',
                 figure={
@@ -443,12 +415,9 @@ app.layout = get_layout(getShots(None))
 
 
 @app.callback(
-    Output('shot-plot', 'figure'),
-    [Input('player-dropdown', 'value')])
-def update_graph(value):
-    if value:
-        data = getShots(value)
-        return get_layout(data)
+    Output('shot-plot', 'figure'))
+def update_graph():
+    return get_layout(getShots(None))
 
 
 external_css = [
@@ -459,12 +428,6 @@ external_css = [
 
 for css in external_css:
     app.css.append_css({"external_url": css})
-
-
-if 'DYNO' in os.environ:
-    app.scripts.append_script({
-        'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
-    })
 
 
 if __name__ == '__main__':
