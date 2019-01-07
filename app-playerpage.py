@@ -7,6 +7,9 @@ import base64
 import time
 from sqlalchemy import create_engine
 
+from flask import Flask
+from flask_caching import Cache
+
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
@@ -18,10 +21,19 @@ from Settings import *
 from Queries import *
 
 
-app = dash.Dash(__name__)
-server = app.server
-app.scripts.config.serve_locally = True
-dcc._js_dist[0]['external_url'] = 'https://cdn.plot.ly/plotly-finance-1.28.0.min.js'
+server = Flask(__name__)
+app = dash.Dash(name='app1', sharing=True, server=server, csrf_protect=False)
+
+# used for local development
+# server = app.server
+
+
+TIMEOUT = 60
+
+cache = Cache(app.server, config={
+    'CACHE_TYPE': 'filesystem',
+    'CACHE_DIR': 'cache-directory'
+})
 
 
 # Establish database connection to Write Records
