@@ -52,6 +52,7 @@ def SQLServerConnection(config):
 conn = SQLServerConnection(sqlconfig)
 
 
+@cache.memoize(timeout=TIMEOUT)
 def loadData(query):
     sqlData = []
 
@@ -72,11 +73,12 @@ def loadData(query):
     return df
 
 
+@cache.memoize(timeout=TIMEOUT)
 def getShots(player):
     if player:
         shot_Query = shotChart + ' %s'
         shot_Query = shot_Query.format(player)
-    
+
     else:
         shot_Query = shotChart.replace('SELECT', 'SELECT TOP 1000')
 
@@ -85,6 +87,7 @@ def getShots(player):
                          'LocationY', 'Period', 'TeamID', 'PlayerID']
 
     return shot_Plot
+
 
 tablestyle = {
     'display': 'table',
@@ -98,7 +101,11 @@ rosters = loadData(teamRosters)
 rosters.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
                    'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
 
+teams = loadData(teams)
+teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
 
+
+@cache.memoize(timeout=TIMEOUT)
 def playerCard(player):
     rows = []
     df = rosters[rosters['PlayerId'] == str(player)]
@@ -117,7 +124,6 @@ def playerCard(player):
         rows.append(html.Tr(row))
 
     return html.Table(rows, style=tablestyle)
-
 
 
 event_definitions = [
@@ -347,20 +353,14 @@ res_area_shape = dict(
 court_shapes.append(res_area_shape)
 
 
-def localImg(image):
-    encoded_image = base64.b64encode(
-        open(os.getcwd() + '/TeamLogos/' + image, 'rb').read())
-    return 'data:image/png;base64,{}'.format(encoded_image)
+nbaLogo = 'http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png'
 
 
 def get_layout(data):
     return html.Div(children=[
         html.Div(
-            html.Img(src=localImg('nba.png'),
-                     style={
-                         'height': '145px',
-                         'float': 'left'},
-                     ),
+            [html.Img(src=i, style={'height': '92px'})
+             for i in teams['TeamLogo'].values if i is not None], style={'padding': '10px'}
         ),
 
         html.Div(
