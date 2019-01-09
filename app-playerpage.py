@@ -89,6 +89,16 @@ def getShots(player):
     return shot_Plot
 
 
+headerstyle = {
+    'align': 'center',
+    'width': '300px',
+    'background-color': '#464646',
+    'text-align': 'center',
+    'font-size': '25px',
+    'padding': '10px',
+    'color': '#ffffff'}
+
+
 tablestyle = {
     'display': 'table',
     'border-cllapse': 'separate',
@@ -97,15 +107,6 @@ tablestyle = {
     'width': '100%'}
 
 
-rosters = loadData(teamRosters)
-rosters.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
-                   'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
-
-teams = loadData(teams)
-teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
-
-
-@cache.memoize(timeout=TIMEOUT)
 def playerCard(player):
     rows = []
     df = rosters[rosters['PlayerId'] == str(player)]
@@ -124,6 +125,68 @@ def playerCard(player):
         rows.append(html.Tr(row))
 
     return html.Table(rows, style=tablestyle)
+
+
+def parseTeams(df, teamId):
+    df = df[df['TeamId'] == str(teamId)]
+
+    teamdict = {}
+    cols = df['Position'].unique()
+
+    for pos in cols:
+        teamdict[pos] = np.array(
+            df.loc[df['Position'] == pos, 'PlayerId'])
+
+    teamdf = pd.DataFrame(dict([(k, pd.Series(v))
+                                for k, v in teamdict.items()]))
+    teamdf = teamdf.fillna('')
+
+    return teamdf
+
+
+def playerImage(player):
+    if player != '':
+        img = rosters.loc[rosters['PlayerId'] == player, 'PlayerImg'].iloc[0]
+        name = rosters.loc[rosters['PlayerId'] == player, 'Player'].iloc[0]
+
+        return html.Div(children=[
+            html.Img(src=str(img), style={
+                     'height': '130px'}, className='image'),
+            html.Div(html.H4(str(name),
+                             style={'font-size': '20px',
+                                    'text-align': 'center'})),
+            html.Div(playerCard(player), className='overlay')],
+            className='container', style={'width': '100%', 'height': '100%', 'position': 'relative'})
+
+
+def get_data_object(df):
+    rows = []
+    for i in range(len(df)):
+        row = []
+        for col in df.columns:
+            value = playerImage(df.iloc[i][col])
+            style = {'align': 'center', 'padding': '5px',
+                     'text-align': 'center', 'font-size': '25px'}
+            row.append(html.Td(value, style=style))
+
+            if i % 2 == 0 and 'background-color' not in style:
+                style['background-color'] = '#f2f2f2'
+
+        rows.append(html.Tr(row))
+
+    return html.Table(
+        [html.Tr([html.Th(col, style=headerstyle) for col in df.columns])] + rows, style=tablestyle)
+
+
+rosters = loadData(teamRosters)
+rosters.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
+                   'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+
+teamdf = parseTeams(rosters, '1610612738')
+get_data_object(teamdf)
+
+teams = loadData(teams)
+teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
 
 
 event_definitions = [
@@ -356,11 +419,20 @@ court_shapes.append(res_area_shape)
 nbaLogo = 'http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png'
 
 
-def get_layout(data):
+def update_layout():
+    data = getShots(None)
+
     return html.Div(children=[
         html.Div(
-            [html.Img(src=i, style={'height': '92px'})
-             for i in teams['TeamLogo'].values if i is not None], style={'padding': '10px'}
+            html.Div(
+                [html.Img(src=i, style={'height': '92px'})
+                 for i in teams['TeamLogo'].values if i is not None], style={'padding': '10px'},
+            ),),
+
+        html.Div(id="placeholder"),
+
+        html.Div(
+            id='tableContainer',
         ),
 
         html.Div(
@@ -423,13 +495,26 @@ def get_layout(data):
     ])
 
 
-app.layout = get_layout(getShots(None))
+app.layout = update_layout()
+
+
+@app.callback(
+    Output('tableContainer', 'children'),
+    [Input('placeholder', 'n_clicks')])
+
+def update_graph(value):
+    # teamId = teams.loc[teams['TeamLogo'] == value, 'TeamID'].iloc[0]
+    rosters = loadData(teamRosters)
+    rosters.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
+                       'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+    teamdf = parseTeams(rosters, '1610612752')
+    return get_data_object(teamdf)
 
 
 @app.callback(
     Output('shot-plot', 'figure'))
-def update_graph():
-    return get_layout(getShots(None))
+def update_shotPlot():
+    return update_layout()
 
 
 external_css = [

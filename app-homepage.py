@@ -84,14 +84,6 @@ def parseTeams(df):
     return teamdf
 
 
-COLORS = [
-    {'background': '#42a059', 'text': 'seagreen'},
-    {'background': '#febe2c', 'text': 'goldenrod'},
-    {'background': '#e32931', 'text': 'crimson'},
-    {'background': '#4990e7', 'text': 'cornflowerblue'},
-    {'background': '#d9d9d9', 'text': 'gainsboro'}]
-
-
 headerstyle = {
     'align': 'center',
     'width': '300px',
@@ -317,17 +309,6 @@ get_data_object(teamdf)
 
 def update_layout():
     return html.Div(children=[
-        html.Div([
-            # html.Img(src=nbaLogo,
-            #          style={
-            #              'height': '140px'
-            #             #  ,'float': 'left'
-            #              },
-            #          ),
-        ]),
-
-        # html.P('Latest match stats from teams across the league. Click on a division/ team or hover over a player to see their latest stats', style={'text-align': 'center', 'padding': '10px'}),
-
         dcc.Tabs(id="div-tabs", value='Atlantic', children=[
             dcc.Tab(label='ATLANTIC', value='Atlantic',
                     style=tab_style, selected_style=tab_selected_style),
@@ -342,8 +323,6 @@ def update_layout():
                     selected_style=tab_selected_style),
             dcc.Tab(label='SOUTHWEST', value='Southwest',
                     style=tab_style, selected_style=tab_selected_style)], style=tabs_styles),
-
-        # html.Button('Refresh Dashboard', id='my-button'),
 
         html.Div(
             id='table-container'
