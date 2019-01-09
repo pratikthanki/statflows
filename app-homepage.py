@@ -232,7 +232,10 @@ def playerCard(player):
 
         rows.append(html.Tr(row))
 
-    return html.Table(rows, style=tablestyle)
+    return html.Div(children=[
+        html.Table(rows, style=tablestyle),
+        html.Button('More Information', id='player-drilldown', style={'font-size': '10px', 'color': 'white', 'font-weight': 'bold'})
+    ])
 
 
 def teamCard(team):
@@ -252,7 +255,10 @@ def teamCard(team):
 
         rows.append(html.Tr(row))
 
-    return html.Table(rows, style=tablestyle)
+    return html.Div(children=[
+        html.Table(rows, style=tablestyle),
+        html.Button('More Information', id='player-drilldown', style={'font-size': '10px', 'color': 'white', 'font-weight': 'bold'})
+    ])
 
 
 def playerImage(player):
@@ -262,7 +268,7 @@ def playerImage(player):
 
         return html.Div(children=[
             html.Img(src=str(img), style={
-                     'height': '130px'}, className='image'),
+                     'height': '140px', 'padding': '10px'}, className='image'),
             html.Div(html.H4(str(name),
                              style={'font-size': '20px',
                                     'text-align': 'center'})),
@@ -275,7 +281,7 @@ def getTeamImage(team):
 
     return html.Div(children=[
         html.Img(src=str(img), style={
-            'height': '120px', 'padding': '10px'}),
+            'height': '150px', 'padding': '15px'}),
         html.Div(teamCard(team), className='overlay')], 
         className='container', style={'width': '100%', 'height': '100%', 'position': 'relative'})
 
