@@ -234,7 +234,7 @@ def playerCard(player):
 
     return html.Div(children=[
         html.Table(rows, style=tablestyle),
-        html.Button('More Information', id='player-drilldown', style={'font-size': '10px', 'color': 'white', 'font-weight': 'bold'})
+        html.Button('More Information', id='player-drilldown-'+str(player), style={'font-size': '10px', 'color': 'white', 'font-weight': 'bold'})
     ])
 
 
@@ -257,7 +257,7 @@ def teamCard(team):
 
     return html.Div(children=[
         html.Table(rows, style=tablestyle),
-        html.Button('More Information', id='player-drilldown', style={'font-size': '10px', 'color': 'white', 'font-weight': 'bold'})
+        html.Button('More Information', id='team-drilldown-'+str(team), style={'font-size': '10px', 'color': 'white', 'font-weight': 'bold'})
     ])
 
 
