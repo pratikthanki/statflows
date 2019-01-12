@@ -425,9 +425,10 @@ def update_layout():
     return html.Div(children=[
         html.Div(
             html.Div(
-                [html.Img(src=i, style={'height': '92px'})
-                 for i in teams['TeamLogo'].values if i is not None], style={'padding': '10px'},
-            ),),
+                html.A(
+                    [html.Img(src=i, style={'height': '92px'}, className='team-overlay')
+                     for i in teams['TeamLogo'].values if i is not None], style={'padding': '10px'},)
+            ), className='team-container'),
 
         html.Div(id="placeholder"),
 
@@ -501,7 +502,6 @@ app.layout = update_layout()
 @app.callback(
     Output('tableContainer', 'children'),
     [Input('placeholder', 'n_clicks')])
-
 def update_graph(value):
     # teamId = teams.loc[teams['TeamLogo'] == value, 'TeamID'].iloc[0]
     rosters = loadData(teamRosters)
@@ -518,9 +518,7 @@ def update_shotPlot():
 
 
 external_css = [
-    "https://codepen.io/chriddyp/pen/bWLwgP.css",
-    "https://codepen.io/chriddyp/pen/brPBPO.css",
-    "https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i"
+    "https://codepen.io/chriddyp/pen/bWLwgP.css", "https://codepen.io/chriddyp/pen/brPBPO.css", "https://codepen.io/chriddyp/pen/dZVMbK.css"
 ]
 
 for css in external_css:

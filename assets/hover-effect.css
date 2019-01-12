@@ -9,11 +9,16 @@
     opacity: 0;
     transition: .5s ease;
     background-color: #404040;
-} 
+}
 
 .container:hover .overlay {
     opacity: .9;
 }
+
+
+/* .team-container:hover .team-overlay {
+    opacity: .3;
+} */
 
 .text {
     color: white;
@@ -30,4 +35,4 @@
 
 .modebar {
     display: none !important;
-    }
+}
