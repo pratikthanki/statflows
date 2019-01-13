@@ -128,7 +128,14 @@ def playerCard(player):
 
 
 def parseTeams(df, teamId):
-    df = df[df['TeamId'] == str(teamId)]
+    if len(df.columns) == int(17):
+        df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
+                      'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+
+    if teamId is not None:
+        df = df[df['TeamId'] == str(teamId)]
+    else:
+        df = df
 
     teamdict = {}
     cols = df['Position'].unique()
@@ -179,11 +186,7 @@ def get_data_object(df):
 
 
 rosters = loadData(teamRosters)
-rosters.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
-                   'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
-
-teamdf = parseTeams(rosters, '1610612738')
-get_data_object(teamdf)
+teamdf = parseTeams(rosters, None)
 
 teams = loadData(teams)
 teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
@@ -426,15 +429,14 @@ def update_layout():
         html.Div(
             html.Div(
                 html.A(
-                    [html.Img(src=i, style={'height': '92px'}, className='team-overlay')
-                     for i in teams['TeamLogo'].values if i is not None], style={'padding': '10px'},)
+                    [html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'}, className='team-overlay', id='team-logo-'+str(i))
+                        for i in teams['TeamID'].values if i is not None], style={'padding': '10px'},),
             ), className='team-container'),
 
         html.Div(id="placeholder"),
 
         html.Div(
-            id='tableContainer',
-        ),
+            get_data_object(teamdf), id='tableContainer'),
 
         html.Div(
             dcc.Graph(
@@ -498,16 +500,53 @@ def update_layout():
 
 app.layout = update_layout()
 
+app.config['suppress_callback_exceptions'] = True
+
 
 @app.callback(
     Output('tableContainer', 'children'),
-    [Input('placeholder', 'n_clicks')])
-def update_graph(value):
-    # teamId = teams.loc[teams['TeamLogo'] == value, 'TeamID'].iloc[0]
-    rosters = loadData(teamRosters)
-    rosters.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
-                       'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
-    teamdf = parseTeams(rosters, '1610612752')
+    [
+        Input('team-logo-1610612737', 'n_clicks'), Input('team-logo-1610612737', 'src'), 
+        # Input('team-logo-1610612738', 'n_clicks'), Input('team-logo-1610612738', 'src'), 
+        # Input('team-logo-1610612739', 'n_clicks'), Input('team-logo-1610612739', 'src'), 
+        # Input('team-logo-1610612740', 'n_clicks'), Input('team-logo-1610612740', 'src'), 
+        # Input('team-logo-1610612741', 'n_clicks'), Input('team-logo-1610612741', 'src'), 
+        # Input('team-logo-1610612742', 'n_clicks'), Input('team-logo-1610612742', 'src'), 
+        # Input('team-logo-1610612743', 'n_clicks'), Input('team-logo-1610612743', 'src'), 
+        # Input('team-logo-1610612744', 'n_clicks'), Input('team-logo-1610612744', 'src'), 
+        # Input('team-logo-1610612745', 'n_clicks'), Input('team-logo-1610612745', 'src'), 
+        # Input('team-logo-1610612746', 'n_clicks'), Input('team-logo-1610612746', 'src'), 
+        # Input('team-logo-1610612747', 'n_clicks'), Input('team-logo-1610612747', 'src'), 
+        # Input('team-logo-1610612748', 'n_clicks'), Input('team-logo-1610612748', 'src'), 
+        # Input('team-logo-1610612749', 'n_clicks'), Input('team-logo-1610612749', 'src'), 
+        # Input('team-logo-1610612750', 'n_clicks'), Input('team-logo-1610612750', 'src'), 
+        # Input('team-logo-1610612751', 'n_clicks'), Input('team-logo-1610612751', 'src'), 
+        # Input('team-logo-1610612752', 'n_clicks'), Input('team-logo-1610612752', 'src'), 
+        # Input('team-logo-1610612753', 'n_clicks'), Input('team-logo-1610612753', 'src'), 
+        # Input('team-logo-1610612754', 'n_clicks'), Input('team-logo-1610612754', 'src'), 
+        # Input('team-logo-1610612755', 'n_clicks'), Input('team-logo-1610612755', 'src'), 
+        # Input('team-logo-1610612756', 'n_clicks'), Input('team-logo-1610612756', 'src'), 
+        # Input('team-logo-1610612757', 'n_clicks'), Input('team-logo-1610612757', 'src'), 
+        # Input('team-logo-1610612758', 'n_clicks'), Input('team-logo-1610612758', 'src'), 
+        # Input('team-logo-1610612759', 'n_clicks'), Input('team-logo-1610612759', 'src'), 
+        # Input('team-logo-1610612760', 'n_clicks'), Input('team-logo-1610612760', 'src'), 
+        # Input('team-logo-1610612761', 'n_clicks'), Input('team-logo-1610612761', 'src'), 
+        # Input('team-logo-1610612762', 'n_clicks'), Input('team-logo-1610612762', 'src'), 
+        # Input('team-logo-1610612763', 'n_clicks'), Input('team-logo-1610612763', 'src'), 
+        # Input('team-logo-1610612764', 'n_clicks'), Input('team-logo-1610612764', 'src'), 
+        # Input('team-logo-1610612765', 'n_clicks'), Input('team-logo-1610612765', 'src'), 
+        # Input('team-logo-1610612766', 'n_clicks'), Input('team-logo-1610612766', 'src'), 
+    ])
+
+
+def update_graph(n_clicks1, src1):
+    if n_clicks1:
+        teamId = teams.loc[teams['TeamLogo'] == src1, 'TeamID'].iloc[0]
+        teamdf = parseTeams(rosters, teamId)
+
+    else:
+        teamdf = parseTeams(rosters, None)
+
     return get_data_object(teamdf)
 
 
