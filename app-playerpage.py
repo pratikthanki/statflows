@@ -6,10 +6,7 @@ import requests
 import base64
 import time
 from sqlalchemy import create_engine
-
 from flask import Flask
-from flask_caching import Cache
-
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
@@ -27,15 +24,6 @@ app = dash.Dash(name='app1', sharing=True, server=server, csrf_protect=False)
 # used for local development
 # server = app.server
 
-
-TIMEOUT = 60
-
-cache = Cache(app.server, config={
-    'CACHE_TYPE': 'filesystem',
-    'CACHE_DIR': 'cache-directory'
-})
-
-
 # Establish database connection to Write Records
 
 def SQLServerConnection(config):
@@ -52,7 +40,6 @@ def SQLServerConnection(config):
 conn = SQLServerConnection(sqlconfig)
 
 
-@cache.memoize(timeout=TIMEOUT)
 def loadData(query):
     sqlData = []
 
@@ -73,7 +60,6 @@ def loadData(query):
     return df
 
 
-@cache.memoize(timeout=TIMEOUT)
 def getShots(player):
     if player:
         shot_Query = shotChart + ' %s'
@@ -92,10 +78,10 @@ def getShots(player):
 headerstyle = {
     'align': 'center',
     'width': '300px',
-    'background-color': '#464646',
+    'background-color': '#0f6db5',
     'text-align': 'center',
-    'font-size': '25px',
-    'padding': '10px',
+    'font-size': '20px',
+    'padding': '20px',
     'color': '#ffffff'}
 
 
@@ -428,9 +414,9 @@ def update_layout():
     return html.Div(children=[
         html.Div(
             html.Div(
-                html.A(
-                    [html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'}, className='team-overlay', id='team-logo-'+str(i))
-                        for i in teams['TeamID'].values if i is not None], style={'padding': '10px'},),
+                [html.A(
+                    html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'}, className='team-overlay', id='team-logo-'+str(i)))
+                    for i in teams['TeamID'].values if i is not None],
             ), className='team-container'),
 
         html.Div(id="placeholder"),
@@ -506,46 +492,48 @@ app.config['suppress_callback_exceptions'] = True
 @app.callback(
     Output('tableContainer', 'children'),
     [
-        Input('team-logo-1610612737', 'n_clicks'), Input('team-logo-1610612737', 'src'), 
-        # Input('team-logo-1610612738', 'n_clicks'), Input('team-logo-1610612738', 'src'), 
-        # Input('team-logo-1610612739', 'n_clicks'), Input('team-logo-1610612739', 'src'), 
-        # Input('team-logo-1610612740', 'n_clicks'), Input('team-logo-1610612740', 'src'), 
-        # Input('team-logo-1610612741', 'n_clicks'), Input('team-logo-1610612741', 'src'), 
-        # Input('team-logo-1610612742', 'n_clicks'), Input('team-logo-1610612742', 'src'), 
-        # Input('team-logo-1610612743', 'n_clicks'), Input('team-logo-1610612743', 'src'), 
-        # Input('team-logo-1610612744', 'n_clicks'), Input('team-logo-1610612744', 'src'), 
-        # Input('team-logo-1610612745', 'n_clicks'), Input('team-logo-1610612745', 'src'), 
-        # Input('team-logo-1610612746', 'n_clicks'), Input('team-logo-1610612746', 'src'), 
-        # Input('team-logo-1610612747', 'n_clicks'), Input('team-logo-1610612747', 'src'), 
-        # Input('team-logo-1610612748', 'n_clicks'), Input('team-logo-1610612748', 'src'), 
-        # Input('team-logo-1610612749', 'n_clicks'), Input('team-logo-1610612749', 'src'), 
-        # Input('team-logo-1610612750', 'n_clicks'), Input('team-logo-1610612750', 'src'), 
-        # Input('team-logo-1610612751', 'n_clicks'), Input('team-logo-1610612751', 'src'), 
-        # Input('team-logo-1610612752', 'n_clicks'), Input('team-logo-1610612752', 'src'), 
-        # Input('team-logo-1610612753', 'n_clicks'), Input('team-logo-1610612753', 'src'), 
-        # Input('team-logo-1610612754', 'n_clicks'), Input('team-logo-1610612754', 'src'), 
-        # Input('team-logo-1610612755', 'n_clicks'), Input('team-logo-1610612755', 'src'), 
-        # Input('team-logo-1610612756', 'n_clicks'), Input('team-logo-1610612756', 'src'), 
-        # Input('team-logo-1610612757', 'n_clicks'), Input('team-logo-1610612757', 'src'), 
-        # Input('team-logo-1610612758', 'n_clicks'), Input('team-logo-1610612758', 'src'), 
-        # Input('team-logo-1610612759', 'n_clicks'), Input('team-logo-1610612759', 'src'), 
-        # Input('team-logo-1610612760', 'n_clicks'), Input('team-logo-1610612760', 'src'), 
-        # Input('team-logo-1610612761', 'n_clicks'), Input('team-logo-1610612761', 'src'), 
-        # Input('team-logo-1610612762', 'n_clicks'), Input('team-logo-1610612762', 'src'), 
-        # Input('team-logo-1610612763', 'n_clicks'), Input('team-logo-1610612763', 'src'), 
-        # Input('team-logo-1610612764', 'n_clicks'), Input('team-logo-1610612764', 'src'), 
-        # Input('team-logo-1610612765', 'n_clicks'), Input('team-logo-1610612765', 'src'), 
-        # Input('team-logo-1610612766', 'n_clicks'), Input('team-logo-1610612766', 'src'), 
+        Input('team-logo-1610612737', 'n_clicks'), Input('team-logo-1610612737', 'src'),
+        Input('team-logo-1610612738', 'n_clicks'), Input('team-logo-1610612738', 'src'),
+        # Input('team-logo-1610612739', 'n_clicks'), Input('team-logo-1610612739', 'src'),
+        # Input('team-logo-1610612740', 'n_clicks'), Input('team-logo-1610612740', 'src'),
+        # Input('team-logo-1610612741', 'n_clicks'), Input('team-logo-1610612741', 'src'),
+        # Input('team-logo-1610612742', 'n_clicks'), Input('team-logo-1610612742', 'src'),
+        # Input('team-logo-1610612743', 'n_clicks'), Input('team-logo-1610612743', 'src'),
+        # Input('team-logo-1610612744', 'n_clicks'), Input('team-logo-1610612744', 'src'),
+        # Input('team-logo-1610612745', 'n_clicks'), Input('team-logo-1610612745', 'src'),
+        # Input('team-logo-1610612746', 'n_clicks'), Input('team-logo-1610612746', 'src'),
+        # Input('team-logo-1610612747', 'n_clicks'), Input('team-logo-1610612747', 'src'),
+        # Input('team-logo-1610612748', 'n_clicks'), Input('team-logo-1610612748', 'src'),
+        # Input('team-logo-1610612749', 'n_clicks'), Input('team-logo-1610612749', 'src'),
+        # Input('team-logo-1610612750', 'n_clicks'), Input('team-logo-1610612750', 'src'),
+        # Input('team-logo-1610612751', 'n_clicks'), Input('team-logo-1610612751', 'src'),
+        # Input('team-logo-1610612752', 'n_clicks'), Input('team-logo-1610612752', 'src'),
+        # Input('team-logo-1610612753', 'n_clicks'), Input('team-logo-1610612753', 'src'),
+        # Input('team-logo-1610612754', 'n_clicks'), Input('team-logo-1610612754', 'src'),
+        # Input('team-logo-1610612755', 'n_clicks'), Input('team-logo-1610612755', 'src'),
+        # Input('team-logo-1610612756', 'n_clicks'), Input('team-logo-1610612756', 'src'),
+        # Input('team-logo-1610612757', 'n_clicks'), Input('team-logo-1610612757', 'src'),
+        # Input('team-logo-1610612758', 'n_clicks'), Input('team-logo-1610612758', 'src'),
+        # Input('team-logo-1610612759', 'n_clicks'), Input('team-logo-1610612759', 'src'),
+        # Input('team-logo-1610612760', 'n_clicks'), Input('team-logo-1610612760', 'src'),
+        # Input('team-logo-1610612761', 'n_clicks'), Input('team-logo-1610612761', 'src'),
+        # Input('team-logo-1610612762', 'n_clicks'), Input('team-logo-1610612762', 'src'),
+        # Input('team-logo-1610612763', 'n_clicks'), Input('team-logo-1610612763', 'src'),
+        # Input('team-logo-1610612764', 'n_clicks'), Input('team-logo-1610612764', 'src'),
+        # Input('team-logo-1610612765', 'n_clicks'), Input('team-logo-1610612765', 'src'),
+        # Input('team-logo-1610612766', 'n_clicks'), Input('team-logo-1610612766', 'src'),
     ])
-
-
-def update_graph(n_clicks1, src1):
+def update_graph(n_clicks1, src1, n_clicks2, src2):
     if n_clicks1:
         teamId = teams.loc[teams['TeamLogo'] == src1, 'TeamID'].iloc[0]
-        teamdf = parseTeams(rosters, teamId)
+
+    if n_clicks2:
+        teamId = teams.loc[teams['TeamLogo'] == src2, 'TeamID'].iloc[0]
 
     else:
-        teamdf = parseTeams(rosters, None)
+        teamId = None
+
+    teamdf = parseTeams(rosters, teamId)
 
     return get_data_object(teamdf)
 

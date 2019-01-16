@@ -25,13 +25,15 @@ tmp = pd.DataFrame()
 for t in teams:
     url = 'https://stats.nba.com/stats/commonteamroster?LeagueID=00&Season='+str(season)+'-19&TeamID=' + str(t)
     rosters = requests.request('GET', url, headers=headers)
-    print(i, t, rosters.status_code)
+    print(t, rosters.status_code)
     rosters = rosters.json()
     tmp = tmp.append(rosters['resultSets'][0]['rowSet'])
 
 tmp.columns = list(rosters['resultSets'][0]['headers'])
 
-cursor.executemany('INSERT INTO Rosters2 (TeamID ,SEASON ,LeagueID ,PLAYER ,NUM ,POSITION ,HEIGHT ,WEIGHT ,BIRTH_DATE ,AGE ,EXP ,SCHOOL ,PLAYER_ID) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)', tmp.values.tolist())
+print('Writing to Database')
+
+cursor.executemany('INSERT INTO TeamRosters (TeamID ,SEASON ,LeagueID ,PLAYER ,NUM ,POSITION ,HEIGHT ,WEIGHT ,BIRTH_DATE ,AGE ,EXP ,SCHOOL ,PLAYER_ID) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)', tmp.values.tolist())
 
 conn.commit()
 
