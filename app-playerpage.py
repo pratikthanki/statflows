@@ -114,7 +114,7 @@ def playerCard(player):
     return html.Table(rows, style=tablestyle)
 
 
-def parseTeams(df, teamId):
+def parseTeams(df, teamId=None):
     if len(df.columns) == int(17):
         df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
                       'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
@@ -173,7 +173,7 @@ def get_data_object(df):
 
 
 rosters = loadData(teamRosters)
-teamdf = parseTeams(rosters, None)
+teamdf = parseTeams(rosters)
 
 teams = loadData(teams)
 teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
@@ -414,11 +414,10 @@ def update_layout():
 
     return html.Div(children=[
         html.Div(
-            html.Div(
-                [dcc.Link(
+            [dcc.Link(
                     html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'},
-                             className='team-overlay', id='team-logo-'+str(i)), href='/' + str(i))  # set link's href to include teamid
-                    for i in teams['TeamID'].values if i is not None],), className='team-container'),
+                             className='team-overlay', id='team-logo-'+str(i)), href='/' + str(i))
+             for i in teams['TeamID'].values if i is not None]),
 
         html.Div(
             get_data_object(teamdf), id='tableContainer'),
@@ -493,7 +492,7 @@ app.config['suppress_callback_exceptions'] = True
     [Input('url', 'pathname')]
 )
 def update_graph(pathname):
-    teamId = pathname.split('/')[-1]
+    teamId = int(pathname.split('/')[-1])
     teamdf = parseTeams(rosters, teamId)
 
     return get_data_object(teamdf)
