@@ -2,6 +2,7 @@ import pandas as pd
 import requests 
 from Settings import *
 import pyodbc 
+import datetime 
 
 season = '2018'
 
@@ -23,17 +24,22 @@ cursor = conn.cursor()
 tmp = pd.DataFrame()
 
 for t in teams:
-    url = 'https://stats.nba.com/stats/commonteamroster?LeagueID=00&Season='+str(season)+'-19&TeamID=' + str(t)
-    rosters = requests.request('GET', url, headers=headers)
-    print(t, rosters.status_code)
-    rosters = rosters.json()
-    tmp = tmp.append(rosters['resultSets'][0]['rowSet'])
+    try:
+        url = 'https://stats.nba.com/stats/commonteamroster?LeagueID=00&Season='+str(season)+'-19&TeamID=' + str(t)
+        rosters = requests.request('GET', url, headers=headers)
+        print(t, rosters.status_code)
+        rosters = rosters.json()
+        tmp = tmp.append(rosters['resultSets'][0]['rowSet'])
+        pass
+    except Exception as e:
+        print(t, e)
 
 tmp.columns = list(rosters['resultSets'][0]['headers'])
+tmp['TimeStamp'] = datetime.datetime.now()
 
 print('Writing to Database')
 
-cursor.executemany('INSERT INTO TeamRosters (TeamID ,SEASON ,LeagueID ,PLAYER ,NUM ,POSITION ,HEIGHT ,WEIGHT ,BIRTH_DATE ,AGE ,EXP ,SCHOOL ,PLAYER_ID) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)', tmp.values.tolist())
+cursor.executemany('INSERT INTO TeamRosters (TeamID ,SEASON ,LeagueID ,PLAYER ,NUM ,POSITION ,HEIGHT ,WEIGHT ,BIRTH_DATE ,AGE ,EXP ,SCHOOL ,PLAYER_ID ,TimeStamp) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)', tmp.values.tolist())
 
 conn.commit()
 
