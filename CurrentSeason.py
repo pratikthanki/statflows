@@ -11,11 +11,7 @@ from Settings import *
 
 
 now = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")
-dateOffset = now - timedelta(days=21)
-# yesterday = datetime.today() - timedelta(days=1)
-# yesterday = datetime.strptime(yesterday.strftime("%Y-%m-%d"), "%Y-%m-%d")
-# minDate = datetime.datetime(2018, 10, 10, 0, 0)
-# maxDate = datetime.datetime(2018, 2, 7, 0, 0)
+dateOffset = now - timedelta(days=7)
 
 # --------------------------- Connecting to the database ---------------------------
 
@@ -61,7 +57,6 @@ games.columns = ['GameID', 'GameCode', 'Venue', 'Date',
 gamestbl = games[['GameID', 'GameCode', 'Venue', 'Date', 'DateString']].copy()
 print('Games:', len(games))
 
-# cursor.executemany('INSERT INTO Staging_Games([GameID],[GameCode],[Venue],[Date],[DateString],[AwayTeamID],[AwayScore],[HomeTeamID],[HomeScore]) VALUES(?,?,?,?,?,?,?,?,?)', games.values.tolist())
 
 # --------------------------- Game Summary per Player per Game ---------------------------
 # game summary data by player by game, looping through all gameIDs up till today
@@ -204,13 +199,6 @@ gameBoxScore = gameBoxScore.rename(columns={0: 'Game', 1: 'GameID', 2: 'BoxScore
 
 # --------------------------- Writing to the database ---------------------------
 print('---------- Writing to NBA database ----------')
-
-# players.to_sql('Staging_Players', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
-# teams.to_sql('Staging_Teams', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
-# gameBoxScore.to_sql('GameBoxScore', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
-# playergameSummary.to_sql('Staging_PlayerGameSummary', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
-# gamePlays.to_sql('Staging_GamePlays', engine, schema='dbo', if_exists='append', index=None, chunksize=10000)
-
 
 # Players, Teams, Games
 cursor.executemany(
