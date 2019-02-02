@@ -94,6 +94,27 @@ tablestyle = {
     'width': '100%'}
 
 
+tabs_styles = {
+    'height': '50px', 
+    'padding': '15px'}
+
+
+tab_style = {
+    'borderBottom': '1px solid #d6d6d6',
+    'padding': '10px',
+    'font-size': '15px'}
+
+
+tab_selected_style = {
+    'borderTop': '1px solid #d6d6d6',
+    'borderBottom': '1px solid #d6d6d6',
+    'backgroundColor': '#119DFF',
+    'fontWeight': 'bold',
+    'color': 'white',
+    'padding': '5px',
+    'font-size': '22px'}
+
+
 def playerCard(player):
     rows = []
     df = rosters[rosters['PlayerId'] == str(player)]
@@ -413,11 +434,23 @@ def update_layout():
     data = getShots(None)
 
     return html.Div(children=[
+        dcc.Location(id='url', refresh=False),
         html.Div(
             [dcc.Link(
-                    html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'},
-                             className='team-overlay', id='team-logo-'+str(i)), href='/' + str(i))
+                html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'},
+                         className='team-overlay', id='team-logo-'+str(i)), href='/' + str(i))
              for i in teams['TeamID'].values if i is not None]),
+
+
+        dcc.Tabs(id="div-tabs", value='Current Roster', children=[
+                    dcc.Tab(label='ROSTER', value='Current Roster',
+                            style=tab_style, selected_style=tab_selected_style),
+                    dcc.Tab(label='RESULTS', value='Results', style=tab_style,
+                            selected_style=tab_selected_style),
+                    dcc.Tab(label='STATS', value='Stats',
+                            style=tab_style, selected_style=tab_selected_style),
+                    dcc.Tab(label='SHOTS', value='Shots',
+                            style=tab_style, selected_style=tab_selected_style)], style=tabs_styles),
 
         html.Div(
             get_data_object(teamdf), id='tableContainer'),
