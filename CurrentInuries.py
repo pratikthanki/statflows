@@ -1,0 +1,49 @@
+import os
+import glob
+import pandas as pd
+from Settings import *
+import pyodbc 
+import xlrd
+
+
+def SQLServerConnection(config):
+    conn_str = (
+        'DRIVER={driver};SERVER={server},{port};DATABASE={database};UID={username};PWD={password}')
+
+    conn = pyodbc.connect(
+        conn_str.format(**config)
+    )
+
+    return conn
+
+conn = SQLServerConnection(sqlconfig)
+cursor = conn.cursor()
+
+
+result = [i for i in glob.glob('*.{}'.format('xlsx'))]
+print(result)
+
+
+if any('CONFIDENTIAL' in i for i in result):
+    injuryfile = i
+    xls = xlrd.open_workbook(injuryfile, on_demand=True)
+
+
+if 'Game by Game - CONFIDENTIAL' in xls.sheet_names():
+    df = pd.read_excel(injuryfile, sheet_name='Game by Game - CONFIDENTIAL')
+
+else:
+    print('Sheet to Parse Not found, sheets available are - ', xls.sheet_names())
+
+
+df['Stats'] = ['Fully Fit' if x.startswith('L') or x.startswith('W') else x for x in df.Stats.values]
+
+latestStatus = df.sort_values(by=['Date']).drop_duplicates(subset='Name', keep='last')
+latestStatus.rename(columns={'Stats': 'Status'}, inplace=True)
+
+print('Writing to Database')
+
+cursor.executemany('INSERT INTO LatestInjuries (Team ,Name ,Date ,Status) VALUES(?,?,?,?)', latestStatus.values.tolist())
+conn.commit()
+
+print('Complete')
