@@ -11,7 +11,7 @@ from Settings import *
 
 
 now = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")
-dateOffset = now - timedelta(days=7)
+dateOffset = now - timedelta(days=14)
 
 # --------------------------- Connecting to the database ---------------------------
 
@@ -55,7 +55,7 @@ games.columns = ['GameID', 'GameCode', 'Venue', 'Date',
                  'DateString', 'AwayTeamID', 'AwayScore', 'HomeTeamID', 'HomeScore']
 
 gamestbl = games[['GameID', 'GameCode', 'Venue', 'Date', 'DateString']].copy()
-print('Games:', len(games))
+print('Games Found:', len(games))
 
 
 # --------------------------- Game Summary per Player per Game ---------------------------
