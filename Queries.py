@@ -1,5 +1,5 @@
 latestGame = 'EXEC [sp_LatestPlayerApps]'
-teamRosters = "EXEC [dbo].[sp_TeamRosters] '2018'"
+teamRosters = "EXEC [dbo].[sp_TeamRosters]"
 teams = "SELECT [TeamID] ,[TeamCode] ,COALESCE([TeamLogo], 'http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png') as TeamLogo FROM [dbo].[Teams] WHERE TeamID NOT IN ('1610616833', '1610616834', '1610616843', '1610616844') AND LEN(TeamID) = 10 "
 
 shotChart = 'EXEC [dbo].[sp_PlayerShotChart]'
