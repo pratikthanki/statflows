@@ -525,7 +525,12 @@ app.config['suppress_callback_exceptions'] = True
     [Input('url', 'pathname')]
 )
 def update_graph(pathname):
-    teamId = int(pathname.split('/')[-1])
+    if pathname == '' or pathname is None:
+        teamId = None
+
+    else:
+         teamId = int(pathname.split('/')[-1])
+
     teamdf = parseTeams(rosters, teamId)
 
     return get_data_object(teamdf)
