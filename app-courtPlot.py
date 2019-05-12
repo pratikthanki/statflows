@@ -60,30 +60,10 @@ def loadData(query):
     return df
 
 
-game_Query = '''
-SELECT 
-[ClockTime]
-,[Description]
-,[EType]
-,[Evt]
-,[LocationX]
-,[LocationY]
-,[Period]
-,[GamePlays].TeamID
-,t.[TeamCode]
-,[GamePlays].[PlayerID]
-,p.FirstName + ' ' + p.LastName as Player
-,s.Num
-FROM [dbo].[GamePlays]
-JOIN [Teams] t ON t.[TeamID] = [GamePlays].TeamID
-JOIN [Players] p ON p.PlayerID = [GamePlays].PlayerID
-JOIN [PlayerGameSummary] s ON s.GameID = GamePlays.GameID AND s.TeamID = GamePlays.TeamID AND s.PlayerID = GamePlays.PlayerID
-WHERE [GamePlays].GameID = 21800285
-ORDER BY Evt
-'''
+game_Query = "EXEC [dbo].[sp_PlayerShotChart] '201142'"
 
 game_locations = loadData(game_Query)
-game_locations.columns = ['ClockTime' ,'Description' ,'EType' ,'Evt' ,'LocationX' ,'LocationY' ,'Period' ,'TeamID' ,'TeamCode' ,'PlayerID' ,'Player', 'Num']
+game_locations.columns = ['ClockTime' ,'Description' ,'EType' ,'Evt' ,'LocationX' ,'LocationY' ,'Period' ,'TeamID', 'PlayerID']
 
 game_list = game_locations.values.tolist()
 
