@@ -215,14 +215,14 @@ def playerCard(player):
         for col in df.columns:
             value = df.iloc[i][col]
             style = {'align': 'center', 'padding': '5px', 'color': 'white',
-                     'border': 'white', 'text-align': 'center', 'font-size': '13px'}
+                     'border': 'white', 'text-align': 'center', 'font-size': '11px'}
             row.append(html.Td(value, style=style))
 
         rows.append(html.Tr(row))
 
     return html.Div(children=[
         html.Table(rows, style=tablestyle),
-        html.Button('More Information', id='player-drilldown-'+str(player), style={'font-size': '10px', 'color': 'white', 'font-weight': 'bold'})
+        html.Button('More Information', id='player-drilldown-'+str(player), style={'font-size': '10px', 'color': 'white', 'font-weight': 'bold', 'border': 'none'})
     ])
 
 
