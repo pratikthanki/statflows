@@ -63,17 +63,12 @@ def loadData(query):
 
 def getShots(player):
     if player:
-        shot_Query = shotChart + ' %s'
-        shot_Query = shot_Query.format(player)
+        shot_Query = shotChart + ' ' + str(player)
+        shot_Plot = loadData(shot_Query)
+        shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
+                            'LocationY', 'Period', 'TeamID', 'PlayerID']
 
-    else:
-        shot_Query = shotChart.replace('SELECT', 'SELECT TOP 1000')
-
-    shot_Plot = loadData(shot_Query)
-    shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-                         'LocationY', 'Period', 'TeamID', 'PlayerID']
-
-    return shot_Plot
+        return shot_Plot
 
 
 headerstyle = {
@@ -95,7 +90,7 @@ tablestyle = {
 
 
 tabs_styles = {
-    'height': '50px', 
+    'height': '50px',
     'padding': '15px'}
 
 
@@ -136,7 +131,8 @@ def playerCard(player):
 
     return html.Div(children=[
         html.Table(rows, style=tablestyle),
-        html.Button('More Information', id='player-drilldown-'+str(player), style={'font-size': '10px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'})
+        dcc.Link(html.Button('More Information', id='player-drilldown-'+str(player), style={
+            'font-size': '10px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}), href='/' + str(player))
     ])
 
 
@@ -435,41 +431,18 @@ court_shapes.append(res_area_shape)
 nbaLogo = 'http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png'
 
 
-def update_layout():
-    data = getShots(None)
-
-    return html.Div(children=[
-        dcc.Location(id='url', refresh=False),
-        html.Div(
-            [dcc.Link(
-                html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'},
-                         className='team-overlay', id='team-logo-'+str(i)), href='/' + str(i))
-             for i in teams['TeamID'].values if i is not None]),
-
-
-        dcc.Tabs(id="div-tabs", value='Current Roster', children=[
-                    dcc.Tab(label='ROSTER', value='Current Roster',
-                            style=tab_style, selected_style=tab_selected_style),
-                    dcc.Tab(label='RESULTS', value='Results', style=tab_style,
-                            selected_style=tab_selected_style),
-                    dcc.Tab(label='STATS', value='Stats',
-                            style=tab_style, selected_style=tab_selected_style),
-                    dcc.Tab(label='SHOTS', value='Shots',
-                            style=tab_style, selected_style=tab_selected_style)], style=tabs_styles),
-
-        html.Div(
-            get_data_object(teamdf), id='tableContainer'),
-
-        html.Div(
+def createShotPlot(data):
+    if data is not None:
+        return html.Div(
             dcc.Graph(
                 id='shot-plot',
                 figure={
                     'data': [
                         go.Scatter(
                             x=data[data['EType']
-                                   == 1]['LocationX'],
+                                == 1]['LocationX'],
                             y=data[data['EType']
-                                   == 1]['LocationY'],
+                                == 1]['LocationY'],
                             mode='markers',
                             name='Made Shot',
                             opacity=0.7,
@@ -484,9 +457,9 @@ def update_layout():
                         ),
                         go.Scatter(
                             x=data[data['EType']
-                                   == 2]['LocationX'],
+                                == 2]['LocationX'],
                             y=data[data['EType']
-                                   == 2]['LocationY'],
+                                == 2]['LocationY'],
                             mode='markers',
                             name='Missed Shot',
                             opacity=0.7,
@@ -516,38 +489,86 @@ def update_layout():
                         shapes=court_shapes
                     )
                 }
-            ), style={'float': 'right'})
+            )
+        )
+
+
+def update_layout():
+
+    return html.Div(children=[
+        dcc.Location(id='teamurl', refresh=False),
+        html.Div(
+            [dcc.Link(
+                html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'},
+                         className='team-overlay', id='team-logo-'+str(i)), href='/' + str(i))
+             for i in teams['TeamID'].values if i is not None]),
+
+
+        dcc.Tabs(id="div-tabs", value='Current Roster', children=[
+                    dcc.Tab(label='ROSTER', value='Current Roster',
+                            style=tab_style, selected_style=tab_selected_style),
+                    dcc.Tab(label='RESULTS', value='Results', style=tab_style,
+                            selected_style=tab_selected_style),
+                    dcc.Tab(label='STATS', value='Stats',
+                            style=tab_style, selected_style=tab_selected_style),
+                    dcc.Tab(label='SHOTS', value='Shots',
+                            style=tab_style, selected_style=tab_selected_style)], style=tabs_styles),
+
+        html.Div(
+            get_data_object(teamdf), id='tableContainer'
+            ),
+
+        html.Div(
+            createShotPlot(getShots(None)), id='shotplot', style={'float': 'right'}
+            )
+
     ])
 
 
-app.layout = update_layout()
+app.layout=update_layout()
 
-app.config['suppress_callback_exceptions'] = True
+app.config['suppress_callback_exceptions']=True
 
 
 @app.callback(
     Output('tableContainer', 'children'),
-    [Input('url', 'pathname')]
+    [Input('teamurl', 'pathname')]
 )
 def update_graph(pathname):
     if pathname == '' or pathname is None:
-        teamId = None
+        teamId=None
 
     else:
-         teamId = int(pathname.split('/')[-1])
+        teamId=int(pathname.split('/')[-1])
 
-    teamdf = parseTeams(rosters, teamId)
+    teamdf=parseTeams(rosters, teamId)
 
     return get_data_object(teamdf)
 
 
 @app.callback(
-    Output('shot-plot', 'figure'))
-def update_shotPlot():
-    return update_layout()
+    Output('shotplot', 'figure'),
+    [Input('teamurl', 'pathname')]
+)
+def update_graph(pathname):
+    if pathname == '' or pathname is None:
+        playerId=None
+
+    else:
+        playerId=int(pathname.split('/')[-1])
+
+    playerdf=getShots(playerId)
+
+    return get_data_object(teamdf)
 
 
-external_css = [
+# @app.callback(
+#     Output('shot-plot', 'figure'))
+# def update_shotPlot():
+#     return update_layout()
+
+
+external_css=[
     "https://codepen.io/chriddyp/pen/bWLwgP.css", "https://codepen.io/chriddyp/pen/brPBPO.css", "https://codepen.io/chriddyp/pen/dZVMbK.css"
 ]
 
