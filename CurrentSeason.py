@@ -258,11 +258,11 @@ cursor.execute('''INSERT INTO GamePlays(ClockTime,Description,EPId,EType,Evt,Gam
 
 print('---------- Game Plays written ----------')
 
-cursor.execute('DELETE FROM Staging_Players')
-cursor.execute('DELETE FROM Staging_Teams')
-cursor.execute('DELETE FROM Staging_Games')
-cursor.execute('DELETE FROM Staging_GamePlays')
-cursor.execute('DELETE FROM Staging_PlayerGameSummary')
+cursor.execute('TRUNCATE TABLE Staging_Players')
+cursor.execute('TRUNCATE TABLE Staging_Teams')
+cursor.execute('TRUNCATE TABLE Staging_Games')
+cursor.execute('TRUNCATE TABLE Staging_GamePlays')
+cursor.execute('TRUNCATE TABLE Staging_PlayerGameSummary')
 
 conn.commit()
 print('---------- All Staging data deleted ----------')
