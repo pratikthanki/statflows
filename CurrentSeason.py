@@ -11,7 +11,7 @@ from Settings import *
 
 
 now = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")
-dateOffset = now - timedelta(days=14)
+dateOffset = now - timedelta(days=150)
 
 # --------------------------- Connecting to the database ---------------------------
 
