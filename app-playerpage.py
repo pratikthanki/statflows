@@ -159,6 +159,7 @@ def parseTeams(df, teamId=None):
 
     return teamdf
 
+defaultimg = 'https://stats.nba.com/media/img/league/nba-headshot-fallback.png'
 
 def playerImage(player):
     if player != '':
@@ -539,7 +540,7 @@ def update_graph(pathname):
         teamId=None
 
     else:
-        teamId=int(pathname.split('/')[-1])
+        teamId = int(pathname.split('/')[-1])
 
     teamdf=parseTeams(rosters, teamId)
 
