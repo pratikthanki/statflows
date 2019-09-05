@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import create_engine
 import time
 from datetime import datetime, timedelta
-from Settings import *
+from Settings import Current_Season_url1, Current_Season_url2, Current_Season_url3, Current_Season_url4 
 
 
 now = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")
@@ -61,10 +61,9 @@ print('Games Found:', len(games))
 # --------------------------- Game Summary per Player per Game ---------------------------
 # game summary data by player by game, looping through all gameIDs up till today
 gameSummaryStats = []
-url2 = Current_Season_url2
 for i in games['GameID']:
     try:
-        gamedetailRequest = requests.get(url2 + i + '_gamedetail.json')
+        gamedetailRequest = requests.get(Current_Season_url2 + i + '_gamedetail.json')
         print(i, str(gamedetailRequest.status_code))
         # gamedetailRequest.raise_for_status()
         gamedetailRequest = gamedetailRequest.json()
@@ -116,10 +115,9 @@ playergameSummary.columns = ['Ast', 'Blk', 'Blka', 'Court', 'Dreb', 'Fbpts', 'Fb
 # game summary data by player by game, looping through all gameIDs up till today
 
 gamePlaybyPlay = []
-url3 = Current_Season_url3
 for i in games['GameID']:
     try:
-        gamePlotRequest = requests.get(url3 + i + '_full_pbp.json')
+        gamePlotRequest = requests.get(Current_Season_url3 + i + '_full_pbp.json')
         print(i, str(gamePlotRequest.status_code))
         # gamePlotRequest.raise_for_status()
         gamePlotRequest = gamePlotRequest.json()
@@ -171,10 +169,9 @@ print(str(len(dateSTR)), 'matchdays found')
 
 
 gameBoxScore_staging = []
-url4 = Current_Season_url4
 for i in dateSTR:
     try:
-        gameBoxScoreRequest = requests.get(url4 + str(i) + '.json')
+        gameBoxScoreRequest = requests.get(Current_Season_url4 + str(i) + '.json')
         print(i, str(gameBoxScoreRequest.status_code))
         # gameBoxScoreRequest.raise_for_status()
         gameBoxScoreRequest = gameBoxScoreRequest.json()
