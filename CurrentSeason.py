@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import create_engine
 import time
 from datetime import datetime, timedelta
-from Settings import Current_Season_url1, Current_Season_url2, Current_Season_url3, Current_Season_url4 
+from Settings import Current_Season_url1, Current_Season_url2, Current_Season_url3, Current_Season_url4, sqlconfig
 
 
 now = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")
@@ -34,25 +34,34 @@ cursor = conn.cursor()
 
 # initial GET request for full season schedule for the 2017 season
 try:
-    scheduleRequest = requests.get(Current_Season_url1).json()
+    scheduleRequest = requests.get(Current_Season_url1)
+    scheduleRequest = scheduleRequest.json()
 except ValueError as e:
     print(e)
 
 
 games = []
-print('Looking back since', dateOffset)
-
 for i in scheduleRequest['lscd']:
     for j in i['mscd']['g']:
-        if datetime.strptime(j['gdte'], "%Y-%m-%d") >= dateOffset and datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
-            games.append([j['gid']] + [j['gcode']] + [j['an']] + [j['gdte']] + [j['gcode'].split(
-                '/')[0]] + [j['v']['tid']] + [j['v']['s']] + [j['h']['tid']] + [j['h']['s']])
+        # if datetime.strptime(j['gdte'], "%Y-%m-%d") >= dateOffset and datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
+            # print('Looking back since', str(dateOffset.date()))
+        games.append(
+            [j['gid']] + 
+            [j['gcode']] + 
+            [j['an']] + 
+            [j['gdte']] + 
+            [j['gcode'].split('/')[0]] + 
+            [j['v']['tid']] + 
+            [j['v']['s']] + 
+            [j['h']['tid']] + 
+            [j['h']['s']])
 
 
 # pandas dataframe with all game general data
-games = pd.DataFrame(games)
-games.columns = ['GameID', 'GameCode', 'Venue', 'Date',
-                 'DateString', 'AwayTeamID', 'AwayScore', 'HomeTeamID', 'HomeScore']
+games = pd.DataFrame(
+    data=games, 
+    columns=['GameID', 'GameCode', 'Venue', 'Date', 'DateString', 'AwayTeamID', 'AwayScore', 'HomeTeamID', 'HomeScore']
+    )
 
 gamestbl = games[['GameID', 'GameCode', 'Venue', 'Date', 'DateString']].copy()
 print('Games Found:', len(games))
