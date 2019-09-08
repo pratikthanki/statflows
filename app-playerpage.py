@@ -15,14 +15,15 @@ import dash_table_experiments as dt
 import plotly.graph_objs as go
 
 from Settings import *
-from Queries import *
+from Queries import latestGame, teamRosters, teams, shotChart, standings
+from Court import court_shape
 
 
 server = Flask(__name__)
 app = dash.Dash(
-    name='app1', 
-    sharing=True, 
-    server=server, 
+    name='app1',
+    sharing=True,
+    server=server,
     csrf_protect=False)
 
 
@@ -61,9 +62,9 @@ def loadData(query):
     return df
 
 
-def getShots(player):
-    if player:
-        shot_Query = shotChart + str(player)
+def getShots(playerId):
+    if playerId:
+        shot_Query = shotChart + str(playerId)
         shot_Plot = loadData(shot_Query)
         shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
                             'LocationY', 'Period', 'TeamID', 'PlayerID']
@@ -178,21 +179,22 @@ def playerImage(player):
 
 def get_data_object(df):
     rows = []
-    for i in range(len(df)):
-        row = []
-        for col in df.columns:
-            value = playerImage(df.iloc[i][col])
-            style = {'align': 'center', 'padding': '5px',
-                     'text-align': 'center', 'font-size': '25px'}
-            row.append(html.Td(value, style=style))
+    if df is not None:
+        for i in range(len(df)):
+            row = []
+            for col in df.columns:
+                value = playerImage(df.iloc[i][col])
+                style = {'align': 'center', 'padding': '5px',
+                        'text-align': 'center', 'font-size': '25px'}
+                row.append(html.Td(value, style=style))
 
-            if i % 2 == 0 and 'background-color' not in style:
-                style['background-color'] = '#f2f2f2'
+                if i % 2 == 0 and 'background-color' not in style:
+                    style['background-color'] = '#f2f2f2'
 
-        rows.append(html.Tr(row))
+            rows.append(html.Tr(row))
 
-    return html.Table(
-        [html.Tr([html.Th(col, style=headerstyle) for col in df.columns])] + rows, style=tablestyle)
+        return html.Table(
+            [html.Tr([html.Th(col, style=headerstyle) for col in df.columns])] + rows, style=tablestyle)
 
 
 rosters = loadData(teamRosters)
@@ -221,213 +223,6 @@ event_definitions = [
     {'EType': '20', 'Event': 'Stoppage: Out-of-Bounds'}
 ]
 
-# ---------- list containing all the shapes ----------
-# ---------- OUTER LINES ----------
-court_shapes = []
-
-outer_lines_shape = dict(
-    type='rect',
-    xref='x',
-    yref='y',
-    x0='-250',
-    y0='-47.5',
-    x1='250',
-    y1='422.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(outer_lines_shape)
-
-# ---------- BASKETBALL HOOP ----------
-hoop_shape = dict(
-    type='circle',
-    xref='x',
-    yref='y',
-    x0='7.5',
-    y0='7.5',
-    x1='-7.5',
-    y1='-7.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(hoop_shape)
-
-# ---------- BASKET BACKBOARD ----------
-backboard_shape = dict(
-    type='rect',
-    xref='x',
-    yref='y',
-    x0='-30',
-    y0='-7.5',
-    x1='30',
-    y1='-6.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    ),
-    fillcolor='rgba(10, 10, 10, 1)'
-)
-
-court_shapes.append(backboard_shape)
-
-# ---------- OUTER BOX OF THREE-SECOND AREA ----------
-outer_three_sec_shape = dict(
-    type='rect',
-    xref='x',
-    yref='y',
-    x0='-80',
-    y0='-47.5',
-    x1='80',
-    y1='143.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(outer_three_sec_shape)
-
-# ---------- INNER BOX OF THREE-SECOND AREA ----------
-inner_three_sec_shape = dict(
-    type='rect',
-    xref='x',
-    yref='y',
-    x0='-60',
-    y0='-47.5',
-    x1='60',
-    y1='143.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(inner_three_sec_shape)
-
-# ---------- THREE-POINT LINE (LEFT) ----------
-left_line_shape = dict(
-    type='line',
-    xref='x',
-    yref='y',
-    x0='-220',
-    y0='-47.5',
-    x1='-220',
-    y1='92.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(left_line_shape)
-
-# ---------- THREE-POINT LINE (RIGHT) ----------
-right_line_shape = dict(
-    type='line',
-    xref='x',
-    yref='y',
-    x0='220',
-    y0='-47.5',
-    x1='220',
-    y1='92.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(right_line_shape)
-
-# ---------- THREE-POINT ARC ----------
-three_point_arc_shape = dict(
-    type='path',
-    xref='x',
-    yref='y',
-    path='M -220 92.5 C -70 300, 70 300, 220 92.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(three_point_arc_shape)
-
-# ---------- CENTER CIRCLE ----------
-center_circle_shape = dict(
-    type='circle',
-    xref='x',
-    yref='y',
-    x0='60',
-    y0='482.5',
-    x1='-60',
-    y1='362.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(center_circle_shape)
-
-# ---------- RESTRAINING CIRCE ----------
-res_circle_shape = dict(
-    type='circle',
-    xref='x',
-    yref='y',
-    x0='20',
-    y0='442.5',
-    x1='-20',
-    y1='402.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(res_circle_shape)
-
-# ---------- FREE-THROW CIRCLE ----------
-free_throw_circle_shape = dict(
-    type='circle',
-    xref='x',
-    yref='y',
-    x0='60',
-    y0='200',
-    x1='-60',
-    y1='80',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(free_throw_circle_shape)
-
-
-# ---------- RESTRICTED AREA ----------
-res_area_shape = dict(
-    type='circle',
-    xref='x',
-    yref='y',
-    x0='40',
-    y0='40',
-    x1='-40',
-    y1='-40',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1,
-        dash='dot'
-    )
-)
-
-court_shapes.append(res_area_shape)
-
 
 nbaLogo = 'http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png'
 
@@ -441,9 +236,9 @@ def createShotPlot(data):
                     'data': [
                         go.Scatter(
                             x=data[data['EType']
-                                == 1]['LocationX'],
+                                   == 1]['LocationX'],
                             y=data[data['EType']
-                                == 1]['LocationY'],
+                                   == 1]['LocationY'],
                             mode='markers',
                             name='Made Shot',
                             opacity=0.7,
@@ -458,9 +253,9 @@ def createShotPlot(data):
                         ),
                         go.Scatter(
                             x=data[data['EType']
-                                == 2]['LocationX'],
+                                   == 2]['LocationX'],
                             y=data[data['EType']
-                                == 2]['LocationY'],
+                                   == 2]['LocationY'],
                             mode='markers',
                             name='Missed Shot',
                             opacity=0.7,
@@ -487,7 +282,7 @@ def createShotPlot(data):
                         ),
                         height=600,
                         width=650,
-                        shapes=court_shapes
+                        shapes=court_shapes()
                     )
                 }
             )
@@ -517,18 +312,18 @@ def update_layout():
 
         html.Div(
             get_data_object(teamdf), id='tableContainer'
-            ),
+        ),
 
         html.Div(
             createShotPlot(getShots(None)), id='shotplot', style={'float': 'right'}
-            )
+        )
 
     ])
 
 
-app.layout=update_layout()
+app.layout = update_layout()
 
-app.config['suppress_callback_exceptions']=True
+app.config['suppress_callback_exceptions'] = True
 
 
 @app.callback(
@@ -569,7 +364,7 @@ def update_graph(pathname):
 #     return update_layout()
 
 
-external_css=[
+external_css = [
     "https://codepen.io/chriddyp/pen/bWLwgP.css",
     "https://codepen.io/chriddyp/pen/brPBPO.css",
     "https://codepen.io/chriddyp/pen/dZVMbK.css",
