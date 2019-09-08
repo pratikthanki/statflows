@@ -19,14 +19,14 @@ from Queries import *
 
 
 server = Flask(__name__)
-app = dash.Dash(name='app1', sharing=True, server=server, csrf_protect=False)
+app = dash.Dash(
+    name='app1', 
+    sharing=True, 
+    server=server, 
+    csrf_protect=False)
 
-# used for local development
-# server = app.server
 
 # Establish database connection to Write Records
-
-
 def SQLServerConnection(config):
     conn_str = (
         'DRIVER={driver};SERVER={server},{port};DATABASE={database};UID={username};PWD={password}')
@@ -63,7 +63,7 @@ def loadData(query):
 
 def getShots(player):
     if player:
-        shot_Query = shotChart + ' ' + str(player)
+        shot_Query = shotChart + str(player)
         shot_Plot = loadData(shot_Query)
         shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
                             'LocationY', 'Period', 'TeamID', 'PlayerID']
@@ -121,7 +121,7 @@ def playerCard(player):
         row = []
         for col in df.columns:
             value = df.iloc[i][col]
-            style = {'align': 'center', 'padding': '5px', 'color': 'white',
+            style = {'align': 'center', 'padding': '5px', 'color': 'black',
                      'border': 'white', 'text-align': 'center', 'font-size': '11px'}
             row.append(html.Td(value, style=style))
 
@@ -570,8 +570,11 @@ def update_graph(pathname):
 
 
 external_css=[
-    "https://codepen.io/chriddyp/pen/bWLwgP.css", "https://codepen.io/chriddyp/pen/brPBPO.css", "https://codepen.io/chriddyp/pen/dZVMbK.css"
+    "https://codepen.io/chriddyp/pen/bWLwgP.css",
+    "https://codepen.io/chriddyp/pen/brPBPO.css",
+    "https://codepen.io/chriddyp/pen/dZVMbK.css",
 ]
+
 
 for css in external_css:
     app.css.append_css({"external_url": css})
