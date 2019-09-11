@@ -1,4 +1,5 @@
-def court_shape():
+def courtPlot():
+
     # ---------- OUTER LINES ----------
     court_shapes = []
 
@@ -203,4 +204,6 @@ def court_shape():
         )
     )
 
-    return court_shapes.append(res_area_shape)
+    court_shapes.append(res_area_shape)
+
+    return court_shapes
