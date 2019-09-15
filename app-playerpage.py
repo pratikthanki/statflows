@@ -8,15 +8,17 @@ import time
 from sqlalchemy import create_engine
 from flask import Flask
 import dash
+import dash_table
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table_experiments as dt
 import plotly.graph_objs as go
 
-from Settings import *
+from Settings import sqlconfig
 from Queries import latestGame, teamRosters, teams, shotChart, standings
-from Court import court_shape
+from Court import courtPlot
+
 
 
 server = Flask(__name__)
@@ -52,6 +54,7 @@ def loadData(query):
         rows = cursor.fetchall()
         pass
     except Exception as e:
+        print(e)
         rows = pd.read_sql(query, conn)
 
     for row in rows:
@@ -67,7 +70,7 @@ def getShots(playerId):
         shot_Query = shotChart + str(playerId)
         shot_Plot = loadData(shot_Query)
         shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-                            'LocationY', 'Period', 'TeamID', 'PlayerID']
+                             'LocationY', 'Period', 'TeamID', 'PlayerID']
 
         return shot_Plot
 
@@ -114,9 +117,11 @@ tab_selected_style = {
 def playerCard(player):
     rows = []
     df = rosters[rosters['PlayerId'] == str(player)]
-    df = df[['Height', 'Weight', 'Position', 'DoB',
-             'Age', 'Experience', 'School']].copy()
-    df = pd.DataFrame({'Metric': df.columns, 'Value': df.iloc[-1].values})
+
+    if len(df) > 0:
+        df = df[['Height', 'Weight', 'Position', 'DoB',
+                'Age', 'Experience', 'School']].copy()
+        df = pd.DataFrame({'Metric': df.columns, 'Value': df.iloc[-1].values})
 
     for i in range(len(df)):
         row = []
@@ -160,12 +165,27 @@ def parseTeams(df, teamId=None):
 
     return teamdf
 
+
+def statstab(df, teamId=None):
+    if len(df.columns) == int(17):
+        df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
+                      'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+
+    if teamId is not None:
+        return df[df['TeamId'] == str(teamId)]
+    else:
+        return df
+
+
 defaultimg = 'https://stats.nba.com/media/img/league/nba-headshot-fallback.png'
 
 def playerImage(player):
     if player != '':
-        img = rosters.loc[rosters['PlayerId'] == player, 'PlayerImg'].iloc[0]
-        name = rosters.loc[rosters['PlayerId'] == player, 'Player'].iloc[0]
+        img = rosters.loc[rosters['PlayerId'] == player, 'PlayerImg']
+        img = img.iloc[0] if len(img) > 0 else defaultimg
+
+        name = rosters.loc[rosters['PlayerId'] == player, 'Player']
+        name = name.iloc[0] if len(name) > 0 else 'Name Missing'
 
         return html.Div(children=[
             html.Img(src=str(img), style={
@@ -186,6 +206,26 @@ def get_data_object(df):
                 value = playerImage(df.iloc[i][col])
                 style = {'align': 'center', 'padding': '5px',
                         'text-align': 'center', 'font-size': '25px'}
+                row.append(html.Td(value, style=style))
+
+                if i % 2 == 0 and 'background-color' not in style:
+                    style['background-color'] = '#f2f2f2'
+
+            rows.append(html.Tr(row))
+
+        return html.Table(
+            [html.Tr([html.Th(col, style=headerstyle) for col in df.columns])] + rows, style=tablestyle)
+
+
+def buildTable(df):
+    rows = []
+    if df is not None:
+        for i in range(len(df)):
+            row = []
+            for col in df.columns:
+                value = df.iloc[i][col]
+                style = {'align': 'center', 'padding': '5px',
+                         'text-align': 'center', 'font-size': '12px'}
                 row.append(html.Td(value, style=style))
 
                 if i % 2 == 0 and 'background-color' not in style:
@@ -282,7 +322,7 @@ def createShotPlot(data):
                         ),
                         height=600,
                         width=650,
-                        shapes=court_shapes()
+                        shapes=courtPlot()
                     )
                 }
             )
@@ -328,34 +368,38 @@ app.config['suppress_callback_exceptions'] = True
 
 @app.callback(
     Output('tableContainer', 'children'),
-    [Input('teamurl', 'pathname')]
+    [Input('teamurl', 'pathname'),
+     Input('div-tabs', 'value')]
 )
-def update_graph(pathname):
-    if pathname == '' or pathname is None:
-        teamId=None
+def updateTeamTable(pathname, value):
+    teamId = int(pathname.split('/')[-1]) if pathname is not '/' else None
 
-    else:
-        teamId = int(pathname.split('/')[-1])
+    if value == 'Current Roster':
+        teamdf = parseTeams(rosters, teamId)
+        return get_data_object(teamdf)
 
-    teamdf=parseTeams(rosters, teamId)
+    elif value == 'Results':
+        return html.P('Results')
 
-    return get_data_object(teamdf)
+    elif value == 'Stats':
+        df = statstab(rosters, teamId)
+        df = df[['Player', 'JerseyNumber', 'Position', 'Height', 'Weight', 'DoB', 'Age', 'Experience', 'School']].copy()
+        return buildTable(df)
+
+    elif value == 'Shots':
+        return html.P('Shots')
 
 
 @app.callback(
     Output('shotplot', 'figure'),
     [Input('teamurl', 'pathname')]
 )
-def update_graph(pathname):
-    if pathname == '' or pathname is None:
-        playerId=None
+def updateShotPlot(pathname):
+    if pathname is not '/' or pathname is not None:
+        playerId = int(float(pathname.split('/')[-1]))
+        playerdf = getShots(playerId)
 
-    else:
-        playerId=int(pathname.split('/')[-1])
-
-    playerdf=getShots(playerId)
-
-    return get_data_object(teamdf)
+    return get_data_object(playerdf)
 
 
 # @app.callback(
