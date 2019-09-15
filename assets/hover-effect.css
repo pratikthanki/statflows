@@ -1,4 +1,4 @@
-.overlay {
+/* .overlay {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -15,8 +15,7 @@
     opacity: .9;
 }
 
-
-/* .team-container:hover .team-overlay {
+.team-container:hover .team-overlay {
     opacity: .3;
 } */
 

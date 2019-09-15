@@ -27,8 +27,12 @@ def SQLServerConnection(config):
     return conn
 
 
-conn = SQLServerConnection(sqlconfig)
-cursor = conn.cursor()
+try:
+    conn = SQLServerConnection(sqlconfig)
+    cursor = conn.cursor()
+except pyodbc.Error as e:
+    print(e)
+
 
 # --------------------------- General Game Data for use in other calls ---------------------------
 
