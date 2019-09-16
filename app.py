@@ -126,7 +126,7 @@ def playerCard(player):
         row = []
         for col in df.columns:
             value = df.iloc[i][col]
-            style = {'align': 'center', 'padding': '5px', 'color': 'white',
+            style = {'align': 'center', 'padding': '5px', 'color': 'black',
                      'border': 'white', 'text-align': 'center', 'font-size': '11px'}
             row.append(html.Td(value, style=style))
 
@@ -136,7 +136,7 @@ def playerCard(player):
 
     return html.Div(children=[
         html.Table(rows, style=tablestyle),
-        dcc.Link(html.Button('More Information', id='player-drilldown-'+str(player), style={
+        dcc.Link(html.Button('More Info', id='player-drilldown-'+str(player), style={
             'font-size': '10px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}), href='/' + str(player))
     ])
 
@@ -261,213 +261,6 @@ event_definitions = [
     {'EType': '20', 'Event': 'Stoppage: Out-of-Bounds'}
 ]
 
-# ---------- list containing all the shapes ----------
-# ---------- OUTER LINES ----------
-court_shapes = []
-
-outer_lines_shape = dict(
-    type='rect',
-    xref='x',
-    yref='y',
-    x0='-250',
-    y0='-47.5',
-    x1='250',
-    y1='422.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(outer_lines_shape)
-
-# ---------- BASKETBALL HOOP ----------
-hoop_shape = dict(
-    type='circle',
-    xref='x',
-    yref='y',
-    x0='7.5',
-    y0='7.5',
-    x1='-7.5',
-    y1='-7.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(hoop_shape)
-
-# ---------- BASKET BACKBOARD ----------
-backboard_shape = dict(
-    type='rect',
-    xref='x',
-    yref='y',
-    x0='-30',
-    y0='-7.5',
-    x1='30',
-    y1='-6.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    ),
-    fillcolor='rgba(10, 10, 10, 1)'
-)
-
-court_shapes.append(backboard_shape)
-
-# ---------- OUTER BOX OF THREE-SECOND AREA ----------
-outer_three_sec_shape = dict(
-    type='rect',
-    xref='x',
-    yref='y',
-    x0='-80',
-    y0='-47.5',
-    x1='80',
-    y1='143.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(outer_three_sec_shape)
-
-# ---------- INNER BOX OF THREE-SECOND AREA ----------
-inner_three_sec_shape = dict(
-    type='rect',
-    xref='x',
-    yref='y',
-    x0='-60',
-    y0='-47.5',
-    x1='60',
-    y1='143.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(inner_three_sec_shape)
-
-# ---------- THREE-POINT LINE (LEFT) ----------
-left_line_shape = dict(
-    type='line',
-    xref='x',
-    yref='y',
-    x0='-220',
-    y0='-47.5',
-    x1='-220',
-    y1='92.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(left_line_shape)
-
-# ---------- THREE-POINT LINE (RIGHT) ----------
-right_line_shape = dict(
-    type='line',
-    xref='x',
-    yref='y',
-    x0='220',
-    y0='-47.5',
-    x1='220',
-    y1='92.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(right_line_shape)
-
-# ---------- THREE-POINT ARC ----------
-three_point_arc_shape = dict(
-    type='path',
-    xref='x',
-    yref='y',
-    path='M -220 92.5 C -70 300, 70 300, 220 92.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(three_point_arc_shape)
-
-# ---------- CENTER CIRCLE ----------
-center_circle_shape = dict(
-    type='circle',
-    xref='x',
-    yref='y',
-    x0='60',
-    y0='482.5',
-    x1='-60',
-    y1='362.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(center_circle_shape)
-
-# ---------- RESTRAINING CIRCE ----------
-res_circle_shape = dict(
-    type='circle',
-    xref='x',
-    yref='y',
-    x0='20',
-    y0='442.5',
-    x1='-20',
-    y1='402.5',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(res_circle_shape)
-
-# ---------- FREE-THROW CIRCLE ----------
-free_throw_circle_shape = dict(
-    type='circle',
-    xref='x',
-    yref='y',
-    x0='60',
-    y0='200',
-    x1='-60',
-    y1='80',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1
-    )
-)
-
-court_shapes.append(free_throw_circle_shape)
-
-
-# ---------- RESTRICTED AREA ----------
-res_area_shape = dict(
-    type='circle',
-    xref='x',
-    yref='y',
-    x0='40',
-    y0='40',
-    x1='-40',
-    y1='-40',
-    line=dict(
-        color='rgba(10, 10, 10, 1)',
-        width=1,
-        dash='dot'
-    )
-)
-
-court_shapes.append(res_area_shape)
-
 
 nbaLogo = 'http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png'
 
@@ -577,7 +370,8 @@ app.config['suppress_callback_exceptions']=True
      Input('div-tabs', 'value')]
 )
 def updateTeamTable(pathname, value):
-    teamId = int(pathname.split('/')[-1]) if pathname is not '/' else None
+    print(pathname.split('/'))
+    teamId = int(pathname.split('/')[-1]) if pathname is not u'/' else None
 
     if value == 'Current Roster':
         teamdf = parseTeams(rosters, teamId)
@@ -600,7 +394,8 @@ def updateTeamTable(pathname, value):
     [Input('teamurl', 'pathname')]
 )
 def updateShotPlot(pathname):
-    if pathname is not '/' or pathname is not None:
+    print(pathname.split('/'))
+    if pathname is not u'/' or pathname is not None:
         playerId = int(float(pathname.split('/')[-1]))
         playerdf = getShots(playerId)
 
@@ -614,7 +409,9 @@ def updateShotPlot(pathname):
 
 
 external_css=[
-    "https://codepen.io/chriddyp/pen/bWLwgP.css", "https://codepen.io/chriddyp/pen/brPBPO.css", "https://codepen.io/chriddyp/pen/dZVMbK.css"
+    "https://codepen.io/chriddyp/pen/bWLwgP.css", 
+    "https://codepen.io/chriddyp/pen/brPBPO.css", 
+    "https://codepen.io/chriddyp/pen/dZVMbK.css"
 ]
 
 for css in external_css:
