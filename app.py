@@ -1,8 +1,5 @@
-import os
 import pandas as pd
 import numpy as np
-import pyodbc
-import requests
 import base64
 import time
 from sqlalchemy import create_engine
@@ -15,7 +12,7 @@ import dash_html_components as html
 import dash_table_experiments as dt
 import plotly.graph_objs as go
 
-from Settings import sqlconfig
+from Settings import sqlconfig, SQLServerConnection
 from Queries import latestGame, teamRosters, teams, shotChart, standings
 from Court import courtPlot
 
@@ -23,28 +20,10 @@ from Court import courtPlot
 server = Flask(__name__)
 app = dash.Dash(name='app1', sharing=True, server=server, csrf_protect=False)
 
-# used for local development
-# server = app.server
-
-# Establish database connection to Write Records
-
-
-def SQLServerConnection(config):
-    conn_str = (
-        'DRIVER={driver};SERVER={server},{port};DATABASE={database};UID={username};PWD={password}')
-
-    conn = pyodbc.connect(
-        conn_str.format(**config)
-    )
-
-    return conn
-
-
-conn = SQLServerConnection(sqlconfig)
-
 
 def loadData(query):
     sqlData = []
+    conn = SQLServerConnection(sqlconfig)
 
     cursor = conn.cursor()
 
@@ -66,7 +45,7 @@ def loadData(query):
 
 def getShots(player):
     if player:
-        shot_Query = shotChart + ' ' + str(player)
+        shot_Query = shotChart + str(player)
         shot_Plot = loadData(shot_Query)
         shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
                              'LocationY', 'Period', 'TeamID', 'PlayerID']
@@ -132,12 +111,10 @@ def playerCard(player):
 
         rows.append(html.Tr(row))
 
-    # return html.Table(rows, style=tablestyle)
-
     return html.Div(children=[
         html.Table(rows, style=tablestyle),
         dcc.Link(html.Button('More Info', id='player-drilldown-'+str(player), style={
-            'font-size': '10px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}), href='/' + str(player))
+            'font-size': '10px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}), href='/player/' + str(player))
     ])
 
 
@@ -242,24 +219,23 @@ teams = loadData(teams)
 teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
 
 
-event_definitions = [
-    {'EType': '0', 'Event': 'Game End'},
-    {'EType': '1', 'Event': 'Shot Made'},
-    {'EType': '2', 'Event': 'Shot Missed'},
-    {'EType': '3', 'Event': 'Free Throw'},
-    {'EType': '4', 'Event': 'Rebound'},
-    {'EType': '5', 'Event': 'Turnover'},
-    {'EType': '6', 'Event': 'Foul'},
-    {'EType': '7', 'Event': 'Violation'},
-    {'EType': '8', 'Event': 'Substitution'},
-    {'EType': '9', 'Event': 'Timeout'},
-    {'EType': '10', 'Event': 'Jump Ball'},
-    {'EType': '11', 'Event': 'Ejection'},
-    {'EType': '12', 'Event': 'Start Period'},
-    {'EType': '13', 'Event': 'End Period'},
-    {'EType': '18', 'Event': 'Instant Replay'},
-    {'EType': '20', 'Event': 'Stoppage: Out-of-Bounds'}
-]
+event_definitions = {
+    '0': 'Game End',
+    '1': 'Shot Made',
+    '2': 'Shot Missed',
+    '3': 'Free Throw',
+    '4': 'Rebound',
+    '5': 'Turnover',
+    '6': 'Foul',
+    '7': 'Violation',
+    '8': 'Substitution',
+    '9': 'Timeout',
+    '10': 'Jump Ball',
+    '11': 'Ejection',
+    '12': 'Start Period',
+    '13': 'End Period',
+    '18': 'Instant Replay',
+    '20': 'Stoppage: Out-of-Bounds'}
 
 
 nbaLogo = 'http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png'
@@ -334,7 +310,7 @@ def update_layout():
         html.Div(
             [dcc.Link(
                 html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'},
-                         className='team-overlay', id='team-logo-'+str(i)), href='/' + str(i))
+                         className='team-overlay', id='team-logo-'+str(i)), href='/team/' + str(i))
              for i in teams['TeamID'].values if i is not None]),
 
 
@@ -349,12 +325,10 @@ def update_layout():
                             style=tab_style, selected_style=tab_selected_style)], style=tabs_styles),
 
         html.Div(
-            get_data_object(teamdf), id='tableContainer'
-            ),
+            html.P('SELECT A TEAM ABOVE TO GET STARTED', style={'float': 'bottom'}), id='tableContainer'),
 
         html.Div(
-            createShotPlot(getShots(None)), id='shotplot', style={'float': 'right'}
-            )
+            id='shotplot')
 
     ])
 
@@ -367,11 +341,12 @@ app.config['suppress_callback_exceptions']=True
 @app.callback(
     Output('tableContainer', 'children'),
     [Input('teamurl', 'pathname'),
-     Input('div-tabs', 'value')]
-)
+     Input('div-tabs', 'value')])
 def updateTeamTable(pathname, value):
-    print(pathname.split('/'))
-    teamId = int(pathname.split('/')[-1]) if pathname is not u'/' else None
+    if pathname:
+        teamId = pathname.split('/')[-1]
+    else:
+        return html.P('SELECT A TEAM ABOVE TO GET STARTED', style={'float': 'bottom'})
 
     if value == 'Current Roster':
         teamdf = parseTeams(rosters, teamId)
@@ -394,18 +369,15 @@ def updateTeamTable(pathname, value):
     [Input('teamurl', 'pathname')]
 )
 def updateShotPlot(pathname):
-    print(pathname.split('/'))
-    if pathname is not u'/' or pathname is not None:
-        playerId = int(float(pathname.split('/')[-1]))
+    if pathname:
+        if pathname.split('/')[1] == u'player':
+            playerId = pathname.split('/')[-1]
+        else:
+            return html.P('SELECT A TEAM ABOVE TO GET STARTED', style={'float': 'center'})
+
         playerdf = getShots(playerId)
 
-    return get_data_object(playerdf)
-
-
-# @app.callback(
-#     Output('shot-plot', 'figure'))
-# def update_shotPlot():
-#     return update_layout()
+        return get_data_object(playerdf)
 
 
 external_css=[
