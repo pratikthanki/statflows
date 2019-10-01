@@ -21,7 +21,7 @@ server = Flask(__name__)
 app = dash.Dash(name='app1', sharing=True, server=server, csrf_protect=False)
 
 
-def loadData(query):
+def load_data(query):
     sqlData = []
     conn = SQLServerConnection(sqlconfig)
 
@@ -43,17 +43,17 @@ def loadData(query):
     return df
 
 
-def getShots(player):
+def get_shots(player):
     if player:
         shot_Query = shotChart + str(player)
-        shot_Plot = loadData(shot_Query)
+        shot_Plot = load_data(shot_Query)
         shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
                              'LocationY', 'Period', 'TeamID', 'PlayerID']
 
         return shot_Plot
 
 
-headerstyle = {
+HEADER_STYLE = {
     'align': 'center',
     'width': '300px',
     'background-color': '#0f6db5',
@@ -63,7 +63,7 @@ headerstyle = {
     'color': '#ffffff'}
 
 
-tablestyle = {
+TABLE_STYLE = {
     'display': 'table',
     'border-cllapse': 'separate',
     'font': '15px Open Sans, Arial, sans-serif',
@@ -71,18 +71,18 @@ tablestyle = {
     'width': '100%'}
 
 
-tabs_styles = {
+ALL_TAB_STYLE = {
     'height': '50px',
     'padding': '15px'}
 
 
-tab_style = {
+SINGLE_TAB_STYLE = {
     'borderBottom': '1px solid #d6d6d6',
     'padding': '10px',
     'font-size': '15px'}
 
 
-tab_selected_style = {
+SELECTED_TAB_STYLE = {
     'borderTop': '1px solid #d6d6d6',
     'borderBottom': '1px solid #d6d6d6',
     'backgroundColor': '#119DFF',
@@ -98,7 +98,7 @@ def playerCard(player):
 
     if len(df) > 0:
         df = df[['Height', 'Weight', 'Position', 'DoB',
-                'Age', 'Experience', 'School']].copy()
+                 'Age', 'Experience', 'School']].copy()
         df = pd.DataFrame({'Metric': df.columns, 'Value': df.iloc[-1].values})
 
     for i in range(len(df)):
@@ -112,7 +112,7 @@ def playerCard(player):
         rows.append(html.Tr(row))
 
     return html.Div(children=[
-        html.Table(rows, style=tablestyle),
+        html.Table(rows, style=TABLE_STYLE),
         dcc.Link(html.Button('More Info', id='player-drilldown-'+str(player), style={
             'font-size': '10px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}), href='/player/' + str(player))
     ])
@@ -125,8 +125,6 @@ def parseTeams(df, teamId=None):
 
     if teamId is not None:
         df = df[df['TeamId'] == str(teamId)]
-    else:
-        df = df
 
     teamdict = {}
     cols = df['Position'].unique()
@@ -155,6 +153,7 @@ def statstab(df, teamId=None):
 
 defaultimg = 'https://stats.nba.com/media/img/league/nba-headshot-fallback.png'
 
+
 def playerImage(player):
     if player != '':
         img = rosters.loc[rosters['PlayerId'] == player, 'PlayerImg']
@@ -173,32 +172,14 @@ def playerImage(player):
             className='container', style={'width': '100%', 'height': '100%', 'position': 'relative'})
 
 
-def get_data_object(df):
-    rows = []
-    for i in range(len(df)):
-        row = []
-        for col in df.columns:
-            value = playerImage(df.iloc[i][col])
-            style = {'align': 'center', 'padding': '5px',
-                     'text-align': 'center', 'font-size': '25px'}
-            row.append(html.Td(value, style=style))
-
-            if i % 2 == 0 and 'background-color' not in style:
-                style['background-color'] = '#f2f2f2'
-
-        rows.append(html.Tr(row))
-
-    return html.Table(
-        [html.Tr([html.Th(col, style=headerstyle) for col in df.columns])] + rows, style=tablestyle)
-
-
-def buildTable(df):
+def buildTable(df, table_setting='Summary'):
     rows = []
     if df is not None:
         for i in range(len(df)):
             row = []
             for col in df.columns:
-                value = df.iloc[i][col]
+                value = df.iloc[i][col] if table_setting != 'Summary' else playerImage(
+                    df.iloc[i][col])
                 style = {'align': 'center', 'padding': '5px',
                          'text-align': 'center', 'font-size': '12px'}
                 row.append(html.Td(value, style=style))
@@ -209,13 +190,13 @@ def buildTable(df):
             rows.append(html.Tr(row))
 
         return html.Table(
-            [html.Tr([html.Th(col, style=headerstyle) for col in df.columns])] + rows, style=tablestyle)
+            [html.Tr([html.Th(col, style=HEADER_STYLE) for col in df.columns])] + rows, style=TABLE_STYLE)
 
 
-rosters = loadData(teamRosters)
+rosters = load_data(teamRosters)
 teamdf = parseTeams(rosters)
 
-teams = loadData(teams)
+teams = load_data(teams)
 teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
 
 
@@ -250,9 +231,9 @@ def createShotPlot(data):
                     'data': [
                         go.Scatter(
                             x=data[data['EType']
-                                == 1]['LocationX'],
+                                   == 1]['LocationX'],
                             y=data[data['EType']
-                                == 1]['LocationY'],
+                                   == 1]['LocationY'],
                             mode='markers',
                             name='Made Shot',
                             opacity=0.7,
@@ -267,9 +248,9 @@ def createShotPlot(data):
                         ),
                         go.Scatter(
                             x=data[data['EType']
-                                == 2]['LocationX'],
+                                   == 2]['LocationX'],
                             y=data[data['EType']
-                                == 2]['LocationY'],
+                                   == 2]['LocationY'],
                             mode='markers',
                             name='Missed Shot',
                             opacity=0.7,
@@ -316,16 +297,18 @@ def update_layout():
 
         dcc.Tabs(id="div-tabs", value='Current Roster', children=[
                     dcc.Tab(label='ROSTER', value='Current Roster',
-                            style=tab_style, selected_style=tab_selected_style),
-                    dcc.Tab(label='RESULTS', value='Results', style=tab_style,
-                            selected_style=tab_selected_style),
+                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+                    dcc.Tab(label='RESULTS', value='Results',
+                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
                     dcc.Tab(label='STATS', value='Stats',
-                            style=tab_style, selected_style=tab_selected_style),
+                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
                     dcc.Tab(label='SHOTS', value='Shots',
-                            style=tab_style, selected_style=tab_selected_style)], style=tabs_styles),
+                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE)],
+                 style=ALL_TAB_STYLE),
 
         html.Div(
-            html.P('SELECT A TEAM ABOVE TO GET STARTED', style={'float': 'bottom'}), id='tableContainer'),
+            html.P('Select a team to get started', style={'align': 'center'}),
+            id='tableContainer'),
 
         html.Div(
             id='shotplot')
@@ -333,9 +316,9 @@ def update_layout():
     ])
 
 
-app.layout=update_layout()
+app.layout = update_layout()
 
-app.config['suppress_callback_exceptions']=True
+app.config['suppress_callback_exceptions'] = True
 
 
 @app.callback(
@@ -346,19 +329,20 @@ def updateTeamTable(pathname, value):
     if pathname:
         teamId = pathname.split('/')[-1]
     else:
-        return html.P('SELECT A TEAM ABOVE TO GET STARTED', style={'float': 'bottom'})
+        return html.P('Select a team to get started')
 
     if value == 'Current Roster':
         teamdf = parseTeams(rosters, teamId)
-        return get_data_object(teamdf)
+        return buildTable(teamdf, 'Summary')
 
     elif value == 'Results':
         return html.P('Results')
 
     elif value == 'Stats':
         df = statstab(rosters, teamId)
-        df = df[['Player', 'JerseyNumber', 'Position', 'Height', 'Weight', 'DoB', 'Age', 'Experience', 'School']].copy()
-        return buildTable(df)
+        df = df[['Player', 'JerseyNumber', 'Position', 'Height',
+                 'Weight', 'DoB', 'Age', 'Experience', 'School']].copy()
+        return buildTable(df, 'Stats')
 
     elif value == 'Shots':
         return html.P('Shots')
@@ -375,14 +359,14 @@ def updateShotPlot(pathname):
         else:
             return html.P('SELECT A TEAM ABOVE TO GET STARTED', style={'float': 'center'})
 
-        playerdf = getShots(playerId)
+        playerdf = get_shots(playerId)
 
-        return get_data_object(playerdf)
+        return createShotPlot(playerdf)
 
 
-external_css=[
-    "https://codepen.io/chriddyp/pen/bWLwgP.css", 
-    "https://codepen.io/chriddyp/pen/brPBPO.css", 
+external_css = [
+    "https://codepen.io/chriddyp/pen/bWLwgP.css",
+    "https://codepen.io/chriddyp/pen/brPBPO.css",
     "https://codepen.io/chriddyp/pen/dZVMbK.css"
 ]
 
