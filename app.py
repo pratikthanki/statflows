@@ -13,9 +13,9 @@ import dash_table_experiments as dt
 import plotly.graph_objs as go
 
 from Settings import sqlconfig, SQLServerConnection
-from Queries import latestGame, teamRosters, teams, shotChart, standings
+from Queries import latest_game_query, team_roster_query, team_query, shot_chart_query, standings_query, \
+    team_stats_query
 from Court import courtPlot
-
 
 server = Flask(__name__)
 
@@ -32,7 +32,6 @@ HEADER_STYLE = {
     'padding': '20px',
     'color': '#ffffff'}
 
-
 TABLE_STYLE = {
     'display': 'table',
     'border-cllapse': 'separate',
@@ -40,17 +39,14 @@ TABLE_STYLE = {
     'font-weight': '30',
     'width': '100%'}
 
-
 ALL_TAB_STYLE = {
     'height': '50px',
     'padding': '15px'}
-
 
 SINGLE_TAB_STYLE = {
     'borderBottom': '1px solid #d6d6d6',
     'padding': '10px',
     'font-size': '15px'}
-
 
 SELECTED_TAB_STYLE = {
     'borderTop': '1px solid #d6d6d6',
@@ -60,7 +56,6 @@ SELECTED_TAB_STYLE = {
     'color': 'white',
     'padding': '5px',
     'font-size': '22px'}
-
 
 EVENT_DEFINITIONS = {
     '0': 'Game End',
@@ -105,7 +100,7 @@ def load_data(query):
 
 def get_shots(player):
     if player:
-        shot_Query = shotChart + str(player)
+        shot_Query = shot_chart_query + str(player)
         shot_Plot = load_data(shot_Query)
         shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
                              'LocationY', 'Period', 'TeamID', 'PlayerID']
@@ -134,15 +129,17 @@ def player_card(player):
 
     return html.Div(children=[
         html.Table(rows, style=TABLE_STYLE),
-        dcc.Link(html.Button('More Info', id='player-drilldown-'+str(player), style={
-            'font-size': '10px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}), href='/player/' + str(player))
+        dcc.Link(html.Button('More Info', id='player-drilldown-' + str(player), style={
+            'font-size': '10px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}),
+                 href='/player/' + str(player))
     ])
 
 
 def current_roster(df, teamId=None):
     if len(df.columns) == int(17):
         df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
-                      'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+                      'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division',
+                      'Conference']
 
     if teamId is not None:
         df = df[df['TeamId'] == str(teamId)]
@@ -155,7 +152,7 @@ def current_roster(df, teamId=None):
             df.loc[df['Position'] == position, 'PlayerId'])
 
     team_df = pd.DataFrame(dict([(k, pd.Series(v))
-                                for k, v in teamdict.items()]))
+                                 for k, v in teamdict.items()]))
     team_df = team_df.fillna('')
 
     return team_df
@@ -164,7 +161,8 @@ def current_roster(df, teamId=None):
 def current_roster_stats(df, teamId=None):
     if len(df.columns) == int(17):
         df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
-                      'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
+                      'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division',
+                      'Conference']
 
     if teamId is not None:
         return df[df['TeamId'] == str(teamId)]
@@ -182,7 +180,7 @@ def player_image(player):
 
         return html.Div(children=[
             html.Img(src=str(img), style={
-                     'height': '130px'}, className='image'),
+                'height': '130px'}, className='image'),
             html.Div(html.H4(str(name),
                              style={'font-size': '20px',
                                     'text-align': 'center'})),
@@ -275,33 +273,33 @@ def shot_map(data):
         )
 
 
-rosters = load_data(teamRosters)
+rosters = load_data(team_roster_query)
 team_df = current_roster(rosters)
 
-teams = load_data(teams)
+teams = load_data(team_query)
 teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
+
+team_stats = load_data(team_stats_query)
 
 
 def update_layout():
-
     return html.Div(children=[
         dcc.Location(id='teamurl', refresh=False),
         html.Div(
             [dcc.Link(
                 html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'},
-                         className='team-overlay', id='team-logo-'+str(i)), href='/team/' + str(i))
-             for i in teams['TeamID'].values if i is not None]),
-
+                         className='team-overlay', id='team-logo-' + str(i)), href='/team/' + str(i))
+                for i in teams['TeamID'].values if i is not None]),
 
         dcc.Tabs(id="div-tabs", value='Current Roster', children=[
-                    dcc.Tab(label='ROSTER', value='Current Roster',
-                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-                    dcc.Tab(label='RESULTS', value='Results',
-                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-                    dcc.Tab(label='STATS', value='Stats',
-                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-                    dcc.Tab(label='SHOTS', value='Shots',
-                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE)],
+            dcc.Tab(label='ROSTER', value='Current Roster',
+                    style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+            dcc.Tab(label='RESULTS', value='Results',
+                    style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+            dcc.Tab(label='STATS', value='Stats',
+                    style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+            dcc.Tab(label='SHOTS', value='Shots',
+                    style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE)],
                  style=ALL_TAB_STYLE),
 
         html.Div(
@@ -370,7 +368,6 @@ external_css = [
 
 for css in external_css:
     app.css.append_css({"external_url": css})
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)
