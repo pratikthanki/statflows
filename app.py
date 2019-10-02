@@ -18,40 +18,10 @@ from Court import courtPlot
 
 
 server = Flask(__name__)
+
 app = dash.Dash(name='app1', sharing=True, server=server, csrf_protect=False)
 
-
-def load_data(query):
-    sqlData = []
-    conn = SQLServerConnection(sqlconfig)
-
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute(query)
-        rows = cursor.fetchall()
-        pass
-    except Exception as e:
-        print(e)
-        rows = pd.read_sql(query, conn)
-
-    for row in rows:
-        sqlData.append(list(row))
-
-    df = pd.DataFrame(sqlData)
-
-    return df
-
-
-def get_shots(player):
-    if player:
-        shot_Query = shotChart + str(player)
-        shot_Plot = load_data(shot_Query)
-        shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-                             'LocationY', 'Period', 'TeamID', 'PlayerID']
-
-        return shot_Plot
-
+DEFAULT_IMAGE = 'https://stats.nba.com/media/img/league/nba-headshot-fallback.png'
 
 HEADER_STYLE = {
     'align': 'center',
@@ -92,7 +62,58 @@ SELECTED_TAB_STYLE = {
     'font-size': '22px'}
 
 
-def playerCard(player):
+EVENT_DEFINITIONS = {
+    '0': 'Game End',
+    '1': 'Shot Made',
+    '2': 'Shot Missed',
+    '3': 'Free Throw',
+    '4': 'Rebound',
+    '5': 'Turnover',
+    '6': 'Foul',
+    '7': 'Violation',
+    '8': 'Substitution',
+    '9': 'Timeout',
+    '10': 'Jump Ball',
+    '11': 'Ejection',
+    '12': 'Start Period',
+    '13': 'End Period',
+    '18': 'Instant Replay',
+    '20': 'Stoppage: Out-of-Bounds'}
+
+
+def load_data(query):
+    sqlData = []
+    conn = SQLServerConnection(sqlconfig)
+
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        pass
+    except Exception as e:
+        print(e)
+        rows = pd.read_sql(query, conn)
+
+    for row in rows:
+        sqlData.append(list(row))
+
+    df = pd.DataFrame(sqlData)
+
+    return df
+
+
+def get_shots(player):
+    if player:
+        shot_Query = shotChart + str(player)
+        shot_Plot = load_data(shot_Query)
+        shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
+                             'LocationY', 'Period', 'TeamID', 'PlayerID']
+
+        return shot_Plot
+
+
+def player_card(player):
     rows = []
     df = rosters[rosters['PlayerId'] == str(player)]
 
@@ -118,7 +139,7 @@ def playerCard(player):
     ])
 
 
-def parseTeams(df, teamId=None):
+def current_roster(df, teamId=None):
     if len(df.columns) == int(17):
         df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
                       'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
@@ -129,18 +150,18 @@ def parseTeams(df, teamId=None):
     teamdict = {}
     cols = df['Position'].unique()
 
-    for pos in cols:
-        teamdict[pos] = np.array(
-            df.loc[df['Position'] == pos, 'PlayerId'])
+    for position in cols:
+        teamdict[position] = np.array(
+            df.loc[df['Position'] == position, 'PlayerId'])
 
-    teamdf = pd.DataFrame(dict([(k, pd.Series(v))
+    team_df = pd.DataFrame(dict([(k, pd.Series(v))
                                 for k, v in teamdict.items()]))
-    teamdf = teamdf.fillna('')
+    team_df = team_df.fillna('')
 
-    return teamdf
+    return team_df
 
 
-def statstab(df, teamId=None):
+def current_roster_stats(df, teamId=None):
     if len(df.columns) == int(17):
         df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
                       'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division', 'Conference']
@@ -151,13 +172,10 @@ def statstab(df, teamId=None):
         return df
 
 
-defaultimg = 'https://stats.nba.com/media/img/league/nba-headshot-fallback.png'
-
-
-def playerImage(player):
+def player_image(player):
     if player != '':
         img = rosters.loc[rosters['PlayerId'] == player, 'PlayerImg']
-        img = img.iloc[0] if len(img) > 0 else defaultimg
+        img = img.iloc[0] if len(img) > 0 else DEFAULT_IMAGE
 
         name = rosters.loc[rosters['PlayerId'] == player, 'Player']
         name = name.iloc[0] if len(name) > 0 else 'Name Missing'
@@ -168,17 +186,17 @@ def playerImage(player):
             html.Div(html.H4(str(name),
                              style={'font-size': '20px',
                                     'text-align': 'center'})),
-            html.Div(playerCard(player), className='overlay')],
+            html.Div(player_card(player), className='overlay')],
             className='container', style={'width': '100%', 'height': '100%', 'position': 'relative'})
 
 
-def buildTable(df, table_setting='Summary'):
+def build_table(df, table_setting='Summary'):
     rows = []
     if df is not None:
         for i in range(len(df)):
             row = []
             for col in df.columns:
-                value = df.iloc[i][col] if table_setting != 'Summary' else playerImage(
+                value = df.iloc[i][col] if table_setting != 'Summary' else player_image(
                     df.iloc[i][col])
                 style = {'align': 'center', 'padding': '5px',
                          'text-align': 'center', 'font-size': '12px'}
@@ -193,47 +211,22 @@ def buildTable(df, table_setting='Summary'):
             [html.Tr([html.Th(col, style=HEADER_STYLE) for col in df.columns])] + rows, style=TABLE_STYLE)
 
 
-rosters = load_data(teamRosters)
-teamdf = parseTeams(rosters)
-
-teams = load_data(teams)
-teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
-
-
-event_definitions = {
-    '0': 'Game End',
-    '1': 'Shot Made',
-    '2': 'Shot Missed',
-    '3': 'Free Throw',
-    '4': 'Rebound',
-    '5': 'Turnover',
-    '6': 'Foul',
-    '7': 'Violation',
-    '8': 'Substitution',
-    '9': 'Timeout',
-    '10': 'Jump Ball',
-    '11': 'Ejection',
-    '12': 'Start Period',
-    '13': 'End Period',
-    '18': 'Instant Replay',
-    '20': 'Stoppage: Out-of-Bounds'}
-
-
-nbaLogo = 'http://www.performgroup.com/wp-content/uploads/2015/09/nba-logo-png.png'
-
-
-def createShotPlot(data):
+def shot_map(data):
     if data is not None:
+        made_x = data[data['EType'] == 1]['LocationX']
+        made_y = data[data['EType'] == 1]['LocationY']
+
+        missed_x = data[data['EType'] == 2]['LocationX']
+        missed_y = data[data['EType'] == 2]['LocationY']
+
         return html.Div(
             dcc.Graph(
                 id='shot-plot',
                 figure={
                     'data': [
                         go.Scatter(
-                            x=data[data['EType']
-                                   == 1]['LocationX'],
-                            y=data[data['EType']
-                                   == 1]['LocationY'],
+                            x=made_x,
+                            y=made_y,
                             mode='markers',
                             name='Made Shot',
                             opacity=0.7,
@@ -247,10 +240,8 @@ def createShotPlot(data):
                             )
                         ),
                         go.Scatter(
-                            x=data[data['EType']
-                                   == 2]['LocationX'],
-                            y=data[data['EType']
-                                   == 2]['LocationY'],
+                            x=missed_x,
+                            y=missed_y,
                             mode='markers',
                             name='Missed Shot',
                             opacity=0.7,
@@ -282,6 +273,13 @@ def createShotPlot(data):
                 }
             )
         )
+
+
+rosters = load_data(teamRosters)
+team_df = current_roster(rosters)
+
+teams = load_data(teams)
+teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
 
 
 def update_layout():
@@ -327,22 +325,22 @@ app.config['suppress_callback_exceptions'] = True
      Input('div-tabs', 'value')])
 def updateTeamTable(pathname, value):
     if pathname:
-        teamId = pathname.split('/')[-1]
+        _team_id = pathname.split('/')[-1]
     else:
         return html.P('Select a team to get started')
 
     if value == 'Current Roster':
-        teamdf = parseTeams(rosters, teamId)
-        return buildTable(teamdf, 'Summary')
+        _teamdf = current_roster(rosters, _team_id)
+        return build_table(_teamdf, 'Summary')
 
     elif value == 'Results':
         return html.P('Results')
 
     elif value == 'Stats':
-        df = statstab(rosters, teamId)
+        df = current_roster_stats(rosters, _team_id)
         df = df[['Player', 'JerseyNumber', 'Position', 'Height',
                  'Weight', 'DoB', 'Age', 'Experience', 'School']].copy()
-        return buildTable(df, 'Stats')
+        return build_table(df, 'Stats')
 
     elif value == 'Shots':
         return html.P('Shots')
@@ -361,7 +359,7 @@ def updateShotPlot(pathname):
 
         playerdf = get_shots(playerId)
 
-        return createShotPlot(playerdf)
+        return shot_map(playerdf)
 
 
 external_css = [
