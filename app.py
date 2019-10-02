@@ -14,7 +14,7 @@ import plotly.graph_objs as go
 
 from Settings import sqlconfig, SQLServerConnection
 from Queries import latest_game_query, team_roster_query, team_query, shot_chart_query, standings_query, \
-    team_stats_query
+    team_game_stats_query, team_season_stats_query
 from Court import courtPlot
 
 server = Flask(__name__)
@@ -194,10 +194,9 @@ def build_table(df, table_setting='Summary'):
         for i in range(len(df)):
             row = []
             for col in df.columns:
-                value = df.iloc[i][col] if table_setting != 'Summary' else player_image(
-                    df.iloc[i][col])
-                style = {'align': 'center', 'padding': '5px',
-                         'text-align': 'center', 'font-size': '12px'}
+                value = player_image(df.iloc[i][col]) if table_setting == 'Summary' else df.iloc[i][col]
+                style = {'align': 'center', 'padding': '5px', 'text-align': 'center',
+                         'font-size': '12px'}
                 row.append(html.Td(value, style=style))
 
                 if i % 2 == 0 and 'background-color' not in style:
@@ -279,8 +278,6 @@ team_df = current_roster(rosters)
 teams = load_data(team_query)
 teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
 
-team_stats = load_data(team_stats_query)
-
 
 def update_layout():
     return html.Div(children=[
@@ -304,7 +301,12 @@ def update_layout():
 
         html.Div(
             html.P('Select a team to get started', style={'align': 'center'}),
-            id='tableContainer'),
+            id='team_roster_container'),
+
+        html.Div(
+            html.P('Select a team to get started', style={'align': 'center'}),
+            id='team_stats_container'),
+
 
         html.Div(
             id='shotplot')
@@ -318,10 +320,10 @@ app.config['suppress_callback_exceptions'] = True
 
 
 @app.callback(
-    Output('tableContainer', 'children'),
+    Output('team_roster_container', 'children'),
     [Input('teamurl', 'pathname'),
      Input('div-tabs', 'value')])
-def updateTeamTable(pathname, value):
+def update_team_roster_table(pathname, value):
     if pathname:
         _team_id = pathname.split('/')[-1]
     else:
@@ -335,13 +337,36 @@ def updateTeamTable(pathname, value):
         return html.P('Results')
 
     elif value == 'Stats':
-        df = current_roster_stats(rosters, _team_id)
-        df = df[['Player', 'JerseyNumber', 'Position', 'Height',
-                 'Weight', 'DoB', 'Age', 'Experience', 'School']].copy()
-        return build_table(df, 'Stats')
+        team_stats_columns = ['GameID', 'Ast', 'Blk ', 'Blka', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fta',
+                              'Ftm', 'Oreb', 'Pf', 'Pip', 'Pipa', 'Pipm', 'Pts', 'Reb', 'Stl', 'Tov', 'Tpa', 'Tpm']
+
+        team_stats = load_data(team_game_stats_query + str(_team_id))
+        team_stats.columns = team_stats_columns
+
+        return build_table(team_stats, 'Stats')
 
     elif value == 'Shots':
         return html.P('Shots')
+
+
+@app.callback(
+    Output('team_stats_container', 'children'),
+    [Input('teamurl', 'pathname'),
+     Input('div-tabs', 'value')])
+def update_team_stats_table(pathname, value):
+    if pathname:
+        _team_id = pathname.split('/')[-1]
+    else:
+        return html.P('Select a team to get started')
+
+    if value == 'Current Roster':
+        team_stats_columns = ['GameID', 'Ast', 'Blk ', 'Blka', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fta',
+                              'Ftm', 'Oreb', 'Pf', 'Pip', 'Pipa', 'Pipm', 'Pts', 'Reb', 'Stl', 'Tov', 'Tpa', 'Tpm']
+
+        team_stats = load_data(team_game_stats_query + str(_team_id))
+        team_stats.columns = team_stats_columns
+
+        return build_table(team_stats, 'Stats')
 
 
 @app.callback(
