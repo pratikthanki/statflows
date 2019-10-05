@@ -1,45 +1,32 @@
 import requests
 import json
-import pandas as pd
-import numpy as np
+import logging
 import pyodbc
-import uuid
-import json
 from sqlalchemy import create_engine
 import time
 from datetime import datetime, timedelta
-from Settings import Current_Season_url1, Current_Season_url2, Current_Season_url3, Current_Season_url4, sqlconfig
+from Settings import Current_Season_url1, Current_Season_url2, Current_Season_url3, Current_Season_url4, sql_config, \
+    sql_server_connection
+
+
+def get_data(base_url):
+    try:
+        rqst = requests.request('GET', base_url)
+        print(str(rqst.status_code), base_url)
+        return rqst.json()
+    except ValueError as e:
+        print(e)
+
+
+print(datetime.utcnow())
 
 now = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")
 date_offset = now - timedelta(days=30)
 
-
-# --------------------------- Connecting to the database ---------------------------
-
-def SQLServerConnection(config):
-    conn_str = (
-        'DRIVER={driver};SERVER={server},{port};DATABASE={database};UID={username};PWD={password}')
-
-    conn = pyodbc.connect(
-        conn_str.format(**config)
-    )
-
-    return conn
-
-
-conn = SQLServerConnection(sqlconfig)
-cursor = conn.cursor()
-
-# --------------------------- General Game Data for use in other calls ---------------------------
-
-try:
-    games_rqst = requests.request('GET', Current_Season_url1)
-    games_rqst = games_rqst.json()
-except ValueError as e:
-    print(e)
+game_rqst = get_data(Current_Season_url1)
 
 games = []
-for i in games_rqst['lscd']:
+for i in game_rqst['lscd']:
     for j in i['mscd']['g']:
         if date_offset <= datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
             games.append({
@@ -56,22 +43,23 @@ for i in games_rqst['lscd']:
 
 list_of_games = [i['GameID'] for i in games]
 
-# --------------------------- Game Summary per Player per Game ---------------------------
-
 game_detail = []
+game_pbp = []
 for i in list_of_games:
     try:
-        game_detail_rqst = requests.request('GET', '{0}{1}_gamedetail.json'.format(Current_Season_url2, i))
-        print(i, str(game_detail_rqst.status_code), '{0}{1}_gamedetail.json'.format(Current_Season_url2, i))
-        game_detail_rqst = game_detail_rqst.json()
-        game_detail.append(game_detail_rqst)
+        summary_url = '{0}{1}_gamedetail.json'.format(Current_Season_url2, i)
+        summary_data = get_data(base_url=summary_url)
+        game_detail.append(summary_data)
+
+        pbp_url = '{0}{1}_full_pbp.json'.format(Current_Season_url3, i)
+        pbp_data = get_data(base_url=pbp_url)
+        game_pbp.append(pbp_data)
     except ValueError as e:
         print(i, e)
 
 
-# # condensed version using function to call game stats for vls and hls
 def game_detail_stats(prop):
-    empty_list = []
+    lst = []
     for a in game_detail:
         for b in [a['g']]:
             if 'pstsg' not in b[prop]:
@@ -83,28 +71,14 @@ def game_detail_stats(prop):
                     c['mid'] = b['mid']
                     c['tid'] = b[prop]['tid']
                     c['ta'] = b[prop]['ta']
-                    empty_list.append(c)
+                    lst.append(c)
 
-    return empty_list
+    return lst
 
 
 game_vls = game_detail_stats('vls')
 game_hls = game_detail_stats('hls')
-
 player_game_summary = game_vls + game_hls
-
-# --------------------------- Game Plays - full event breakdown in the game ---------------------------
-
-game_pbp = []
-for i in list_of_games:
-    try:
-        game_pbp_rqst = requests.request('GET', '{0}{1}_full_pbp.json'.format(Current_Season_url3, i))
-        print(i, str(game_pbp_rqst.status_code), '{0}{1}_full_pbp.json'.format(Current_Season_url3, i))
-        game_pbp_rqst = game_pbp_rqst.json()
-        game_pbp.append(game_pbp_rqst)
-        pass
-    except ValueError as e:
-        print(i, e)
 
 play_by_play = []
 for i in game_pbp:
@@ -119,8 +93,6 @@ for i in game_pbp:
                 k['mid'] = i['g']['mid']
                 play_by_play.append(k)
 
-
-# --------------------------- Create Player + Team Dicts ---------------------------
 
 def remove_duplicates(lst):
     return [dict(t) for t in {tuple(d.items()) for d in lst}]
@@ -137,22 +109,17 @@ teams = [
 players = remove_duplicates(players)
 teams = remove_duplicates(teams)
 
-# --------------------------- Game Box Score ---------------------------
-
-# game box score descriptons by game, looping through all gameIDs up till today
-
 list_of_game_dates = [i['DateString'] for i in games]
-
 match_days = sorted(set(list_of_game_dates))
+
 print(str(len(match_days)), 'match days found')
 
 box_scores = []
 for i in match_days:
     try:
-        box_score_rqst = requests.request('GET', '{0}{1}.json'.format(Current_Season_url4, i))
-        print(i, str(box_score_rqst.status_code), '{0}{1}.json'.format(Current_Season_url4, i))
-        box_score_rqst = box_score_rqst.json()
-        box_scores.append(box_score_rqst)
+        url = '{0}{1}.json'.format(Current_Season_url4, i)
+        data = get_data(base_url=url)
+        box_scores.append(data)
     except ValueError as e:
         print(i, e)
 
@@ -173,33 +140,33 @@ for i in box_scores:
                     'AwayTeamNickname': [j['VisitorTeam']['teamNickname']]
                 })
 
-print(game_box_scores)
+# --------------------------- Writing to the database ---------------------------
+print('---------- Inserting records to the database ----------')
 
+conn = sql_server_connection(sql_config)
+cursor = conn.cursor()
 
-# # --------------------------- Writing to the database ---------------------------
-# print('---------- Writing to NBA database ----------')
-#
-# print(players.values.tolist())
+player_table_columns = ', '.join(['PlayerID', 'LastName', 'FirstName'])
+team_table_columns = ', '.join(['TeamCode', 'TeamID'])
+game_table_columns = ', '.join(['HomeScore', 'AwayTeamID', 'HomeTeamID', 'GameID', 'Date', 'AwayScore', 'Venue', \
+                                'GameCode', 'DateString'])
 
-# Players, Teams, Games
-# cursor.executemany(
-#     'INSERT INTO Staging_Players (FirstName, LastName, PlayerID) VALUES(?,?,?)', players.values.tolist())
-# cursor.execute('''INSERT INTO Players (PlayerID, FirstName, LastName)
-# 	SELECT PlayerID, FirstName, LastName FROM Staging_Players
-# 		WHERE NOT EXISTS (SELECT PlayerID, FirstName, LastName FROM Players
-# 			WHERE Staging_Players.PlayerID=Players.PlayerID)''')
-#
-# cursor.executemany(
-#     'INSERT INTO Staging_Teams (TeamCode, TeamID) VALUES(?,?)', teams.values.tolist())
-# cursor.execute('''INSERT INTO Teams(TeamID,TeamCode)
-# 	SELECT TeamID,TeamCode FROM Staging_Teams
-# 		WHERE NOT EXISTS (SELECT TeamID,TeamCode FROM Teams
-# 			WHERE Staging_Teams.TeamID=Teams.TeamID)''')
-#
+cursor.executemany(
+    'INSERT INTO Staging_Players ({0}) VALUES(?,?,?)'.format(player_table_columns),
+    [player.values() for player in players])
+cursor.execute(
+    'INSERT INTO Players ({0}) SELECT {0} FROM Staging_Players WHERE NOT EXISTS (SELECT {0} FROM Players WHERE Staging_Players.PlayerID=Players.PlayerID)'.format(
+        player_table_columns))
+
+cursor.executemany(
+    'INSERT INTO Staging_Teams ({0}) VALUES(?,?)'.format(team_table_columns), [team.values() for team in teams])
+cursor.execute(
+    'INSERT INTO Teams({0}) SELECT {0} FROM Staging_Teams WHERE NOT EXISTS (SELECT {0} FROM Teams WHERE Staging_Teams.TeamID=Teams.TeamID)'.format(
+        team_table_columns))
+
 # cursor.executemany(
 #     'INSERT INTO Staging_Games([GameID],[GameCode],[Venue],[Date],[DateString]) VALUES(?,?,?,?,?)',
 #     gamestbl.values.tolist())
-#
 # cursor.execute(''' INSERT INTO Games([GameID],[GameCode],[Venue],[Date],[DateString])
 #     SELECT [GameID],[GameCode],[Venue],[Date],[DateString] FROM Staging_Games
 #         WHERE NOT EXISTS ( SELECT [GameID],[GameCode],[Venue],[Date],[DateString] FROM Games
@@ -243,5 +210,5 @@ print(game_box_scores)
 # cursor.execute('TRUNCATE TABLE Staging_GamePlays')
 # cursor.execute('TRUNCATE TABLE Staging_PlayerGameSummary')
 #
-# conn.commit()
-# print('---------- All Staging data deleted ----------')
+conn.commit()
+print('---------- All Staging data deleted ----------')
