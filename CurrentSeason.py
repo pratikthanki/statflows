@@ -137,40 +137,45 @@ teams = [
 players = remove_duplicates(players)
 teams = remove_duplicates(teams)
 
-# # --------------------------- Game Box Score ---------------------------
-#
-# # game box score descriptons by game, looping through all gameIDs up till today
-#
-# dateSTR = sorted(set(games['DateString'].values.tolist()))
-# print(str(len(dateSTR)), 'matchdays found')
-#
-# gameBoxScore_staging = []
-# for i in dateSTR:
-#     try:
-#         gameBoxScoreRequest = requests.get(Current_Season_url4 + str(i) + '.json')
-#         print(i, str(gameBoxScoreRequest.status_code))
-#         # gameBoxScoreRequest.raise_for_status()
-#         gameBoxScoreRequest = gameBoxScoreRequest.json()
-#         gameBoxScore_staging.append(gameBoxScoreRequest)
-#     except ValueError as e:
-#         print(i, e)
-#
-# gameBoxScore = []
-# for i in gameBoxScore_staging:
-#     if int(i['result_count']) > 0:
-#         for j in i['results']:
-#             if 'Game' and 'GameID' and 'Breakdown' in j:
-#                 #                if len(j['GameID']) == int(10) and j['Breakdown'] is not None:
-#                 gameBoxScore.append([j['Game']] + [j['GameID']] + [j['Breakdown']] + [j['HomeTeam']['triCode']] + [
-#                     j['HomeTeam']['teamName']] + [
-#                                         j['HomeTeam']['teamNickname']] + [j['VisitorTeam']['triCode']] + [
-#                                         j['VisitorTeam']['teamName']] + [j['VisitorTeam']['teamNickname']])
-#
-# gameBoxScore = pd.DataFrame(gameBoxScore)
-# gameBoxScore = gameBoxScore.rename(columns={0: 'Game', 1: 'GameID', 2: 'BoxScoreBreakdown', 3: 'HomeTeamCode',
-#                                             4: 'HomeTeamName', 5: 'HomeTeamNickname', 6: 'AwayTeamCode',
-#                                             7: 'AwayTeamName', 8: 'AwayTeamNickname'})
-#
+# --------------------------- Game Box Score ---------------------------
+
+# game box score descriptons by game, looping through all gameIDs up till today
+
+list_of_game_dates = [i['DateString'] for i in games]
+
+match_days = sorted(set(list_of_game_dates))
+print(str(len(match_days)), 'match days found')
+
+box_scores = []
+for i in match_days:
+    try:
+        box_score_rqst = requests.request('GET', '{0}{1}.json'.format(Current_Season_url4, i))
+        print(i, str(box_score_rqst.status_code), '{0}{1}.json'.format(Current_Season_url4, i))
+        box_score_rqst = box_score_rqst.json()
+        box_scores.append(box_score_rqst)
+    except ValueError as e:
+        print(i, e)
+
+game_box_scores = []
+for i in box_scores:
+    if int(i['result_count']) > 0:
+        for j in i['results']:
+            if 'Game' and 'GameID' and 'Breakdown' in j:
+                game_box_scores.append({
+                    'Game': [j['Game']],
+                    'GameID': [j['GameID']],
+                    'BoxScoreBreakdown': [j['Breakdown']],
+                    'HomeTeamCode': [j['HomeTeam']['triCode']],
+                    'HomeTeamName': [j['HomeTeam']['teamName']],
+                    'HomeTeamNickname': [j['HomeTeam']['teamNickname']],
+                    'AwayTeamCode': [j['VisitorTeam']['triCode']],
+                    'AwayTeamName': [j['VisitorTeam']['teamName']],
+                    'AwayTeamNickname': [j['VisitorTeam']['teamNickname']]
+                })
+
+print(game_box_scores)
+
+
 # # --------------------------- Writing to the database ---------------------------
 # print('---------- Writing to NBA database ----------')
 #
@@ -202,7 +207,7 @@ teams = remove_duplicates(teams)
 #
 # cursor.executemany(
 #     'INSERT INTO Staging_GameBoxScore([Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname]) VALUES(?,?,?,?,?,?,?,?,?)',
-#     gameBoxScore.values.tolist())
+#     game_box_scores.values.tolist())
 # cursor.execute('''INSERT INTO GameBoxScore([Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname])
 #     SELECT [Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname] FROM Staging_GameBoxScore
 #         WHERE NOT EXISTS (SELECT [Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname] FROM GameBoxScore
