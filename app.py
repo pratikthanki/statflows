@@ -12,7 +12,7 @@ import dash_html_components as html
 import dash_table_experiments as dt
 import plotly.graph_objs as go
 
-from Settings import sqlconfig, SQLServerConnection
+from Settings import sql_config, sql_server_connection
 from Queries import latest_game_query, team_roster_query, team_query, shot_chart_query, standings_query, \
     team_game_stats_query, team_season_stats_query
 from Court import courtPlot
