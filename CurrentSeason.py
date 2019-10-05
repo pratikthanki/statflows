@@ -4,17 +4,17 @@ import pandas as pd
 import numpy as np
 import pyodbc
 import uuid
+import json
 from sqlalchemy import create_engine
 import time
 from datetime import datetime, timedelta
 from Settings import Current_Season_url1, Current_Season_url2, Current_Season_url3, Current_Season_url4, sqlconfig
 
-
 now = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")
-dateOffset = now - timedelta(days=30)
+date_offset = now - timedelta(days=30)
+
 
 # --------------------------- Connecting to the database ---------------------------
-
 
 def SQLServerConnection(config):
     conn_str = (
@@ -27,67 +27,52 @@ def SQLServerConnection(config):
     return conn
 
 
-try:
-    conn = SQLServerConnection(sqlconfig)
-    cursor = conn.cursor()
-except pyodbc.Error as e:
-    print(e)
-
+conn = SQLServerConnection(sqlconfig)
+cursor = conn.cursor()
 
 # --------------------------- General Game Data for use in other calls ---------------------------
 
-# initial GET request for full season schedule for the 2017 season
 try:
-    scheduleRequest = requests.get(Current_Season_url1)
-    scheduleRequest = scheduleRequest.json()
+    games_rqst = requests.request('GET', Current_Season_url1)
+    games_rqst = games_rqst.json()
 except ValueError as e:
     print(e)
 
-
 games = []
-for i in scheduleRequest['lscd']:
+for i in games_rqst['lscd']:
     for j in i['mscd']['g']:
-        # if datetime.strptime(j['gdte'], "%Y-%m-%d") >= dateOffset and datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
-            # print('Looking back since', str(dateOffset.date()))
-        games.append(
-            [j['gid']] + 
-            [j['gcode']] + 
-            [j['an']] + 
-            [j['gdte']] + 
-            [j['gcode'].split('/')[0]] + 
-            [j['v']['tid']] + 
-            [j['v']['s']] + 
-            [j['h']['tid']] + 
-            [j['h']['s']])
+        if date_offset <= datetime.strptime(j['gdte'], "%Y-%m-%d") < now:
+            games.append({
+                'GameID': j['gid'],
+                'GameCode': j['gcode'],
+                'Venue': j['an'],
+                'Date': j['gdte'],
+                'DateString': j['gcode'].split('/')[0],
+                'AwayTeamID': j['v']['tid'],
+                'AwayScore': j['v']['s'],
+                'HomeTeamID': j['h']['tid'],
+                'HomeScore': j['h']['s']
+            })
 
-
-# pandas dataframe with all game general data
-games = pd.DataFrame(
-    data=games, 
-    columns=['GameID', 'GameCode', 'Venue', 'Date', 'DateString', 'AwayTeamID', 'AwayScore', 'HomeTeamID', 'HomeScore']
-    )
-
-gamestbl = games[['GameID', 'GameCode', 'Venue', 'Date', 'DateString']].copy()
-print('Games Found:', len(games))
-
+list_of_games = [i['GameID'] for i in games]
 
 # --------------------------- Game Summary per Player per Game ---------------------------
-# game summary data by player by game, looping through all gameIDs up till today
-gameSummaryStats = []
-for i in games['GameID']:
+
+game_detail = []
+for i in list_of_games:
     try:
-        gamedetailRequest = requests.get(Current_Season_url2 + i + '_gamedetail.json')
-        print(i, str(gamedetailRequest.status_code))
-        # gamedetailRequest.raise_for_status()
-        gamedetailRequest = gamedetailRequest.json()
-        gameSummaryStats.append(gamedetailRequest)
+        game_detail_rqst = requests.request('GET', '{0}{1}_gamedetail.json'.format(Current_Season_url2, i))
+        print(i, str(game_detail_rqst.status_code), '{0}{1}_gamedetail.json'.format(Current_Season_url2, i))
+        game_detail_rqst = game_detail_rqst.json()
+        game_detail.append(game_detail_rqst)
     except ValueError as e:
         print(i, e)
 
 
-# condensed version using function to call game stats for vls and hls
-def getSummary(prop, summaries, gameList, idList):
-    for a in gameSummaryStats:
+# # condensed version using function to call game stats for vls and hls
+def game_detail_stats(prop):
+    empty_list = []
+    for a in game_detail:
         for b in [a['g']]:
             if 'pstsg' not in b[prop]:
                 print('issue with game:', b['gid'])
@@ -98,51 +83,31 @@ def getSummary(prop, summaries, gameList, idList):
                     c['mid'] = b['mid']
                     c['tid'] = b[prop]['tid']
                     c['ta'] = b[prop]['ta']
-                    idList.append(str(uuid.uuid4()))
-                    gameList.append(c)
+                    empty_list.append(c)
+
+    return empty_list
 
 
-game_vls = []
-game_hls = []
-vls_Id = []
-hls_Id = []
-getSummary('vls', gameSummaryStats, game_vls, vls_Id)
-getSummary('hls', gameSummaryStats, game_hls, hls_Id)
+game_vls = game_detail_stats('vls')
+game_hls = game_detail_stats('hls')
 
-game_vls = pd.DataFrame(game_vls)
-game_hls = pd.DataFrame(game_hls)
-
-#vls_Id = pd.DataFrame(vls_Id)
-#hls_Id = pd.DataFrame(hls_Id)
-#game_vls['Id'] = vls_Id
-#game_hls['Id'] = hls_Id
-
-gameStaging = [game_vls, game_hls]
-playergameSummary = pd.concat(gameStaging)  # final dataframe
-playergameSummary['Id'] = None
-
-playergameSummary.columns = ['Ast', 'Blk', 'Blka', 'Court', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fn', 'Fta', 'Ftm', 'GameID', 'Ln', 'Memo', 'Mid', 'Min',
-                             'Num', 'Oreb', 'Pf', 'PlayerID', 'Pip', 'Pipa', 'Pipm', 'Pm', 'Pos', 'Pts', 'Reb', 'Sec', 'Status', 'Stl', 'Ta', 'Tf', 'TeamID', 'Totsec', 'Tov', 'Tpa', 'Tpm', 'Id']
+player_game_summary = game_vls + game_hls
 
 # --------------------------- Game Plays - full event breakdown in the game ---------------------------
-# game summary data by player by game, looping through all gameIDs up till today
 
-gamePlaybyPlay = []
-for i in games['GameID']:
+game_pbp = []
+for i in list_of_games:
     try:
-        gamePlotRequest = requests.get(Current_Season_url3 + i + '_full_pbp.json')
-        print(i, str(gamePlotRequest.status_code))
-        # gamePlotRequest.raise_for_status()
-        gamePlotRequest = gamePlotRequest.json()
-        gamePlaybyPlay.append(gamePlotRequest)
+        game_pbp_rqst = requests.request('GET', '{0}{1}_full_pbp.json'.format(Current_Season_url3, i))
+        print(i, str(game_pbp_rqst.status_code), '{0}{1}_full_pbp.json'.format(Current_Season_url3, i))
+        game_pbp_rqst = game_pbp_rqst.json()
+        game_pbp.append(game_pbp_rqst)
         pass
     except ValueError as e:
         print(i, e)
 
-
-PlaybyPlay = []
-idList = []
-for i in gamePlaybyPlay:
+play_by_play = []
+for i in game_pbp:
     for j in i['g']['pd']:
         for k in j['pla']:
             if 'pla' not in j:
@@ -152,127 +117,126 @@ for i in gamePlaybyPlay:
                 k['period'] = j['p']
                 k['gid'] = i['g']['gid']
                 k['mid'] = i['g']['mid']
-                PlaybyPlay.append(k)
-                idList.append(str(uuid.uuid4()))
+                play_by_play.append(k)
 
 
-gamePlays = pd.DataFrame(PlaybyPlay)  # final dataframe
-gamePlays['Id'] = idList
+# --------------------------- Create Player + Team Dicts ---------------------------
 
-gamePlays.columns = ['ClockTime', 'Description', 'EPId', 'EType', 'Evt', 'GameID', 'HS', 'LocationX',
-                     'LocationY', 'MId', 'MType', 'OftId', 'OpId', 'Opt1', 'Opt2', 'Ord', 'Period', 'PlayerID', 'TeamID', 'Vs', 'Id']
-
-# --------------------------- Create Player Team DF ---------------------------
-
-players = pd.DataFrame(
-    {'PlayerID': playergameSummary['PlayerID'], 'LastName': playergameSummary['Ln'], 'FirstName': playergameSummary['Fn']})
-players = players.dropna(how='any')
-players = players.drop_duplicates(['PlayerID'], keep='first')
-
-teams = pd.DataFrame(
-    {'TeamID': playergameSummary['TeamID'], 'TeamCode': playergameSummary['Ta']})
-teams = teams.drop_duplicates(['TeamID'], keep='first')
-
-# --------------------------- Game Box Score ---------------------------
-
-# game box score descriptons by game, looping through all gameIDs up till today
-
-dateSTR = sorted(set(games['DateString'].values.tolist()))
-print(str(len(dateSTR)), 'matchdays found')
+def remove_duplicates(lst):
+    return [dict(t) for t in {tuple(d.items()) for d in lst}]
 
 
-gameBoxScore_staging = []
-for i in dateSTR:
-    try:
-        gameBoxScoreRequest = requests.get(Current_Season_url4 + str(i) + '.json')
-        print(i, str(gameBoxScoreRequest.status_code))
-        # gameBoxScoreRequest.raise_for_status()
-        gameBoxScoreRequest = gameBoxScoreRequest.json()
-        gameBoxScore_staging.append(gameBoxScoreRequest)
-    except ValueError as e:
-        print(i, e)
+players = [
+    {'PlayerID': i['pid'], 'LastName': i['ln'], 'FirstName': i['fn']} for i in player_game_summary
+]
 
+teams = [
+    {'TeamID': i['tid'], 'TeamCode': i['ta']} for i in player_game_summary
+]
 
-gameBoxScore = []
-for i in gameBoxScore_staging:
-    if int(i['result_count']) > 0:
-        for j in i['results']:
-            if 'Game' and 'GameID' and 'Breakdown' in j:
-                #                if len(j['GameID']) == int(10) and j['Breakdown'] is not None:
-                gameBoxScore.append([j['Game']] + [j['GameID']] + [j['Breakdown']] + [j['HomeTeam']['triCode']] + [j['HomeTeam']['teamName']] + [
-                                    j['HomeTeam']['teamNickname']] + [j['VisitorTeam']['triCode']] + [j['VisitorTeam']['teamName']] + [j['VisitorTeam']['teamNickname']])
+players = remove_duplicates(players)
+teams = remove_duplicates(teams)
 
-gameBoxScore = pd.DataFrame(gameBoxScore)
-gameBoxScore = gameBoxScore.rename(columns={0: 'Game', 1: 'GameID', 2: 'BoxScoreBreakdown', 3: 'HomeTeamCode',
-                                            4: 'HomeTeamName', 5: 'HomeTeamNickname', 6: 'AwayTeamCode', 7: 'AwayTeamName', 8: 'AwayTeamNickname'})
-
-
-# --------------------------- Writing to the database ---------------------------
-print('---------- Writing to NBA database ----------')
+# # --------------------------- Game Box Score ---------------------------
+#
+# # game box score descriptons by game, looping through all gameIDs up till today
+#
+# dateSTR = sorted(set(games['DateString'].values.tolist()))
+# print(str(len(dateSTR)), 'matchdays found')
+#
+# gameBoxScore_staging = []
+# for i in dateSTR:
+#     try:
+#         gameBoxScoreRequest = requests.get(Current_Season_url4 + str(i) + '.json')
+#         print(i, str(gameBoxScoreRequest.status_code))
+#         # gameBoxScoreRequest.raise_for_status()
+#         gameBoxScoreRequest = gameBoxScoreRequest.json()
+#         gameBoxScore_staging.append(gameBoxScoreRequest)
+#     except ValueError as e:
+#         print(i, e)
+#
+# gameBoxScore = []
+# for i in gameBoxScore_staging:
+#     if int(i['result_count']) > 0:
+#         for j in i['results']:
+#             if 'Game' and 'GameID' and 'Breakdown' in j:
+#                 #                if len(j['GameID']) == int(10) and j['Breakdown'] is not None:
+#                 gameBoxScore.append([j['Game']] + [j['GameID']] + [j['Breakdown']] + [j['HomeTeam']['triCode']] + [
+#                     j['HomeTeam']['teamName']] + [
+#                                         j['HomeTeam']['teamNickname']] + [j['VisitorTeam']['triCode']] + [
+#                                         j['VisitorTeam']['teamName']] + [j['VisitorTeam']['teamNickname']])
+#
+# gameBoxScore = pd.DataFrame(gameBoxScore)
+# gameBoxScore = gameBoxScore.rename(columns={0: 'Game', 1: 'GameID', 2: 'BoxScoreBreakdown', 3: 'HomeTeamCode',
+#                                             4: 'HomeTeamName', 5: 'HomeTeamNickname', 6: 'AwayTeamCode',
+#                                             7: 'AwayTeamName', 8: 'AwayTeamNickname'})
+#
+# # --------------------------- Writing to the database ---------------------------
+# print('---------- Writing to NBA database ----------')
+#
+# print(players.values.tolist())
 
 # Players, Teams, Games
-cursor.executemany(
-    'INSERT INTO Staging_Players (FirstName, LastName, PlayerID) VALUES(?,?,?)', players.values.tolist())
-cursor.execute('''INSERT INTO Players (PlayerID, FirstName, LastName) 
-	SELECT PlayerID, FirstName, LastName FROM Staging_Players 
-		WHERE NOT EXISTS (SELECT PlayerID, FirstName, LastName FROM Players 
-			WHERE Staging_Players.PlayerID=Players.PlayerID)''')
-
-
-cursor.executemany(
-    'INSERT INTO Staging_Teams (TeamCode, TeamID) VALUES(?,?)', teams.values.tolist())
-cursor.execute('''INSERT INTO Teams(TeamID,TeamCode) 
-	SELECT TeamID,TeamCode FROM Staging_Teams 
-		WHERE NOT EXISTS (SELECT TeamID,TeamCode FROM Teams 
-			WHERE Staging_Teams.TeamID=Teams.TeamID)''')
-
-
-cursor.executemany(
-    'INSERT INTO Staging_Games([GameID],[GameCode],[Venue],[Date],[DateString]) VALUES(?,?,?,?,?)', gamestbl.values.tolist())
-
-cursor.execute(''' INSERT INTO Games([GameID],[GameCode],[Venue],[Date],[DateString])
-    SELECT [GameID],[GameCode],[Venue],[Date],[DateString] FROM Staging_Games
-        WHERE NOT EXISTS ( SELECT [GameID],[GameCode],[Venue],[Date],[DateString] FROM Games
-            WHERE Staging_Games.[GameID] = Games.[GameID] )''')
-
-
-cursor.executemany(
-    'INSERT INTO Staging_GameBoxScore([Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname]) VALUES(?,?,?,?,?,?,?,?,?)', gameBoxScore.values.tolist())
-cursor.execute('''INSERT INTO GameBoxScore([Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname])
-    SELECT [Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname] FROM Staging_GameBoxScore
-        WHERE NOT EXISTS (SELECT [Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname] FROM GameBoxScore
-            WHERE Staging_GameBoxScore.GameID = GameBoxScore.GameID)''')
-
-
-print('---------- Players, Teams and Games written ----------')
-
-
-cursor.executemany('INSERT INTO Staging_PlayerGameSummary(Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm,Id) VALUES(?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?)', playergameSummary.values.tolist())
-
-cursor.execute('''INSERT INTO PlayerGameSummary( Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm) 
-	SELECT Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm FROM Staging_PlayerGameSummary 
-		WHERE NOT EXISTS ( SELECT Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm FROM PlayerGameSummary 
-			WHERE Staging_PlayerGameSummary.GameID=PlayerGameSummary.GameID AND Staging_PlayerGameSummary.PlayerID=PlayerGameSummary.PlayerID AND Staging_PlayerGameSummary.TeamID=PlayerGameSummary.TeamID)''')
-
-
-print('---------- Player Game Summary written ----------')
-
-
-cursor.executemany('INSERT INTO Staging_GamePlays(ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs,Id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', gamePlays.values.tolist())
-
-cursor.execute('''INSERT INTO GamePlays(ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs) 
-	SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM Staging_GamePlays 
-		WHERE NOT EXISTS (SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM GamePlays 
-			WHERE Staging_GamePlays.TeamID=GamePlays.TeamID AND Staging_GamePlays.GameID=GamePlays.GameID AND Staging_GamePlays.PlayerID=GamePlays.PlayerID AND Staging_GamePlays.Evt=GamePlays.Evt)''')
-
-
-print('---------- Game Plays written ----------')
-
-cursor.execute('TRUNCATE TABLE Staging_Players')
-cursor.execute('TRUNCATE TABLE Staging_Teams')
-cursor.execute('TRUNCATE TABLE Staging_Games')
-cursor.execute('TRUNCATE TABLE Staging_GamePlays')
-cursor.execute('TRUNCATE TABLE Staging_PlayerGameSummary')
-
-conn.commit()
-print('---------- All Staging data deleted ----------')
+# cursor.executemany(
+#     'INSERT INTO Staging_Players (FirstName, LastName, PlayerID) VALUES(?,?,?)', players.values.tolist())
+# cursor.execute('''INSERT INTO Players (PlayerID, FirstName, LastName)
+# 	SELECT PlayerID, FirstName, LastName FROM Staging_Players
+# 		WHERE NOT EXISTS (SELECT PlayerID, FirstName, LastName FROM Players
+# 			WHERE Staging_Players.PlayerID=Players.PlayerID)''')
+#
+# cursor.executemany(
+#     'INSERT INTO Staging_Teams (TeamCode, TeamID) VALUES(?,?)', teams.values.tolist())
+# cursor.execute('''INSERT INTO Teams(TeamID,TeamCode)
+# 	SELECT TeamID,TeamCode FROM Staging_Teams
+# 		WHERE NOT EXISTS (SELECT TeamID,TeamCode FROM Teams
+# 			WHERE Staging_Teams.TeamID=Teams.TeamID)''')
+#
+# cursor.executemany(
+#     'INSERT INTO Staging_Games([GameID],[GameCode],[Venue],[Date],[DateString]) VALUES(?,?,?,?,?)',
+#     gamestbl.values.tolist())
+#
+# cursor.execute(''' INSERT INTO Games([GameID],[GameCode],[Venue],[Date],[DateString])
+#     SELECT [GameID],[GameCode],[Venue],[Date],[DateString] FROM Staging_Games
+#         WHERE NOT EXISTS ( SELECT [GameID],[GameCode],[Venue],[Date],[DateString] FROM Games
+#             WHERE Staging_Games.[GameID] = Games.[GameID] )''')
+#
+# cursor.executemany(
+#     'INSERT INTO Staging_GameBoxScore([Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname]) VALUES(?,?,?,?,?,?,?,?,?)',
+#     gameBoxScore.values.tolist())
+# cursor.execute('''INSERT INTO GameBoxScore([Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname])
+#     SELECT [Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname] FROM Staging_GameBoxScore
+#         WHERE NOT EXISTS (SELECT [Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname] FROM GameBoxScore
+#             WHERE Staging_GameBoxScore.GameID = GameBoxScore.GameID)''')
+#
+# print('---------- Players, Teams and Games written ----------')
+#
+# cursor.executemany(
+#     'INSERT INTO Staging_PlayerGameSummary(Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm,Id) VALUES(?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?)',
+#     player_game_summary.values.tolist())
+#
+# cursor.execute('''INSERT INTO PlayerGameSummary( Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm)
+# 	SELECT Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm FROM Staging_PlayerGameSummary
+# 		WHERE NOT EXISTS ( SELECT Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm FROM PlayerGameSummary
+# 			WHERE Staging_PlayerGameSummary.GameID=PlayerGameSummary.GameID AND Staging_PlayerGameSummary.PlayerID=PlayerGameSummary.PlayerID AND Staging_PlayerGameSummary.TeamID=PlayerGameSummary.TeamID)''')
+#
+# print('---------- Player Game Summary written ----------')
+#
+# cursor.executemany(
+#     'INSERT INTO Staging_GamePlays(ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs,Id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+#     game_plays.values.tolist())
+#
+# cursor.execute('''INSERT INTO GamePlays(ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs)
+# 	SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM Staging_GamePlays
+# 		WHERE NOT EXISTS (SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM GamePlays
+# 			WHERE Staging_GamePlays.TeamID=GamePlays.TeamID AND Staging_GamePlays.GameID=GamePlays.GameID AND Staging_GamePlays.PlayerID=GamePlays.PlayerID AND Staging_GamePlays.Evt=GamePlays.Evt)''')
+#
+# print('---------- Game Plays written ----------')
+#
+# cursor.execute('TRUNCATE TABLE Staging_Players')
+# cursor.execute('TRUNCATE TABLE Staging_Teams')
+# cursor.execute('TRUNCATE TABLE Staging_Games')
+# cursor.execute('TRUNCATE TABLE Staging_GamePlays')
+# cursor.execute('TRUNCATE TABLE Staging_PlayerGameSummary')
+#
+# conn.commit()
+# print('---------- All Staging data deleted ----------')
