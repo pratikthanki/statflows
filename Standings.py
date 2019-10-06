@@ -2,32 +2,42 @@ import requests
 import json
 import pandas as pd
 import pyodbc
-from Settings import sql_config, sql_server_connection, Standings_url1, headers
-
+from Settings import sql_config, Standings_url1, headers
+from py_modules import sql_server_connection, execute_sql
 
 standingsRequest = requests.request('GET', Standings_url1, headers=headers)
 standingsRequest = standingsRequest.json()
 
-
 standings = []
 for i in standingsRequest['payload']['standingGroups']:
     for j in i['teams']:
-        standings.append([j['profile']['abbr']] + [j['profile']['conference']] + [j['profile']['id']] + [j['profile']['name']] + [j['standings']['confRank']] + [j['standings']['wins']] + [j['standings']['losses']] + [j['standings']['streak']] + [j['standings']['winPct']] + [j['standings']['divLoss']] + [j['standings']['divWin']] + [j['standings']['divRank']] + [j['standings']['last10']] + [j['standings']['homeWin']] + [j['standings']['homeLoss']] + [j['standings']['roadWin']] + [j['standings']['roadLoss']] + [j['standings']['roadStreak']] + [j['standings']['homeStreak']])
-
-
-standings = pd.DataFrame(standings)
-standings.columns = ['Abbr', 'Conference', 'TeamId', 'TeamName', 'ConfRank', 'Wins', 'Losses', 'Streak', 'Win%', 'DivLosses',
-                     'DivWins', 'DivRank', 'Last10', 'HomeWins', 'HomeLosses', 'RoadWins', 'RoadLosses', 'RoadStreak', 'HomeStreak']
+        standings.append({
+            'Abbr': j['profile']['abbr'],
+            'Conference': j['profile']['conference'],
+            'TeamId': j['profile']['id'],
+            'TeamName': j['profile']['name'],
+            'ConfRank': j['standings']['confRank'],
+            'Wins': j['standings']['wins'],
+            'Losses': j['standings']['losses'],
+            'Streak': j['standings']['streak'],
+            'Win%': j['standings']['winPct'],
+            'DivLosses': j['standings']['divLoss'],
+            'DivWins': j['standings']['divWin'],
+            'DivRank': j['standings']['divRank'],
+            'Last10': j['standings']['last10'],
+            'HomeWins': j['standings']['homeWin'],
+            'HomeLosses': j['standings']['homeLoss'],
+            'RoadWins': j['standings']['roadWin'],
+            'RoadLosses': j['standings']['roadLoss'],
+            'RoadStreak': j['standings']['roadStreak'],
+            'HomeStreak': j['standings']['homeStreak']
+        })
 
 conn = sql_server_connection(sql_config)
 cursor = conn.cursor()
+
 cursor.execute('DELETE FROM LeagueStandings')
-
-print('Writing to database')
-
-cursor.executemany(
-    'INSERT INTO LeagueStandings (Abbr, Conference, TeamId, TeamName, ConfRank, Wins, Losses, Streak, [Win%], DivLosses, DivWins, DivRank, Last10, HomeWins, HomeLosses, RoadWins, RoadLosses, RoadStreak, HomeStreak, LastUpdates) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, GETDATE())', standings.values.tolist())
-
+execute_sql('LeagueStandings', standings, ['TeamName'], cursor)
 conn.commit()
 
-print('Job completed successfully')
+print('Task completed')
