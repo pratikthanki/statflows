@@ -1,8 +1,5 @@
 import requests
-import json
 import logging
-import pyodbc
-from sqlalchemy import create_engine
 import time
 from datetime import datetime, timedelta
 from Settings import Current_Season_url1, Current_Season_url2, Current_Season_url3, Current_Season_url4, sql_config, \
@@ -109,106 +106,70 @@ teams = [
 players = remove_duplicates(players)
 teams = remove_duplicates(teams)
 
-list_of_game_dates = [i['DateString'] for i in games]
-match_days = sorted(set(list_of_game_dates))
-
-print(str(len(match_days)), 'match days found')
-
-box_scores = []
-for i in match_days:
-    try:
-        url = '{0}{1}.json'.format(Current_Season_url4, i)
-        data = get_data(base_url=url)
-        box_scores.append(data)
-    except ValueError as e:
-        print(i, e)
-
-game_box_scores = []
-for i in box_scores:
-    if int(i['result_count']) > 0:
-        for j in i['results']:
-            if 'Game' and 'GameID' and 'Breakdown' in j:
-                game_box_scores.append({
-                    'Game': [j['Game']],
-                    'GameID': [j['GameID']],
-                    'BoxScoreBreakdown': [j['Breakdown']],
-                    'HomeTeamCode': [j['HomeTeam']['triCode']],
-                    'HomeTeamName': [j['HomeTeam']['teamName']],
-                    'HomeTeamNickname': [j['HomeTeam']['teamNickname']],
-                    'AwayTeamCode': [j['VisitorTeam']['triCode']],
-                    'AwayTeamName': [j['VisitorTeam']['teamName']],
-                    'AwayTeamNickname': [j['VisitorTeam']['teamNickname']]
-                })
-
-# --------------------------- Writing to the database ---------------------------
 print('---------- Inserting records to the database ----------')
 
-conn = sql_server_connection(sql_config)
-cursor = conn.cursor()
+try:
+    conn = sql_server_connection(sql_config)
+    cursor = conn.cursor()
+except Exception as e:
+    print(e)
 
-player_table_columns = ', '.join(['PlayerID', 'LastName', 'FirstName'])
-team_table_columns = ', '.join(['TeamCode', 'TeamID'])
-game_table_columns = ', '.join(['HomeScore', 'AwayTeamID', 'HomeTeamID', 'GameID', 'Date', 'AwayScore', 'Venue', \
-                                'GameCode', 'DateString'])
 
-cursor.executemany(
-    'INSERT INTO Staging_Players ({0}) VALUES(?,?,?)'.format(player_table_columns),
-    [player.values() for player in players])
-cursor.execute(
-    'INSERT INTO Players ({0}) SELECT {0} FROM Staging_Players WHERE NOT EXISTS (SELECT {0} FROM Players WHERE Staging_Players.PlayerID=Players.PlayerID)'.format(
-        player_table_columns))
+def values_statement(lst):
+    if lst:
+        _ = [tuple([str(l).replace("'", "") for l in ls.values()])
+             for ls in lst]
+        return ','.join([str(i) for i in _])
 
-cursor.executemany(
-    'INSERT INTO Staging_Teams ({0}) VALUES(?,?)'.format(team_table_columns), [team.values() for team in teams])
-cursor.execute(
-    'INSERT INTO Teams({0}) SELECT {0} FROM Staging_Teams WHERE NOT EXISTS (SELECT {0} FROM Teams WHERE Staging_Teams.TeamID=Teams.TeamID)'.format(
-        team_table_columns))
 
-# cursor.executemany(
-#     'INSERT INTO Staging_Games([GameID],[GameCode],[Venue],[Date],[DateString]) VALUES(?,?,?,?,?)',
-#     gamestbl.values.tolist())
-# cursor.execute(''' INSERT INTO Games([GameID],[GameCode],[Venue],[Date],[DateString])
-#     SELECT [GameID],[GameCode],[Venue],[Date],[DateString] FROM Staging_Games
-#         WHERE NOT EXISTS ( SELECT [GameID],[GameCode],[Venue],[Date],[DateString] FROM Games
-#             WHERE Staging_Games.[GameID] = Games.[GameID] )''')
-#
-# cursor.executemany(
-#     'INSERT INTO Staging_GameBoxScore([Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname]) VALUES(?,?,?,?,?,?,?,?,?)',
-#     game_box_scores.values.tolist())
-# cursor.execute('''INSERT INTO GameBoxScore([Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname])
-#     SELECT [Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname] FROM Staging_GameBoxScore
-#         WHERE NOT EXISTS (SELECT [Game],[GameID],[BoxScoreBreakdown],[HomeTeamCode],[HomeTeamName],[HomeTeamNickname],[AwayTeamCode],[AwayTeamName],[AwayTeamNickname] FROM GameBoxScore
-#             WHERE Staging_GameBoxScore.GameID = GameBoxScore.GameID)''')
-#
-# print('---------- Players, Teams and Games written ----------')
-#
-# cursor.executemany(
-#     'INSERT INTO Staging_PlayerGameSummary(Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm,Id) VALUES(?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?, ?,?,?,?)',
-#     player_game_summary.values.tolist())
-#
-# cursor.execute('''INSERT INTO PlayerGameSummary( Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm)
-# 	SELECT Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm FROM Staging_PlayerGameSummary
-# 		WHERE NOT EXISTS ( SELECT Ast,Blk,Blka,Court,Dreb,Fbpts,Fbptsa,Fbptsm,Fga,Fgm,Fn,Fta,Ftm,GameID,Ln,Memo,Mid,Min,Num,Oreb,Pf,PlayerID,Pip,Pipa,Pipm,Pm,Pos,Pts,Reb,Sec,Status,Stl,Ta,Tf,TeamID,Totsec,Tov,Tpa,Tpm FROM PlayerGameSummary
-# 			WHERE Staging_PlayerGameSummary.GameID=PlayerGameSummary.GameID AND Staging_PlayerGameSummary.PlayerID=PlayerGameSummary.PlayerID AND Staging_PlayerGameSummary.TeamID=PlayerGameSummary.TeamID)''')
-#
-# print('---------- Player Game Summary written ----------')
-#
-# cursor.executemany(
-#     'INSERT INTO Staging_GamePlays(ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs,Id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-#     game_plays.values.tolist())
-#
-# cursor.execute('''INSERT INTO GamePlays(ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs)
-# 	SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM Staging_GamePlays
-# 		WHERE NOT EXISTS (SELECT ClockTime,Description,EPId,EType,Evt,GameID,HS,LocationX,LocationY,MId,MType,OftId,OpId,Opt1,Opt2,Ord,Period,PlayerID,TeamID,Vs FROM GamePlays
-# 			WHERE Staging_GamePlays.TeamID=GamePlays.TeamID AND Staging_GamePlays.GameID=GamePlays.GameID AND Staging_GamePlays.PlayerID=GamePlays.PlayerID AND Staging_GamePlays.Evt=GamePlays.Evt)''')
-#
-# print('---------- Game Plays written ----------')
-#
-# cursor.execute('TRUNCATE TABLE Staging_Players')
-# cursor.execute('TRUNCATE TABLE Staging_Teams')
-# cursor.execute('TRUNCATE TABLE Staging_Games')
-# cursor.execute('TRUNCATE TABLE Staging_GamePlays')
-# cursor.execute('TRUNCATE TABLE Staging_PlayerGameSummary')
-#
+def columns_statement(lst):
+    if lst:
+        return ', '.join([l.keys() for l in lst][0])
+
+
+def source_columns_statement(lst):
+    if lst:
+        return ', '.join([['Source.' + i for i in l.keys()] for l in lst][0])
+
+
+def update_statement(lst):
+    if lst:
+        return ', '.join([[i + '=Source.' + i for i in l.keys()] for l in lst][0])
+
+
+def on_statement(lst, key_columns):
+    return ' AND '.join([['Target.' + i + '=Source.' + i for i in l.keys() if i in key_columns] for l in lst][0])
+
+
+def set_statement(lst, key_columns):
+    return ', '.join([[i + '=Source.' + i for i in l.keys() if i not in key_columns] for l in lst][0])
+
+
+def execute_sql(table_name, data, key_columns):
+    cursor.execute('MERGE INTO {0} as Target '
+                   'USING (SELECT * FROM '
+                   '(VALUES {1}) '
+                   'AS s ({2}) '
+                   ') AS Source '
+                   'ON {3} '
+                   'WHEN NOT MATCHED THEN '
+                   'INSERT ({2}) VALUES ({4}) '
+                   'WHEN MATCHED THEN '
+                   'UPDATE SET {5}; '.format(table_name,
+                                             values_statement(data),
+                                             columns_statement(data),
+                                             on_statement(data, key_columns),
+                                             source_columns_statement(data),
+                                             set_statement(data, key_columns))
+                   )
+    print('Table {0} has been updated with {1} records'.format(table_name, len(data)))
+
+
+execute_sql('Teams', teams, ['TeamID'])
+execute_sql('Players', players, ['PlayerID'])
+execute_sql('Schedule', games, ['GameID'])
+execute_sql('GamePlays', play_by_play, ['evt', 'gid', 'gid', 'pid', 'tid'])
+execute_sql('PlayerGameSummary', player_game_summary, ['pid', 'gid', 'tid'])
+
 conn.commit()
-print('---------- All Staging data deleted ----------')
+print('completed')
