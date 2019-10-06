@@ -1,21 +1,27 @@
 import requests
 import logging
+import logging.handlers
 import time
 from datetime import datetime, timedelta
 from Settings import Current_Season_url1, Current_Season_url2, Current_Season_url3, Current_Season_url4, sql_config, \
     sql_server_connection
 
+logging.basicConfig(filename='nba_log',
+                    filemode='a',
+                    format='%(asctime)s %(levelname)s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    level=logging.DEBUG)
+
+logging.info('Task started')
+
 
 def get_data(base_url):
     try:
         rqst = requests.request('GET', base_url)
-        print(str(rqst.status_code), base_url)
         return rqst.json()
     except ValueError as e:
-        print(e)
+        logging.info(e)
 
-
-print(datetime.utcnow())
 
 now = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")
 date_offset = now - timedelta(days=30)
@@ -52,7 +58,7 @@ for i in list_of_games:
         pbp_data = get_data(base_url=pbp_url)
         game_pbp.append(pbp_data)
     except ValueError as e:
-        print(i, e)
+        logging.info(i, e)
 
 
 def game_detail_stats(prop):
@@ -60,7 +66,7 @@ def game_detail_stats(prop):
     for a in game_detail:
         for b in [a['g']]:
             if 'pstsg' not in b[prop]:
-                print('issue with game:', b['gid'])
+                logging.info('**Issue with game:', b['gid'])
                 pass
             else:
                 for c in b[prop]['pstsg']:
@@ -82,7 +88,7 @@ for i in game_pbp:
     for j in i['g']['pd']:
         for k in j['pla']:
             if 'pla' not in j:
-                print('issue with game:', i['g']['gid'])
+                logging.info('**Issue with game:', i['g']['gid'])
                 pass
             else:
                 k['period'] = j['p']
@@ -106,13 +112,11 @@ teams = [
 players = remove_duplicates(players)
 teams = remove_duplicates(teams)
 
-print('---------- Inserting records to the database ----------')
-
 try:
     conn = sql_server_connection(sql_config)
     cursor = conn.cursor()
 except Exception as e:
-    print(e)
+    logging.info(e)
 
 
 def values_statement(lst):
@@ -162,7 +166,7 @@ def execute_sql(table_name, data, key_columns):
                                              source_columns_statement(data),
                                              set_statement(data, key_columns))
                    )
-    print('Table {0} has been updated with {1} records'.format(table_name, len(data)))
+    logging.info('Table {0} updated: {1} records'.format(table_name, len(data)))
 
 
 execute_sql('Teams', teams, ['TeamID'])
@@ -172,4 +176,4 @@ execute_sql('GamePlays', play_by_play, ['evt', 'gid', 'gid', 'pid', 'tid'])
 execute_sql('PlayerGameSummary', player_game_summary, ['pid', 'gid', 'tid'])
 
 conn.commit()
-print('completed')
+logging.info('Task completed')
