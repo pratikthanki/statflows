@@ -78,7 +78,7 @@ EVENT_DEFINITIONS = {
 
 def load_data(query):
     sqlData = []
-    conn = SQLServerConnection(sqlconfig)
+    conn = sql_server_connection(sql_config)
 
     cursor = conn.cursor()
 
