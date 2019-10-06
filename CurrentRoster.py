@@ -19,9 +19,6 @@ teams = ['1610612737', '1610612738', '1610612751', '1610612766', '1610612741', '
          '1610612745', '1610612746', '1610612747', '1610612763', '1610612750', '1610612740',
          '1610612760', '1610612756', '1610612757', '1610612758', '1610612759', '1610612762']
 
-conn = sql_server_connection(sql_config)
-cursor = conn.cursor()
-
 roster_lst = []
 failed_responses = []
 for t in teams:
@@ -35,7 +32,7 @@ for t in teams:
         roster = roster_rqst.json()
         roster_lst.append(roster['resultSets'][0]['rowSet'])
 
-        time.sleep(5)
+        time.sleep(3)
         pass
     except Exception as e:
         print(t, e)
@@ -44,10 +41,13 @@ for t in teams:
 headers = roster['resultSets'][0]['headers']
 team_rosters = [dict(zip(headers, player)) for team in roster_lst for player in team]
 
-now = datetime.datetime.utcnow()
+now = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
 for team in team_rosters:
     team['TIMESTAMP'] = now
+
+conn = sql_server_connection(sql_config)
+cursor = conn.cursor()
 
 execute_sql('TeamRosters', team_rosters, ['TIMESTAMP'], cursor)
 conn.commit()
