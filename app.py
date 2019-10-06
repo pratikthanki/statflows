@@ -12,9 +12,10 @@ import dash_html_components as html
 import dash_table_experiments as dt
 import plotly.graph_objs as go
 
-from Settings import sql_config, sql_server_connection
+from Settings import sql_config
 from Queries import latest_game_query, team_roster_query, team_query, shot_chart_query, standings_query, \
     team_game_stats_query, team_season_stats_query
+from py_modules import load_data, sql_server_connection
 from Court import courtPlot
 
 server = Flask(__name__)
@@ -76,32 +77,10 @@ EVENT_DEFINITIONS = {
     '20': 'Stoppage: Out-of-Bounds'}
 
 
-def load_data(query):
-    sqlData = []
-    conn = sql_server_connection(sql_config)
-
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute(query)
-        rows = cursor.fetchall()
-        pass
-    except Exception as e:
-        print(e)
-        rows = pd.read_sql(query, conn)
-
-    for row in rows:
-        sqlData.append(list(row))
-
-    df = pd.DataFrame(sqlData)
-
-    return df
-
-
 def get_shots(player):
     if player:
         shot_Query = shot_chart_query + str(player)
-        shot_Plot = load_data(shot_Query)
+        shot_Plot = load_data(shot_Query, sql_config)
         shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
                              'LocationY', 'Period', 'TeamID', 'PlayerID']
 
@@ -272,10 +251,10 @@ def shot_map(data):
         )
 
 
-rosters = load_data(team_roster_query)
+rosters = load_data(team_roster_query, sql_config)
 team_df = current_roster(rosters)
 
-teams = load_data(team_query)
+teams = load_data(team_query, sql_config)
 teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
 
 
@@ -306,7 +285,6 @@ def update_layout():
         html.Div(
             html.P('Select a team to get started', style={'align': 'center'}),
             id='team_stats_container'),
-
 
         html.Div(
             id='shotplot')
@@ -340,7 +318,7 @@ def update_team_roster_table(pathname, value):
         team_stats_columns = ['GameID', 'Ast', 'Blk ', 'Blka', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fta',
                               'Ftm', 'Oreb', 'Pf', 'Pip', 'Pipa', 'Pipm', 'Pts', 'Reb', 'Stl', 'Tov', 'Tpa', 'Tpm']
 
-        team_stats = load_data(team_game_stats_query + str(_team_id))
+        team_stats = load_data(team_game_stats_query + str(_team_id), sql_config)
         team_stats.columns = team_stats_columns
 
         return build_table(team_stats, 'Stats')
@@ -363,7 +341,7 @@ def update_team_stats_table(pathname, value):
         team_stats_columns = ['GameID', 'Ast', 'Blk ', 'Blka', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fta',
                               'Ftm', 'Oreb', 'Pf', 'Pip', 'Pipa', 'Pipm', 'Pts', 'Reb', 'Stl', 'Tov', 'Tpa', 'Tpm']
 
-        team_stats = load_data(team_game_stats_query + str(_team_id))
+        team_stats = load_data(team_game_stats_query + str(_team_id), sql_config)
         team_stats.columns = team_stats_columns
 
         return build_table(team_stats, 'Stats')
