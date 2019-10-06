@@ -2,7 +2,7 @@ import requests
 import json
 import pandas as pd
 import pyodbc
-from Settings import *
+from Settings import sql_config, sql_server_connection, Standings_url1, headers
 
 
 standingsRequest = requests.request('GET', Standings_url1, headers=headers)
@@ -19,22 +19,8 @@ standings = pd.DataFrame(standings)
 standings.columns = ['Abbr', 'Conference', 'TeamId', 'TeamName', 'ConfRank', 'Wins', 'Losses', 'Streak', 'Win%', 'DivLosses',
                      'DivWins', 'DivRank', 'Last10', 'HomeWins', 'HomeLosses', 'RoadWins', 'RoadLosses', 'RoadStreak', 'HomeStreak']
 
-
-# Writing to the database
-def SQLServerConnection(config):
-    conn_str = (
-        'DRIVER={driver};SERVER={server},{port};DATABASE={database};UID={username};PWD={password}')
-
-    conn = pyodbc.connect(
-        conn_str.format(**config)
-    )
-
-    return conn
-
-
-conn = SQLServerConnection(sqlconfig)
+conn = sql_server_connection(sql_config)
 cursor = conn.cursor()
-
 cursor.execute('DELETE FROM LeagueStandings')
 
 print('Writing to database')
