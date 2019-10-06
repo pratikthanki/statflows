@@ -3,8 +3,9 @@ import logging
 import logging.handlers
 import time
 from datetime import datetime, timedelta
-from Settings import Current_Season_url1, Current_Season_url2, Current_Season_url3, Current_Season_url4, sql_config, \
-    sql_server_connection
+from Settings import Current_Season_url1, Current_Season_url2, Current_Season_url3, Current_Season_url4, sql_config
+from py_modules import sql_server_connection, values_statement, columns_statement, source_columns_statement, \
+    update_statement, on_statement, set_statement, execute_sql
 
 logging.basicConfig(filename='nba_log',
                     filemode='a',
@@ -118,62 +119,11 @@ try:
 except Exception as e:
     logging.info(e)
 
-
-def values_statement(lst):
-    if lst:
-        _ = [tuple([str(l).replace("'", "") for l in ls.values()])
-             for ls in lst]
-        return ','.join([str(i) for i in _])
-
-
-def columns_statement(lst):
-    if lst:
-        return ', '.join([l.keys() for l in lst][0])
-
-
-def source_columns_statement(lst):
-    if lst:
-        return ', '.join([['Source.' + i for i in l.keys()] for l in lst][0])
-
-
-def update_statement(lst):
-    if lst:
-        return ', '.join([[i + '=Source.' + i for i in l.keys()] for l in lst][0])
-
-
-def on_statement(lst, key_columns):
-    return ' AND '.join([['Target.' + i + '=Source.' + i for i in l.keys() if i in key_columns] for l in lst][0])
-
-
-def set_statement(lst, key_columns):
-    return ', '.join([[i + '=Source.' + i for i in l.keys() if i not in key_columns] for l in lst][0])
-
-
-def execute_sql(table_name, data, key_columns):
-    cursor.execute('MERGE INTO {0} as Target '
-                   'USING (SELECT * FROM '
-                   '(VALUES {1}) '
-                   'AS s ({2}) '
-                   ') AS Source '
-                   'ON {3} '
-                   'WHEN NOT MATCHED THEN '
-                   'INSERT ({2}) VALUES ({4}) '
-                   'WHEN MATCHED THEN '
-                   'UPDATE SET {5}; '.format(table_name,
-                                             values_statement(data),
-                                             columns_statement(data),
-                                             on_statement(data, key_columns),
-                                             source_columns_statement(data),
-                                             set_statement(data, key_columns))
-                   )
-    logging.info('Table {0} updated: {1} records'.format(table_name, len(data)))
-
-
-execute_sql('Teams', teams, ['TeamID'])
-execute_sql('Players', players, ['PlayerID'])
-execute_sql('Schedule', games, ['GameID'])
-execute_sql('GamePlays', play_by_play, ['evt', 'gid', 'gid', 'pid', 'tid'])
-execute_sql('PlayerGameSummary', player_game_summary, ['pid', 'gid', 'tid'])
+execute_sql('Teams', teams, ['TeamID'], cursor)
+execute_sql('Players', players, ['PlayerID'], cursor)
+execute_sql('Schedule', games, ['GameID'], cursor)
+execute_sql('GamePlays', play_by_play, ['evt', 'gid', 'gid', 'pid', 'tid'], cursor)
+execute_sql('PlayerGameSummary', player_game_summary, ['pid', 'gid', 'tid'], cursor)
 
 conn.commit()
 logging.info('Task completed')
