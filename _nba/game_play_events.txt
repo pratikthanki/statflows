@@ -1,0 +1,20 @@
+"""
+Game Play E Types 
+
+1 - Shot made 
+2 - Shot Missed
+3 - Free Throw
+4 - Rebound
+5 - Turnover
+6 - Foul
+7 - Violation:Kicked Ball
+8 - Substitution
+9 - Team Timeout
+10 - Jump Ball
+11 - Ejection
+12 - Start Period
+13 - End Period
+18 - Instant Replay
+20 - Stoppagee
+
+"""
