@@ -1,8 +1,8 @@
 import requests
-from afl_settings import season_stats_1, get_token
+from afl_settings import season_stats_1
 from shared_config import sql_config
-from shared_modules import sql_server_connection, execute_sql
-from afl_settings import match_stats_1, match_stats_2, flatten, get_token
+from shared_modules import sql_server_connection
+from afl_settings import get_token
 
 
 headers = get_token()
