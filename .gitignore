@@ -1,7 +1,13 @@
-Settings.py
+_nba/settings.py
 *.pyc
 Queries.py
 *.pyc
 CONFIDENTIAL-NBAgamebygame-2019-01-25.xlsx
 nba_log
 *.pyc
+_afl/afl_settings.py
+shared_config.py
+_epl/epl_settings.py
+_nba/nba_settings.py
+_nfl/nfl_settings.py
+_nhl/nhl_settings.py
