@@ -330,10 +330,11 @@ def update_team_stats_table(pathname, value):
         return html.P('Select a team to get started')
 
     if value == 'Current Roster' and _team_id:
-        team_stats_columns = ['GameID', 'Ast', 'Blk ', 'Blka', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fta',
-                              'Ftm', 'Oreb', 'Pf', 'Pip', 'Pipa', 'Pipm', 'Pts', 'Reb', 'Stl', 'Tov', 'Tpa', 'Tpm']
+        team_stats_columns = ['tid', 'season', 'ast', 'games, ''blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
+                              'fbptsm', 'fga', 'fgm', 'fta', 'ftm', 'oreb', 'pf', 'pip', 'pipa', 'pipm',
+                              'pts', 'reb', 'stl', 'tov', 'tpa', 'tpm']
 
-        team_stats = load_data('{} {}'.format(team_season_stats_query, str(_team_id)), sql_config, 'nba')
+        team_stats = load_data(team_season_stats_query, sql_config, 'nba')
         team_stats.columns = team_stats_columns
 
         return build_table(team_stats, 'Stats')
