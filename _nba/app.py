@@ -7,7 +7,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 from shared_config import sql_config
-from sql_queries import team_roster_query, team_query, shot_chart_query, team_game_stats_query
+from sql_queries import team_roster_query, team_query, shot_chart_query, team_game_stats_query, team_season_stats_query
 from shared_modules import load_data
 
 server = Flask(__name__)
@@ -71,9 +71,9 @@ EVENT_DEFINITIONS = {
 
 def get_shots(player):
     if player:
-        shot_Query = shot_chart_query + str(player)
-        shot_Plot = load_data(shot_Query, sql_config, 'nba')
-        shot_Plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
+        shot_query = '{} {}'.format(shot_chart_query, str(player))
+        shot_plot = load_data(shot_query, sql_config, 'nba')
+        shot_plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
                              'LocationY', 'Period', 'TeamID', 'PlayerID']
 
         return shot_Plot
@@ -106,37 +106,37 @@ def player_card(player):
     ])
 
 
-def current_roster(df, teamId=None):
+def current_roster(df, team_id=None):
     if len(df.columns) == int(17):
         df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
                       'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division',
                       'Conference']
 
-    if teamId is not None:
-        df = df[df['TeamId'] == str(teamId)]
+    if team_id is not None:
+        df = df[df['TeamId'] == str(team_id)]
 
-    teamdict = {}
+    team_dict = {}
     cols = df['Position'].unique()
 
     for position in cols:
-        teamdict[position] = np.array(
+        team_dict[position] = np.array(
             df.loc[df['Position'] == position, 'PlayerId'])
 
-    team_df = pd.DataFrame(dict([(k, pd.Series(v))
-                                 for k, v in teamdict.items()]))
-    team_df = team_df.fillna('')
+    roster = pd.DataFrame(dict([(k, pd.Series(v))
+                                for k, v in team_dict.items()]))
+    roster = roster.fillna('')
 
-    return team_df
+    return roster
 
 
-def current_roster_stats(df, teamId=None):
+def current_roster_stats(df, team_id=None):
     if len(df.columns) == int(17):
         df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
                       'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division',
                       'Conference']
 
-    if teamId is not None:
-        return df[df['TeamId'] == str(teamId)]
+    if team_id is not None:
+        return df[df['TeamId'] == str(team_id)]
     else:
         return df
 
@@ -252,7 +252,7 @@ teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
 
 def update_layout():
     return html.Div(children=[
-        dcc.Location(id='teamurl', refresh=False),
+        dcc.Location(id='team_url', refresh=False),
         html.Div(
             [dcc.Link(
                 html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'},
@@ -279,7 +279,7 @@ def update_layout():
             id='team_stats_container'),
 
         html.Div(
-            id='shotplot')
+            id='shot_plot')
 
     ])
 
@@ -291,7 +291,7 @@ app.config['suppress_callback_exceptions'] = True
 
 @app.callback(
     Output('team_roster_container', 'children'),
-    [Input('teamurl', 'pathname'),
+    [Input('team_url', 'pathname'),
      Input('div-tabs', 'value')])
 def update_team_roster_table(pathname, value):
     if pathname:
@@ -310,7 +310,7 @@ def update_team_roster_table(pathname, value):
         team_stats_columns = ['GameID', 'Ast', 'Blk ', 'Blka', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fta',
                               'Ftm', 'Oreb', 'Pf', 'Pip', 'Pipa', 'Pipm', 'Pts', 'Reb', 'Stl', 'Tov', 'Tpa', 'Tpm']
 
-        team_stats = load_data(team_game_stats_query + str(_team_id), sql_config, 'nba')
+        team_stats = load_data('{} {}'.format(team_game_stats_query, str(_team_id)), sql_config, 'nba')
         team_stats.columns = team_stats_columns
 
         return build_table(team_stats, 'Stats')
@@ -321,7 +321,7 @@ def update_team_roster_table(pathname, value):
 
 @app.callback(
     Output('team_stats_container', 'children'),
-    [Input('teamurl', 'pathname'),
+    [Input('team_url', 'pathname'),
      Input('div-tabs', 'value')])
 def update_team_stats_table(pathname, value):
     if pathname:
@@ -333,26 +333,26 @@ def update_team_stats_table(pathname, value):
         team_stats_columns = ['GameID', 'Ast', 'Blk ', 'Blka', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fta',
                               'Ftm', 'Oreb', 'Pf', 'Pip', 'Pipa', 'Pipm', 'Pts', 'Reb', 'Stl', 'Tov', 'Tpa', 'Tpm']
 
-        team_stats = load_data(team_game_stats_query + str(_team_id), sql_config, 'nba')
+        team_stats = load_data('{} {}'.format(team_season_stats_query, str(_team_id)), sql_config, 'nba')
         team_stats.columns = team_stats_columns
 
         return build_table(team_stats, 'Stats')
 
 
 @app.callback(
-    Output('shotplot', 'figure'),
-    [Input('teamurl', 'pathname')]
+    Output('shot_plot', 'figure'),
+    [Input('team_url', 'pathname')]
 )
-def updateShotPlot(pathname):
+def update_shot_plot(pathname):
     if pathname:
         if pathname.split('/')[1] == u'player':
-            playerId = pathname.split('/')[-1]
+            player_id = pathname.split('/')[-1]
         else:
             return html.P('SELECT A TEAM ABOVE TO GET STARTED', style={'float': 'center'})
 
-        playerdf = get_shots(playerId)
+        player_df = get_shots(player_id)
 
-        return shot_map(playerdf)
+        return shot_map(player_df)
 
 
 external_css = [
