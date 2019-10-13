@@ -12,21 +12,26 @@ import dash_html_components as html
 import plotly.graph_objs as go
 
 from shared_config import sql_config
+from shared_modules import load_data
+from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_STYLE, \
+    SINGLE_TAB_STYLE, ALL_TAB_STYLE, EVENT_DEFINITIONS
+
 from nba_settings import authorized_app_emails
 from sql_queries import team_roster_query, team_query, shot_chart_query, team_game_stats_query, team_season_stats_query
-from shared_modules import load_data
 
 server = Flask(__name__)
 
 external_css = [
-    "https://codepen.io/chriddyp/pen/bWLwgP.css",
-    "https://codepen.io/chriddyp/pen/brPBPO.css",
-    "https://codepen.io/chriddyp/pen/dZVMbK.css"]
+    "https://codepen.io/chriddyp/pen/bWLwgP.css"
+]
 
 app = dash.Dash(
     name='app1',
     server=server,
     url_base_pathname='/',
+    # meta_tags=[
+    #     {"name": "viewport", "content": "width=device-width, initial-scale=1.0"}
+    # ],
     external_stylesheets=external_css)
 
 app.config['suppress_callback_exceptions'] = True
@@ -41,67 +46,24 @@ auth = GoogleOAuth(
     authorized_app_emails,
 )
 
-DEFAULT_IMAGE = 'https://stats.nba.com/media/img/league/nba-headshot-fallback.png'
+SHOT_PLOT_COLUMNS = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
+                     'LocationY', 'Period', 'TeamID', 'PlayerID']
 
-HEADER_STYLE = {
-    'align': 'center',
-    'width': '300px',
-    'background-color': '#0f6db5',
-    'text-align': 'center',
-    'font-size': '20px',
-    'padding': '20px',
-    'color': '#ffffff'}
+TEAM_COLUMNS = ['TeamID', 'TeamCode', 'TeamLogo']
 
-TABLE_STYLE = {
-    'display': 'table',
-    'border-cllapse': 'separate',
-    'font': '15px Open Sans, Arial, sans-serif',
-    'font-weight': '30',
-    'width': '100%'}
+TEAM_STATS_COLUMNS = ['tid', 'teamcode', 'season', 'ast', 'games', 'blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
+                      'fbptsm', 'fga', 'fgm', 'fta', 'ftm', 'oreb', 'pf', 'pip', 'pipa', 'pipm',
+                      'pts', 'reb', 'stl', 'tov', 'tpa', 'tpm']
 
-ALL_TAB_STYLE = {
-    'height': '50px',
-    'padding': '15px'}
-
-SINGLE_TAB_STYLE = {
-    'borderBottom': '1px solid #d6d6d6',
-    'padding': '10px',
-    'font-size': '15px'}
-
-SELECTED_TAB_STYLE = {
-    'borderTop': '1px solid #d6d6d6',
-    'borderBottom': '1px solid #d6d6d6',
-    'backgroundColor': '#119DFF',
-    'fontWeight': 'bold',
-    'color': 'white',
-    'padding': '5px',
-    'font-size': '22px'}
-
-EVENT_DEFINITIONS = {
-    '0': 'Game End',
-    '1': 'Shot Made',
-    '2': 'Shot Missed',
-    '3': 'Free Throw',
-    '4': 'Rebound',
-    '5': 'Turnover',
-    '6': 'Foul',
-    '7': 'Violation',
-    '8': 'Substitution',
-    '9': 'Timeout',
-    '10': 'Jump Ball',
-    '11': 'Ejection',
-    '12': 'Start Period',
-    '13': 'End Period',
-    '18': 'Instant Replay',
-    '20': 'Stoppage: Out-of-Bounds'}
+CURRENT_ROSTER_COLUMNS = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
+                          'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division',
+                          'Conference']
 
 
 def get_shots(player):
     if player:
         shot_query = '{} {}'.format(shot_chart_query, str(player))
-        shot_plot = load_data(shot_query, sql_config, 'nba')
-        shot_plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-                             'LocationY', 'Period', 'TeamID', 'PlayerID']
+        shot_plot = load_data(shot_query, sql_config, 'nba', SHOT_PLOT_COLUMNS)
 
         return shot_plot
 
@@ -134,11 +96,6 @@ def player_card(player):
 
 
 def current_roster(df, team_id=None):
-    if len(df.columns) == int(17):
-        df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
-                      'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division',
-                      'Conference']
-
     if team_id is not None:
         df = df[df['TeamId'] == str(team_id)]
 
@@ -157,11 +114,6 @@ def current_roster(df, team_id=None):
 
 
 def current_roster_stats(df, team_id=None):
-    if len(df.columns) == int(17):
-        df.columns = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
-                      'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division',
-                      'Conference']
-
     if team_id is not None:
         return df[df['TeamId'] == str(team_id)]
     else:
@@ -270,11 +222,10 @@ def shot_map(data):
         )
 
 
-rosters = load_data(team_roster_query, sql_config, 'nba')
+rosters = load_data(team_roster_query, sql_config, 'nba', CURRENT_ROSTER_COLUMNS)
 team_df = current_roster(rosters)
 
-teams = load_data(team_query, sql_config, 'nba')
-teams.columns = ['TeamID', 'TeamCode', 'TeamLogo']
+teams = load_data(team_query, sql_config, 'nba', TEAM_COLUMNS)
 
 
 def update_layout():
@@ -296,6 +247,22 @@ def update_layout():
             dcc.Tab(label='SHOTS', value='Shots',
                     style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE)],
                  style=ALL_TAB_STYLE),
+
+        html.P('Select Trend to view team stats over time of Compare to see stats relative to the league'),
+
+        dcc.RadioItems(
+            id='stat-option',
+            options=[
+                {'label': 'Trend', 'value': 'Trend'},
+                {'label': 'Compare', 'value': 'Compare'}
+            ],
+            value='Trend',
+            labelStyle={'display': 'inline-block'}
+        ),
+
+        dcc.Graph(
+            id='team-graph'
+        ),
 
         html.Div(
             html.P('Select a team to get started', style={'align': 'center'}),
@@ -328,17 +295,58 @@ def update_team_roster_table(pathname, value):
         return html.P('Results')
 
     elif value == 'Stats':
-        team_stats_columns = ['tid', 'season', 'ast', 'games', 'blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
-                              'fbptsm', 'fga', 'fgm', 'fta', 'ftm', 'oreb', 'pf', 'pip', 'pipa', 'pipm',
-                              'pts', 'reb', 'stl', 'tov', 'tpa', 'tpm']
-
-        team_stats = load_data(team_season_stats_query, sql_config, 'nba')
+        team_stats = load_data(team_season_stats_query, sql_config, 'nba', TEAM_STATS_COLUMNS)
         team_stats.columns = team_stats_columns
 
         return build_table(team_stats, 'Stats')
 
     elif value == 'Shots':
         return html.P('Shots')
+
+
+@app.callback(
+    Output('team-graph', 'figure'),
+    [Input('team_url', 'pathname'),
+     Input('div-tabs', 'value'),
+     Input('stat-option', 'value')]
+)
+def team_summary_stats(pathname, value, option):
+    if pathname and value == 'Current Roster':
+        _team_id = pathname.split('/')[-1]
+
+        if option == 'Compare':
+            query = '{}'.format(team_season_stats_query)
+            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS)
+            temp = team_stats[team_stats['season'] == '2019-2020']
+            data_x = temp['teamcode'].values.tolist()
+            data_y = temp['pts'].values.tolist()
+
+            return {
+                'data': [
+                    {'x': data_x, 'y': data_y, 'type': 'bar', 'name': 'SF'}
+                ],
+                'layout': {
+                    'title': 'Dash Data Visualization'
+                }
+            }
+
+        if option == 'Trend':
+            query = '{} {}'.format(team_season_stats_query, _team_id)
+            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS)
+            data_x = [str(i) for i in team_stats['season'].values.tolist()]
+            data_y = team_stats['pts'].values.tolist()
+
+            return {
+                'data': [
+                    {'x': data_x, 'y': data_y, 'type': 'bar', 'name': 'SF'}
+                ],
+                'layout': {
+                    'title': 'Dash Data Visualization'
+                }
+            }
+
+    else:
+        return html.P('Select a team to get started')
 
 
 @app.callback(
