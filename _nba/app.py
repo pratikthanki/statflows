@@ -12,7 +12,13 @@ from shared_modules import load_data
 
 server = Flask(__name__)
 
-app = dash.Dash(name='app1', sharing=True, server=server, csrf_protect=False)
+external_css = [
+    "https://codepen.io/chriddyp/pen/bWLwgP.css",
+    "https://codepen.io/chriddyp/pen/brPBPO.css",
+    "https://codepen.io/chriddyp/pen/dZVMbK.css"
+]
+
+app = dash.Dash(name='app1', server=server, external_stylesheets=external_css)
 
 DEFAULT_IMAGE = 'https://stats.nba.com/media/img/league/nba-headshot-fallback.png'
 
@@ -76,7 +82,7 @@ def get_shots(player):
         shot_plot.columns = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
                              'LocationY', 'Period', 'TeamID', 'PlayerID']
 
-        return shot_Plot
+        return shot_plot
 
 
 def player_card(player):
@@ -275,10 +281,6 @@ def update_layout():
             id='team_roster_container'),
 
         html.Div(
-            html.P('Select a team to get started', style={'align': 'center'}),
-            id='team_stats_container'),
-
-        html.Div(
             id='shot_plot')
 
     ])
@@ -307,30 +309,7 @@ def update_team_roster_table(pathname, value):
         return html.P('Results')
 
     elif value == 'Stats':
-        team_stats_columns = ['GameID', 'Ast', 'Blk ', 'Blka', 'Dreb', 'Fbpts', 'Fbptsa', 'Fbptsm', 'Fga', 'Fgm', 'Fta',
-                              'Ftm', 'Oreb', 'Pf', 'Pip', 'Pipa', 'Pipm', 'Pts', 'Reb', 'Stl', 'Tov', 'Tpa', 'Tpm']
-
-        team_stats = load_data('{} {}'.format(team_game_stats_query, str(_team_id)), sql_config, 'nba')
-        team_stats.columns = team_stats_columns
-
-        return build_table(team_stats, 'Stats')
-
-    elif value == 'Shots':
-        return html.P('Shots')
-
-
-@app.callback(
-    Output('team_stats_container', 'children'),
-    [Input('team_url', 'pathname'),
-     Input('div-tabs', 'value')])
-def update_team_stats_table(pathname, value):
-    if pathname:
-        _team_id = pathname.split('/')[-1]
-    else:
-        return html.P('Select a team to get started')
-
-    if value == 'Current Roster' and _team_id:
-        team_stats_columns = ['tid', 'season', 'ast', 'games, ''blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
+        team_stats_columns = ['tid', 'season', 'ast', 'games', 'blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
                               'fbptsm', 'fga', 'fgm', 'fta', 'ftm', 'oreb', 'pf', 'pip', 'pipa', 'pipm',
                               'pts', 'reb', 'stl', 'tov', 'tpa', 'tpm']
 
@@ -338,6 +317,9 @@ def update_team_stats_table(pathname, value):
         team_stats.columns = team_stats_columns
 
         return build_table(team_stats, 'Stats')
+
+    elif value == 'Shots':
+        return html.P('Shots')
 
 
 @app.callback(
@@ -355,15 +337,6 @@ def update_shot_plot(pathname):
 
         return shot_map(player_df)
 
-
-external_css = [
-    "https://codepen.io/chriddyp/pen/bWLwgP.css",
-    "https://codepen.io/chriddyp/pen/brPBPO.css",
-    "https://codepen.io/chriddyp/pen/dZVMbK.css"
-]
-
-for css in external_css:
-    app.css.append_css({"external_url": css})
 
 if __name__ == '__main__':
     app.run_server(debug=True)
