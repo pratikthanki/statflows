@@ -1,12 +1,18 @@
+import os
 import pandas as pd
 import numpy as np
-from flask import Flask
+
+from flask import Flask, session
+from dash_google_auth import GoogleOAuth
+
 import dash
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
+
 from shared_config import sql_config
+from nba_settings import authorized_app_emails
 from sql_queries import team_roster_query, team_query, shot_chart_query, team_game_stats_query, team_season_stats_query
 from shared_modules import load_data
 
@@ -15,10 +21,25 @@ server = Flask(__name__)
 external_css = [
     "https://codepen.io/chriddyp/pen/bWLwgP.css",
     "https://codepen.io/chriddyp/pen/brPBPO.css",
-    "https://codepen.io/chriddyp/pen/dZVMbK.css"
-]
+    "https://codepen.io/chriddyp/pen/dZVMbK.css"]
 
-app = dash.Dash(name='app1', server=server, external_stylesheets=external_css)
+app = dash.Dash(
+    name='app1',
+    server=server,
+    url_base_pathname='/',
+    external_stylesheets=external_css)
+
+app.config['suppress_callback_exceptions'] = True
+
+server.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
+server.config["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+server.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
+auth = GoogleOAuth(
+    app,
+    authorized_app_emails,
+)
 
 DEFAULT_IMAGE = 'https://stats.nba.com/media/img/league/nba-headshot-fallback.png'
 
@@ -99,7 +120,7 @@ def player_card(player):
         for col in df.columns:
             value = df.iloc[i][col]
             style = {'align': 'center', 'padding': '5px', 'color': 'black',
-                     'border': 'white', 'text-align': 'center', 'font-size': '11px'}
+                     'border': 'white', 'text-align': 'center', 'font-size': '14px'}
             row.append(html.Td(value, style=style))
 
         rows.append(html.Tr(row))
@@ -157,9 +178,9 @@ def player_image(player):
 
         return html.Div(children=[
             html.Img(src=str(img), style={
-                'height': '130px'}, className='image'),
+                'height': '170px'}, className='image'),
             html.Div(html.H4(str(name),
-                             style={'font-size': '20px',
+                             style={'font-size': '24px',
                                     'text-align': 'center'})),
             html.Div(player_card(player), className='overlay')],
             className='container', style={'width': '100%', 'height': '100%', 'position': 'relative'})
@@ -261,7 +282,7 @@ def update_layout():
         dcc.Location(id='team_url', refresh=False),
         html.Div(
             [dcc.Link(
-                html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '92px'},
+                html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '110px'},
                          className='team-overlay', id='team-logo-' + str(i)), href='/team/' + str(i))
                 for i in teams['TeamID'].values if i is not None]),
 
@@ -287,8 +308,6 @@ def update_layout():
 
 
 app.layout = update_layout()
-
-app.config['suppress_callback_exceptions'] = True
 
 
 @app.callback(
