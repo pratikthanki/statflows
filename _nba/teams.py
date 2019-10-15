@@ -1,7 +1,7 @@
 import pandas as pd
 
 TEAMS = {
-    'ATL': {
+    '1610612737': {
         'abbr': 'ATL',
         'city': 'Atlanta',
         'code': 'hawks',
@@ -13,7 +13,8 @@ TEAMS = {
         'name': 'Hawks',
         'color': 'E2373E',
         'colors': ['E2373E', '002A5C', 'BAC4CA']
-    }, 'BOS': {
+    },
+    '1610612738': {
         'abbr': 'BOS',
         'city': 'Boston',
         'code': 'celtics',
@@ -25,7 +26,8 @@ TEAMS = {
         'name': 'Celtics',
         'color': '007239',
         'colors': ['007239', 'AE8445', '982527', '000000']
-    }, 'BKN': {
+    },
+    '1610612751': {
         'abbr': 'BKN',
         'city': 'Brooklyn',
         'code': 'nets',
@@ -37,7 +39,8 @@ TEAMS = {
         'name': 'Nets',
         'color': '000000',
         'colors': ['000000', 'FFFFFF']
-    }, 'CHA': {
+    },
+    '1610612766': {
         'abbr': 'CHA',
         'city': 'Charlotte',
         'code': 'hornets',
@@ -49,7 +52,8 @@ TEAMS = {
         'name': 'Hornets',
         'color': '00848E',
         'colors': ['00848E', '260F54', 'CCCCCC']
-    }, 'CHI': {
+    },
+    '1610612741': {
         'abbr': 'CHI',
         'city': 'Chicago',
         'code': 'bulls',
@@ -61,7 +65,8 @@ TEAMS = {
         'name': 'Bulls',
         'color': 'C60033',
         'colors': ['C60033', '000000']
-    }, 'CLE': {
+    },
+    '1610612739': {
         'abbr': 'CLE',
         'city': 'Cleveland',
         'code': 'cavaliers',
@@ -73,7 +78,8 @@ TEAMS = {
         'name': 'Cavaliers',
         'color': '860038',
         'colors': ['860038', '002D62', 'FDBA31']
-    }, 'DAL': {
+    },
+    '1610612742': {
         'abbr': 'DAL',
         'city': 'Dallas',
         'code': 'mavericks',
@@ -85,7 +91,8 @@ TEAMS = {
         'name': 'Mavericks',
         'color': '0063AF',
         'colors': ['0063AF', 'BAC4CA', '000000']
-    }, 'DEN': {
+    },
+    '1610612743': {
         'abbr': 'DEN',
         'city': 'Denver',
         'code': 'nuggets',
@@ -97,7 +104,8 @@ TEAMS = {
         'name': 'Nuggets',
         'color': '559FD6',
         'colors': ['559FD6', '006BB7', 'FEA927']
-    }, 'DET': {
+    },
+    '1610612765': {
         'abbr': 'DET',
         'city': 'Detroit',
         'code': 'pistons',
@@ -109,7 +117,8 @@ TEAMS = {
         'name': 'Pistons',
         'color': 'EC003D',
         'colors': ['EC003D', '0058A6', '001D4A']
-    }, 'GSW': {
+    },
+    '1610612744': {
         'abbr': 'GSW',
         'city': 'Golden State',
         'code': 'warriors',
@@ -121,7 +130,8 @@ TEAMS = {
         'name': 'Warriors',
         'color': '0068B3',
         'colors': ['0068B3', 'FFC423']
-    }, 'HOU': {
+    },
+    '1610612745': {
         'abbr': 'HOU',
         'city': 'Houston',
         'code': 'rockets',
@@ -133,7 +143,8 @@ TEAMS = {
         'name': 'Rockets',
         'color': 'C60033',
         'colors': ['C60033', '000000']
-    }, 'IND': {
+    },
+    '1610612754': {
         'abbr': 'IND',
         'city': 'Indiana',
         'code': 'pacers',
@@ -145,7 +156,8 @@ TEAMS = {
         'name': 'Pacers',
         'color': '001D4A',
         'colors': ['001D4A', 'FEAC2D', 'B0B2B5']
-    }, 'LAC': {
+    },
+    '1610612746': {
         'abbr': 'LAC',
         'city': 'Los Angeles',
         'code': 'clippers',
@@ -157,7 +169,8 @@ TEAMS = {
         'name': 'Clippers',
         'color': '00559A',
         'colors': ['00559A', 'EC003D']
-    }, 'LAL': {
+    },
+    '1610612747': {
         'abbr': 'LAL',
         'city': 'Los Angeles',
         'code': 'lakers',
@@ -169,7 +182,8 @@ TEAMS = {
         'name': 'Lakers',
         'color': 'FEA927',
         'colors': ['FEA927', '42186E', '000000']
-    }, 'MEM': {
+    },
+    '1610612763': {
         'abbr': 'MEM',
         'city': 'Memphis',
         'code': 'grizzlies',
@@ -181,7 +195,8 @@ TEAMS = {
         'name': 'Grizzlies',
         'color': '182A48',
         'colors': ['182A48', '4C78AD', 'FEA927', 'AAC8E5']
-    }, 'MIA': {
+    },
+    '1610612748': {
         'abbr': 'MIA',
         'city': 'Miami',
         'code': 'heat',
@@ -193,7 +208,8 @@ TEAMS = {
         'name': 'Heat',
         'color': '98002E',
         'colors': ['98002E', 'F88D1D', '000000']
-    }, 'MIL': {
+    },
+    '1610612749': {
         'abbr': 'MIL',
         'city': 'Milwaukee',
         'code': 'bucks',
@@ -205,7 +221,8 @@ TEAMS = {
         'name': 'Bucks',
         'color': 'C41230',
         'colors': ['C41230', '003815', 'BAC4CA']
-    }, 'MIN': {
+    },
+    '1610612750': {
         'abbr': 'MIN',
         'city': 'Minnesota',
         'code': 'timberwolves',
@@ -217,7 +234,8 @@ TEAMS = {
         'name': 'Timberwolves',
         'color': '#003F70',
         'colors': ['003F70', '006F42', 'BAC4CA', 'FFE211', 'DE2032', '000000']
-    }, 'NOP': {
+    },
+    '1610612740': {
         'abbr': 'NOP',
         'city': 'New Orleans',
         'code': 'pelicans',
@@ -229,7 +247,8 @@ TEAMS = {
         'name': 'Pelicans',
         'color': '#002B5C',
         'colors': ['002B5C', 'B4975A', 'E13A3E']
-    }, 'NYK': {
+    },
+    '1610612752': {
         'abbr': 'NYK',
         'city': 'New York',
         'code': 'knicks',
@@ -241,7 +260,8 @@ TEAMS = {
         'name': 'Knicks',
         'color': 'F3571F',
         'colors': ['F3571F', '0067B2', 'BAC4CA']
-    }, 'OKC': {
+    },
+    '1610612760': {
         'abbr': 'OKC',
         'city': 'Oklahoma City',
         'code': 'thunder',
@@ -253,7 +273,8 @@ TEAMS = {
         'name': 'Thunder',
         'color': 'FDBB30',
         'colors': ['FDBB30', 'F05133', '007DC3', '002D62']
-    }, 'ORL': {
+    },
+    '1610612753': {
         'abbr': 'ORL',
         'city': 'Orlando',
         'code': 'magic',
@@ -265,7 +286,8 @@ TEAMS = {
         'name': 'Magic',
         'color': '006BB7',
         'colors': ['006BB7', 'BAC4CA', '000000']
-    }, 'PHI': {
+    },
+    '1610612755': {
         'abbr': 'PHI',
         'city': 'Philadelphia',
         'code': 'sixers',
@@ -277,7 +299,8 @@ TEAMS = {
         'name': 'Sixers',
         'color': 'EC003D',
         'colors': ['EC003D', '00559A', 'BAC4CA']
-    }, 'PHX': {
+    },
+    '1610612756': {
         'abbr': 'PHX',
         'city': 'Phoenix',
         'code': 'suns',
@@ -289,7 +312,8 @@ TEAMS = {
         'name': 'Suns',
         'color': 'E45F1F',
         'colors': ['E45F1F', 'F89F1B', 'BAC4CA', '000000']
-    }, 'POR': {
+    },
+    '1610612757': {
         'abbr': 'POR',
         'city': 'Portland',
         'code': 'blazers',
@@ -301,7 +325,8 @@ TEAMS = {
         'name': 'Trail Blazers',
         'color': 'DE2032',
         'colors': ['DE2032', 'BAC4CA', '000000']
-    }, 'SAC': {
+    },
+    '1610612758': {
         'abbr': 'SAC',
         'city': 'Sacramento',
         'code': 'kings',
@@ -313,7 +338,8 @@ TEAMS = {
         'name': 'Kings',
         'color': '542E91',
         'colors': ['542E91', 'BAC4CA', '000000']
-    }, 'SAS': {
+    },
+    '1610612759': {
         'abbr': 'SAS',
         'city': 'San Antonio',
         'code': 'spurs',
@@ -325,7 +351,8 @@ TEAMS = {
         'name': 'Spurs',
         'color': '#BA24CA',
         'colors': ['BA24CA', '000000']
-    }, 'TOR': {
+    },
+    '1610612761': {
         'abbr': 'TOR',
         'city': 'Toronto',
         'code': 'raptors',
@@ -337,7 +364,8 @@ TEAMS = {
         'name': 'Raptors',
         'color': 'C60033',
         'colors': ['C60033', 'BAC4CA']
-    }, 'UTA': {
+    },
+    '1610612762': {
         'abbr': 'UTA',
         'city': 'Utah',
         'code': 'jazz',
@@ -349,7 +377,8 @@ TEAMS = {
         'name': 'Jazz',
         'color': '#002A5C',
         'colors': ['002A5C', '004812', 'FCB034', 'BACA4CA']
-    }, 'WAS': {
+    },
+    '1610612764': {
         'abbr': 'WAS',
         'city': 'Washington',
         'code': 'wizards',
