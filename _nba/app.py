@@ -17,7 +17,9 @@ from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_ST
     SINGLE_TAB_STYLE, ALL_TAB_STYLE, EVENT_DEFINITIONS
 
 from nba_settings import authorized_app_emails
-from sql_queries import team_roster_query, team_query, shot_chart_query, team_game_stats_query, team_season_stats_query
+from teams import TEAMS
+from sql_queries import team_roster_query, team_query, shot_chart_query, team_game_stats_query, \
+    team_season_stats_query, SHOT_PLOT_COLUMNS, TEAM_COLUMNS, TEAM_STATS_COLUMNS, CURRENT_ROSTER_COLUMNS
 
 server = Flask(__name__)
 
@@ -29,9 +31,6 @@ app = dash.Dash(
     name='app1',
     server=server,
     url_base_pathname='/',
-    # meta_tags=[
-    #     {"name": "viewport", "content": "width=device-width, initial-scale=1.0"}
-    # ],
     external_stylesheets=external_css)
 
 app.config['suppress_callback_exceptions'] = True
@@ -45,19 +44,6 @@ auth = GoogleOAuth(
     app,
     authorized_app_emails,
 )
-
-SHOT_PLOT_COLUMNS = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-                     'LocationY', 'Period', 'TeamID', 'PlayerID']
-
-TEAM_COLUMNS = ['TeamID', 'TeamCode', 'TeamLogo']
-
-TEAM_STATS_COLUMNS = ['tid', 'teamcode', 'season', 'ast', 'games', 'blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
-                      'fbptsm', 'fga', 'fgm', 'fta', 'ftm', 'oreb', 'pf', 'pip', 'pipa', 'pipm',
-                      'pts', 'reb', 'stl', 'tov', 'tpa', 'tpm']
-
-CURRENT_ROSTER_COLUMNS = ['TeamId', 'Season', 'LeagueId', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
-                          'DoB', 'Age', 'Experience', 'School', 'PlayerId', 'TeamLogo', 'PlayerImg', 'Division',
-                          'Conference']
 
 
 def get_shots(player):
@@ -229,49 +215,69 @@ teams = load_data(team_query, sql_config, 'nba', TEAM_COLUMNS)
 
 
 def update_layout():
-    return html.Div(children=[
-        dcc.Location(id='team_url', refresh=False),
-        html.Div(
-            [dcc.Link(
-                html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '110px'},
-                         className='team-overlay', id='team-logo-' + str(i)), href='/team/' + str(i))
-                for i in teams['TeamID'].values if i is not None]),
+    return html.Div(
+        children=[
+            dcc.Location(id='team_url', refresh=False),
+            html.Div(
+                [dcc.Link(
+                    html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '110px'},
+                             className='team-overlay', id='team-logo-' + str(i)), href='/team/' + str(i))
+                    for i in teams['TeamID'].values if i is not None]),
 
-        dcc.Tabs(id="div-tabs", value='Current Roster', children=[
-            dcc.Tab(label='ROSTER', value='Current Roster',
-                    style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-            dcc.Tab(label='RESULTS', value='Results',
-                    style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-            dcc.Tab(label='STATS', value='Stats',
-                    style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-            dcc.Tab(label='SHOTS', value='Shots',
-                    style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE)],
-                 style=ALL_TAB_STYLE),
+            dcc.Tabs(id="div-tabs", value='Current Roster', children=[
+                dcc.Tab(label='ROSTER', value='Current Roster',
+                        style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+                dcc.Tab(label='RESULTS', value='Results',
+                        style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+                dcc.Tab(label='STATS', value='Stats',
+                        style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+                dcc.Tab(label='SHOTS', value='Shots',
+                        style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE)],
+                     style=ALL_TAB_STYLE
+                     ),
 
-        html.P('Select Trend to view team stats over time of Compare to see stats relative to the league'),
+            html.P('Select TREND to view team stats over time or COMPARE to see stats relative to the league',
+                   style={'font-size': '12px'}
+                   ),
 
-        dcc.RadioItems(
-            id='stat-option',
-            options=[
-                {'label': 'Trend', 'value': 'Trend'},
-                {'label': 'Compare', 'value': 'Compare'}
-            ],
-            value='Trend',
-            labelStyle={'display': 'inline-block'}
-        ),
+            dcc.RadioItems(
+                id='stat-option',
+                options=[
+                    {'label': 'TREND', 'value': 'Trend'},
+                    {'label': 'COMPARE', 'value': 'Compare'}
+                ],
+                value='Trend',
+                labelStyle={'display': 'inline-block'}
+            ),
 
-        dcc.Graph(
-            id='team-graph'
-        ),
+            dcc.RadioItems(
+                id='season-option',
+                options=[{'label': i, 'value': i} for i in
+                         ['2014-2015', '2015-2016', '2016-2017', '2017-2018', '2018-2019', '2019-2020']],
+                value='2019-2020',
+                labelStyle={'display': 'inline-block'}
+            ),
 
-        html.Div(
-            html.P('Select a team to get started', style={'align': 'center'}),
-            id='team_roster_container'),
+            dcc.Dropdown(
+                id='metric-picker',
+                options=[{'label': i, 'value': i} for i in TEAM_STATS_COLUMNS if
+                         i not in ['tid', 'teamcode', 'season']],
+                value='ast'
+            ),
 
-        html.Div(
-            id='shot_plot')
+            dcc.Graph(
+                id='team-graph'
+            ),
 
-    ])
+            html.Div(
+                id='team_roster_container'
+            ),
+
+            html.Div(
+                id='shot_plot'
+            )
+
+        ])
 
 
 app.layout = update_layout()
@@ -280,7 +286,8 @@ app.layout = update_layout()
 @app.callback(
     Output('team_roster_container', 'children'),
     [Input('team_url', 'pathname'),
-     Input('div-tabs', 'value')])
+     Input('div-tabs', 'value')]
+)
 def update_team_roster_table(pathname, value):
     if pathname:
         _team_id = pathname.split('/')[-1]
@@ -308,45 +315,41 @@ def update_team_roster_table(pathname, value):
     Output('team-graph', 'figure'),
     [Input('team_url', 'pathname'),
      Input('div-tabs', 'value'),
-     Input('stat-option', 'value')]
+     Input('stat-option', 'value'),
+     Input('metric-picker', 'value'),
+     Input('season-option', 'value')]
 )
-def team_summary_stats(pathname, value, option):
-    if pathname and value == 'Current Roster':
+def team_summary_stats(pathname, value, option, metric, season):
+    if pathname:
         _team_id = pathname.split('/')[-1]
+
+    if value == 'Current Roster':
 
         if option == 'Compare':
             query = '{}'.format(team_season_stats_query)
-            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS)
-            temp = team_stats[team_stats['season'] == '2019-2020']
+            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by=metric)
+            temp = team_stats[team_stats['season'] == season]
             data_x = temp['teamcode'].values.tolist()
-            data_y = temp['pts'].values.tolist()
+            data_y = temp[metric].values.tolist()
 
-            return {
-                'data': [
-                    {'x': data_x, 'y': data_y, 'type': 'bar', 'name': 'SF'}
-                ],
-                'layout': {
-                    'title': 'Dash Data Visualization'
-                }
-            }
-
-        if option == 'Trend':
+        elif option == 'Trend':
             query = '{} {}'.format(team_season_stats_query, _team_id)
-            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS)
+            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by='season')
             data_x = [str(i) for i in team_stats['season'].values.tolist()]
-            data_y = team_stats['pts'].values.tolist()
+            data_y = team_stats[metric].values.tolist()
 
-            return {
-                'data': [
-                    {'x': data_x, 'y': data_y, 'type': 'bar', 'name': 'SF'}
-                ],
-                'layout': {
-                    'title': 'Dash Data Visualization'
-                }
+        else:
+            return html.P('Select a team to get started')
+
+        return {
+            'data': [
+                {'x': data_x, 'y': data_y, 'type': 'bar', 'name': 'SF'}
+            ],
+            'layout': {
+                'title': 'Team: {0} \n'
+                         'Metric: {1}'.format(TEAMS[_team_id]['name'], metric)
             }
-
-    else:
-        return html.P('Select a team to get started')
+        }
 
 
 @app.callback(
