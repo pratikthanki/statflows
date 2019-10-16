@@ -6,8 +6,8 @@ standings_query = 'SELECT * FROM [dbo].[vwStandings]'
 team_game_stats_query = 'EXEC [dbo].[sp_TeamGameStats]'
 team_season_stats_query = 'EXEC [dbo].[sp_TeamSeasonStats]'
 
-SHOT_PLOT_COLUMNS = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX',
-                     'LocationY', 'Period', 'TeamID', 'PlayerID']
+SHOT_PLOT_COLUMNS = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX', 'LocationY', 'Period', 'TeamID',
+                     'PlayerID']
 
 TEAM_COLUMNS = ['TeamID', 'TeamCode', 'TeamLogo']
 
