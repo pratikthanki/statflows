@@ -265,8 +265,12 @@ def update_layout():
                 value='ast'
             ),
 
-            dcc.Graph(
-                id='team-graph'
+            dcc.Loading(
+                id="loading-1",
+                children=[html.Div(
+                    dcc.Graph(id='team-graph')
+                )],
+                type="default"
             ),
 
             html.Div(
