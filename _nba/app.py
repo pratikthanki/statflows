@@ -222,7 +222,12 @@ def update_layout():
                 [dcc.Link(
                     html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '110px'},
                              className='team-overlay', id='team-logo-' + str(i)), href='/team/' + str(i))
-                    for i in teams['TeamID'].values if i is not None]),
+                    for i in sorted(teams['TeamID'].values)[:15] if i is not None] +
+                [dcc.Link(
+                    html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '110px'},
+                             className='team-overlay', id='team-logo-' + str(i)), href='/team/' + str(i))
+                    for i in sorted(teams['TeamID'].values)[-15:] if i is not None]
+            ),
 
             dcc.Tabs(id="div-tabs", value='Current Roster', children=[
                 dcc.Tab(label='ROSTER', value='Current Roster',
@@ -268,13 +273,17 @@ def update_layout():
             dcc.Loading(
                 id="loading-1",
                 children=[html.Div(
-                    dcc.Graph(id='team-graph')
+                    dcc.Graph(id='team-graph', style={'width': '100%'})
                 )],
                 type="default"
             ),
 
-            html.Div(
-                id='team_roster_container'
+            dcc.Loading(
+                id="loading-2",
+                children=html.Div(
+                    id='team_roster_container'
+                ),
+                type="default"
             ),
 
             html.Div(
@@ -294,12 +303,12 @@ app.layout = update_layout()
 )
 def update_team_roster_table(pathname, value):
     if pathname:
-        _team_id = pathname.split('/')[-1]
+        team_id = pathname.split('/')[-1]
     else:
         return html.P('Select a team to get started')
 
     if value == 'Current Roster':
-        _teamdf = current_roster(rosters, _team_id)
+        _teamdf = current_roster(rosters, team_id)
         return build_table(_teamdf, 'Summary')
 
     elif value == 'Results':
@@ -324,11 +333,9 @@ def update_team_roster_table(pathname, value):
      Input('season-option', 'value')]
 )
 def team_summary_stats(pathname, value, option, metric, season):
-    if pathname:
-        _team_id = pathname.split('/')[-1]
+    team_id = pathname.split('/')[-1] if pathname else None
 
-    if value == 'Current Roster':
-
+    if team_id and value == 'Current Roster':
         if option == 'Compare':
             query = '{}'.format(team_season_stats_query)
             team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by=metric)
@@ -337,21 +344,27 @@ def team_summary_stats(pathname, value, option, metric, season):
             data_y = temp[metric].values.tolist()
 
         elif option == 'Trend':
-            query = '{} {}'.format(team_season_stats_query, _team_id)
+            query = '{} {}'.format(team_season_stats_query, team_id)
             team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by='season')
             data_x = [str(i) for i in team_stats['season'].values.tolist()]
             data_y = team_stats[metric].values.tolist()
 
-        else:
-            return html.P('Select a team to get started')
-
         return {
             'data': [
-                {'x': data_x, 'y': data_y, 'type': 'bar', 'name': 'SF'}
+                {'x': data_x, 'y': data_y, 'type': 'bar', 'name': '{}'.format(TEAMS[team_id]['name'])}
             ],
             'layout': {
-                'title': 'Team: {0} \n'
-                         'Metric: {1}'.format(TEAMS[_team_id]['name'], metric)
+                'title': 'Team: {0} \n Metric: {1}'.format(TEAMS[team_id]['name'], metric)
+            }
+        }
+
+    else:
+        return {
+            'data': [
+                {'x': 0, 'y': 0, 'type': 'bar'}
+            ],
+            'layout': {
+                'title': 'Select a team to get started'
             }
         }
 
