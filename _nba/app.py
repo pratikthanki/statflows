@@ -220,13 +220,11 @@ def update_layout():
             dcc.Location(id='team_url', refresh=False),
             html.Div(
                 [dcc.Link(
-                    html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '110px'},
-                             className='team-overlay', id='team-logo-' + str(i)), href='/team/' + str(i))
-                    for i in sorted(teams['TeamID'].values)[:15] if i is not None] +
-                [dcc.Link(
-                    html.Img(src=teams.loc[teams['TeamID'] == i, 'TeamLogo'].iloc[0], style={'height': '110px'},
-                             className='team-overlay', id='team-logo-' + str(i)), href='/team/' + str(i))
-                    for i in sorted(teams['TeamID'].values)[-15:] if i is not None]
+                    html.Img(src=teams.loc[teams['TeamID'] == i['TeamID'], 'TeamLogo'].iloc[0],
+                             style={'height': '110px'},
+                             className='team-overlay', id='team-logo-' + str(i['TeamID'])),
+                    href='/team/' + str(i['TeamID']))
+                    for i in teams.to_dict('records') if i['TeamID'] is not None]
             ),
 
             dcc.Tabs(id="div-tabs", value='Current Roster', children=[
