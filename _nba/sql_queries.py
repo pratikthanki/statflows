@@ -9,7 +9,7 @@ team_season_stats_query = 'EXEC [dbo].[sp_TeamSeasonStats]'
 SHOT_PLOT_COLUMNS = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX', 'LocationY', 'Period', 'TeamID',
                      'PlayerID']
 
-TEAM_COLUMNS = ['TeamID', 'TeamCode', 'TeamLogo']
+TEAM_COLUMNS = ['TeamID', 'TeamCode', 'TeamLogo', 'Division', 'Conference']
 
 TEAM_STATS_COLUMNS = ['tid', 'teamcode', 'season', 'ast', 'games', 'blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
                       'fbptsm', 'fga', 'fgm', 'fta', 'ftm', 'oreb', 'pf', 'pip', 'pipa', 'pipm',
