@@ -2,8 +2,11 @@ import os
 import pandas as pd
 import numpy as np
 
-from flask import Flask, session
+from flask import Flask, redirect, url_for, session
+from flask_oauth import OAuth
 from dash_google_auth import GoogleOAuth
+
+from urllib.parse import urljoin
 
 import dash
 from dash.dependencies import Input, Output
@@ -18,26 +21,26 @@ from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_ST
 
 from nba_settings import authorized_app_emails
 from teams import TEAMS
+from court import court_plot
 from sql_queries import team_roster_query, team_query, shot_chart_query, team_game_stats_query, \
     team_season_stats_query, SHOT_PLOT_COLUMNS, TEAM_COLUMNS, TEAM_STATS_COLUMNS, CURRENT_ROSTER_COLUMNS
 
 server = Flask(__name__)
 
-external_css = [
-    "https://codepen.io/chriddyp/pen/bWLwgP.css"
-]
-
 app = dash.Dash(
-    name='app1',
+    name='nba_app',
     server=server,
     url_base_pathname='/',
-    external_stylesheets=external_css)
-
-app.config['suppress_callback_exceptions'] = True
+    external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'],
+    suppress_callback_exceptions=True)
 
 server.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
 server.config["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 server.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+
+# one of the Redirect URIs from Google APIs console
+REDIRECT_URI = '/oauth2callback'
+
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 auth = GoogleOAuth(
@@ -48,7 +51,7 @@ auth = GoogleOAuth(
 
 def get_shots(player):
     if player:
-        shot_query = '{} {}'.format(shot_chart_query, str(player))
+        shot_query = shot_chart_query.format(player, '', '')
         shot_plot = load_data(shot_query, sql_config, 'nba', SHOT_PLOT_COLUMNS)
 
         return shot_plot
@@ -75,8 +78,8 @@ def player_card(player):
 
     return html.Div(children=[
         html.Table(rows, style=TABLE_STYLE),
-        dcc.Link(html.Button('More Info', id='player-drilldown-' + str(player), style={
-            'font-size': '10px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}),
+        dcc.Link(html.Button('MORE STATS', id='player-drilldown-' + str(player), style={
+            'font-size': '12px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}),
                  href='/player/' + str(player))
     ])
 
@@ -116,9 +119,9 @@ def player_image(player):
 
         return html.Div(children=[
             html.Img(src=str(img), style={
-                'height': '170px'}, className='image'),
+                'height': '160px'}, className='image'),
             html.Div(html.H4(str(name),
-                             style={'font-size': '24px',
+                             style={'font-size': '22px',
                                     'text-align': 'center'})),
             html.Div(player_card(player), className='overlay')],
             className='container', style={'width': '100%', 'height': '100%', 'position': 'relative'})
@@ -131,7 +134,7 @@ def build_table(df, table_setting='Summary'):
             row = []
             for col in df.columns:
                 value = player_image(df.iloc[i][col]) if table_setting == 'Summary' else df.iloc[i][col]
-                style = {'align': 'center', 'padding': '5px', 'text-align': 'center',
+                style = {'align': 'center', 'padding': '3px', 'text-align': 'center',
                          'font-size': '12px'}
                 row.append(html.Td(value, style=style))
 
@@ -201,11 +204,61 @@ def shot_map(data):
                         ),
                         height=600,
                         width=650,
-                        shapes=courtPlot()
+                        shapes=court_plot()
                     )
                 }
             )
         )
+
+
+def division_image_header(conf, float, align):
+    return html.Div(
+        [dcc.Link(
+            html.Img(src=teams.loc[teams['TeamID'] == i['TeamID'], 'TeamLogo'].iloc[0],
+                     style={'height': 'auto', 'width': '75px'},
+                     className='team-overlay',
+                     id='team-logo-' + str(i['TeamID'])),
+            href='/team/' + str(i['TeamID']),
+            style={'padding-{}'.format(align): '20px'})
+            for i in teams.sort_values(by=['Division', 'TeamCode']).to_dict('records') if
+            i['TeamID'] is not None and i['Conference'] == conf],
+        style={'float': float, 'width': '50%', 'text-align': align, 'padding': '0px 0px 0px 0px'}
+    )
+
+
+def team_stats_graph(team_id, value, option, metric, season):
+    if team_id and value in ['Current Roster', 'Stats']:
+        if option == 'Compare':
+            query = '{}'.format(team_season_stats_query)
+            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by=metric)
+            temp = team_stats[team_stats['season'] == season]
+            data_x = temp['teamcode'].values.tolist()
+            data_y = temp[metric].values.tolist()
+
+        elif option == 'Trend':
+            query = '{} {}'.format(team_season_stats_query, team_id)
+            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by='season')
+            data_x = [str(i) for i in team_stats['season'].values.tolist()]
+            data_y = team_stats[metric].values.tolist()
+
+        return {
+            'data': [
+                {'x': data_x, 'y': data_y, 'type': 'bar', 'name': '{}'.format(TEAMS[team_id]['name'])}
+            ],
+            'layout': {
+                'title': 'Team: {0} \n Metric: {1}'.format(TEAMS[team_id]['name'], metric)
+            }
+        }
+
+    else:
+        return {
+            'data': [
+                {'x': 0, 'y': 0, 'type': 'bar'}
+            ],
+            'layout': {
+                'title': 'Select a team to get started'
+            }
+        }
 
 
 rosters = load_data(team_roster_query, sql_config, 'nba', CURRENT_ROSTER_COLUMNS)
@@ -218,26 +271,30 @@ def update_layout():
     return html.Div(
         children=[
             dcc.Location(id='team_url', refresh=False),
+
             html.Div(
-                [dcc.Link(
-                    html.Img(src=teams.loc[teams['TeamID'] == i['TeamID'], 'TeamLogo'].iloc[0],
-                             style={'height': '110px'},
-                             className='team-overlay', id='team-logo-' + str(i['TeamID'])),
-                    href='/team/' + str(i['TeamID']))
-                    for i in teams.to_dict('records') if i['TeamID'] is not None]
+                children=[
+                    division_image_header('Eastern', 'left', 'right'),
+                    division_image_header('Western', 'right', 'left')
+                ],
+                style={'display': 'flex'}
             ),
 
-            dcc.Tabs(id="div-tabs", value='Current Roster', children=[
-                dcc.Tab(label='ROSTER', value='Current Roster',
-                        style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-                dcc.Tab(label='RESULTS', value='Results',
-                        style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-                dcc.Tab(label='STATS', value='Stats',
-                        style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-                dcc.Tab(label='SHOTS', value='Shots',
-                        style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE)],
-                     style=ALL_TAB_STYLE
-                     ),
+            html.Div(
+                children=[
+                    dcc.Tabs(id="div-tabs", value='Current Roster', children=[
+                        dcc.Tab(label='ROSTER', value='Current Roster', style=SINGLE_TAB_STYLE,
+                                selected_style=SELECTED_TAB_STYLE),
+                        dcc.Tab(label='RESULTS', value='Results',
+                                style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+                        dcc.Tab(label='STATS', value='Stats',
+                                style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+                        dcc.Tab(label='SHOTS', value='Shots',
+                                style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE)],
+                             style=ALL_TAB_STYLE
+                             )
+                ]
+            ),
 
             html.P('Select TREND to view team stats over time or COMPARE to see stats relative to the league',
                    style={'font-size': '12px'}
@@ -312,12 +369,6 @@ def update_team_roster_table(pathname, value):
     elif value == 'Results':
         return html.P('Results')
 
-    elif value == 'Stats':
-        team_stats = load_data(team_season_stats_query, sql_config, 'nba', TEAM_STATS_COLUMNS)
-        team_stats.columns = team_stats_columns
-
-        return build_table(team_stats, 'Stats')
-
     elif value == 'Shots':
         return html.P('Shots')
 
@@ -333,38 +384,7 @@ def update_team_roster_table(pathname, value):
 def team_summary_stats(pathname, value, option, metric, season):
     team_id = pathname.split('/')[-1] if pathname else None
 
-    if team_id and value == 'Current Roster':
-        if option == 'Compare':
-            query = '{}'.format(team_season_stats_query)
-            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by=metric)
-            temp = team_stats[team_stats['season'] == season]
-            data_x = temp['teamcode'].values.tolist()
-            data_y = temp[metric].values.tolist()
-
-        elif option == 'Trend':
-            query = '{} {}'.format(team_season_stats_query, team_id)
-            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by='season')
-            data_x = [str(i) for i in team_stats['season'].values.tolist()]
-            data_y = team_stats[metric].values.tolist()
-
-        return {
-            'data': [
-                {'x': data_x, 'y': data_y, 'type': 'bar', 'name': '{}'.format(TEAMS[team_id]['name'])}
-            ],
-            'layout': {
-                'title': 'Team: {0} \n Metric: {1}'.format(TEAMS[team_id]['name'], metric)
-            }
-        }
-
-    else:
-        return {
-            'data': [
-                {'x': 0, 'y': 0, 'type': 'bar'}
-            ],
-            'layout': {
-                'title': 'Select a team to get started'
-            }
-        }
+    return team_stats_graph(team_id, value, option, metric, season)
 
 
 @app.callback(
@@ -373,7 +393,7 @@ def team_summary_stats(pathname, value, option, metric, season):
 )
 def update_shot_plot(pathname):
     if pathname:
-        if pathname.split('/')[1] == u'player':
+        if pathname.split('/')[1] == 'player':
             player_id = pathname.split('/')[-1]
         else:
             return html.P('SELECT A TEAM ABOVE TO GET STARTED', style={'float': 'center'})
@@ -381,6 +401,12 @@ def update_shot_plot(pathname):
         player_df = get_shots(player_id)
 
         return shot_map(player_df)
+
+
+@server.route('/login')
+def login():
+    callback = url_for('authorized', _external=True)
+    return google.authorize(callback=callback)
 
 
 if __name__ == '__main__':
