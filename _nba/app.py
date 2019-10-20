@@ -49,6 +49,22 @@ auth = GoogleOAuth(
 )
 
 
+def build_banner():
+    return html.Div(
+        id="banner",
+        className="banner",
+        children=[
+            html.Div(
+                id="banner-logo",
+                children=[
+                    html.Img(id="logo", src=app.get_asset_url("logo-white.png"),
+                             style={'height': '100px', 'float': 'right'}),
+                ],
+            ),
+        ],
+    )
+
+
 def get_shots(player):
     if player:
         shot_query = shot_chart_query.format(player, '', '')
@@ -227,38 +243,117 @@ def division_image_header(conf, float, align):
 
 
 def team_stats_graph(team_id, value, option, metric, season):
-    if team_id and value in ['Current Roster', 'Stats']:
+    # data_x = []
+    # data_y = []
+
+    metrics = [metric, None]
+
+    if team_id and value == 'Current Roster':
         if option == 'Compare':
             query = '{}'.format(team_season_stats_query)
-            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by=metric)
+            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS)
             temp = team_stats[team_stats['season'] == season]
+
             data_x = temp['teamcode'].values.tolist()
-            data_y = temp[metric].values.tolist()
+            # data_y = temp[metric].values.tolist()
+            colour = ['#{}'.format(TEAMS[str(tid)]['color']) for tid in temp['tid'].values.tolist()]
+
+            return go.Figure(
+                data=[
+                    go.Bar(
+                        x=data_x,
+                        y=temp[m].values.tolist(),
+                        name='{}'.format(m),
+                        # marker=go.bar.Marker(
+                        #     color=colour
+                        # )
+                    ) for m in metrics if m is not None
+                ],
+                layout=go.Layout(
+                    title='Team: {0} \n Metric: {1}'.format(TEAMS[team_id]['name'], metric),
+                    showlegend=True,
+                    legend=go.layout.Legend(
+                        x=0,
+                        y=1.0
+                    ),
+                    margin=go.layout.Margin(l=40, r=0, t=40, b=30)
+                )
+            )
 
         elif option == 'Trend':
             query = '{} {}'.format(team_season_stats_query, team_id)
             team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by='season')
             data_x = [str(i) for i in team_stats['season'].values.tolist()]
-            data_y = team_stats[metric].values.tolist()
+            # data_y = team_stats[metric].values.tolist()
 
-        return {
-            'data': [
-                {'x': data_x, 'y': data_y, 'type': 'bar', 'name': '{}'.format(TEAMS[team_id]['name'])}
-            ],
-            'layout': {
-                'title': 'Team: {0} \n Metric: {1}'.format(TEAMS[team_id]['name'], metric)
-            }
-        }
+            return go.Figure(
+                data=[
+                    go.Bar(
+                        x=data_x,
+                        y=team_stats[m].values.tolist(),
+                        name='{}'.format(m),
+                        marker=go.bar.Marker(
+                            color='#{}'.format(TEAMS[team_id]['color'])
+                        )
+                    ) for m in metrics if m is not None
+                ],
+                layout=go.Layout(
+                    title='Team: {0} \n Metric: {1}'.format(TEAMS[team_id]['name'], metric),
+                    showlegend=True,
+                    legend=go.layout.Legend(
+                        x=0,
+                        y=1.0
+                    ),
+                    margin=go.layout.Margin(l=40, r=0, t=40, b=30)
+                )
+            )
 
     else:
-        return {
-            'data': [
-                {'x': 0, 'y': 0, 'type': 'bar'}
+        return go.Figure(
+            data=[
+                go.Bar(
+                    x=[],
+                    y=[],
+                    name='',
+                    marker=go.bar.Marker(
+                        color='rgb(55, 83, 109)'
+                    )
+                )
             ],
-            'layout': {
-                'title': 'Select a team to get started'
-            }
-        }
+            layout=go.Layout(
+                title='Select a team to get started',
+                showlegend=True,
+                legend=go.layout.Legend(
+                    x=0,
+                    y=1.0
+                ),
+                margin=go.layout.Margin(l=40, r=0, t=40, b=30)
+            )
+        )
+
+
+def build_tabs():
+    return html.Div(
+        id="tabs",
+        className="tabs",
+        children=[
+            dcc.Tabs(
+                id="div-tabs",
+                value='Current Roster',
+                className='custom-tabs',
+                children=[
+                    dcc.Tab(label='ROSTER', value='Current Roster', style=SINGLE_TAB_STYLE,
+                            selected_style=SELECTED_TAB_STYLE),
+                    dcc.Tab(label='RESULTS', value='Results',
+                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+                    dcc.Tab(label='STATS', value='Stats',
+                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
+                    dcc.Tab(label='SHOTS', value='Shots',
+                            style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE)],
+                style=ALL_TAB_STYLE
+            ),
+        ],
+    )
 
 
 rosters = load_data(team_roster_query, sql_config, 'nba', CURRENT_ROSTER_COLUMNS)
@@ -280,21 +375,7 @@ def update_layout():
                 style={'display': 'flex'}
             ),
 
-            html.Div(
-                children=[
-                    dcc.Tabs(id="div-tabs", value='Current Roster', children=[
-                        dcc.Tab(label='ROSTER', value='Current Roster', style=SINGLE_TAB_STYLE,
-                                selected_style=SELECTED_TAB_STYLE),
-                        dcc.Tab(label='RESULTS', value='Results',
-                                style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-                        dcc.Tab(label='STATS', value='Stats',
-                                style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
-                        dcc.Tab(label='SHOTS', value='Shots',
-                                style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE)],
-                             style=ALL_TAB_STYLE
-                             )
-                ]
-            ),
+            build_tabs(),
 
             html.P('Select TREND to view team stats over time or COMPARE to see stats relative to the league',
                    style={'font-size': '12px'}
@@ -322,13 +403,16 @@ def update_layout():
                 id='metric-picker',
                 options=[{'label': i, 'value': i} for i in TEAM_STATS_COLUMNS if
                          i not in ['tid', 'teamcode', 'season']],
+                multi=True,
                 value='ast'
             ),
 
             dcc.Loading(
                 id="loading-1",
                 children=[html.Div(
-                    dcc.Graph(id='team-graph', style={'width': '100%'})
+                    dcc.Graph(
+                        id='team-graph'
+                    )
                 )],
                 type="default"
             ),
