@@ -1,34 +1,35 @@
-import glob
+import os
 import pandas as pd
-from shared_modules import sql_server_connection
+import requests
+import logging
+
+from shared_modules import sql_server_connection, execute_sql, create_logger
 from shared_config import sql_config
-import xlrd
 
-conn = sql_server_connection(sql_config)
-cursor = conn.cursor()
 
-result = [i for i in glob.glob('*.{}'.format('xlsx'))]
-print(result)
+def parse_excel(injury_file):
+    df = pd.read_excel(injury_file, sheet_name='Game by Game - CONFIDENTIAL')
+    df['Stats'] = ['Fully Fit' if x.startswith('L') or x.startswith('W') else x for x in df.Stats.values]
 
-if any('CONFIDENTIAL' in i for i in result):
-    injuryfile = i
-    xls = xlrd.open_workbook(injuryfile, on_demand=True)
+    df.rename(columns={'Stats': 'Status'}, inplace=True)
 
-if 'Game by Game - CONFIDENTIAL' in xls.sheet_names():
-    df = pd.read_excel(injuryfile, sheet_name='Game by Game - CONFIDENTIAL')
+    df = df.to_dict('records')
+    return df
 
-else:
-    print('Sheet to Parse Not found, sheets available are - ', xls.sheet_names())
 
-df['Stats'] = ['Fully Fit' if x.startswith('L') or x.startswith('W') else x for x in df.Stats.values]
+def main():
+    create_logger('nba_log_injuries')
+    logging.info('Task started')
 
-latestStatus = df.sort_values(by=['Date']).drop_duplicates(subset='Name', keep='last')
-latestStatus.rename(columns={'Stats': 'Status'}, inplace=True)
+    conn, cursor = sql_server_connection(sql_config, database='nba')
 
-print('Writing to Database')
+    os.chdir('_nba/')
+    injury_file = [file for file in os.listdir() if 'CONFIDENTIAL' in file][0]
+    df = parse_excel(injury_file)
 
-cursor.executemany('INSERT INTO LatestInjuries (Team ,Name ,Date ,Status) VALUES(?,?,?,?)',
-                   latestStatus.values.tolist())
-conn.commit()
+    execute_sql('LatestInjuries', df, ['Team', 'Name', 'Date'], cursor)
+    conn.commit()
 
-print('Complete')
+
+if __name__ == '__main__':
+    main()
