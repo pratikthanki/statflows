@@ -9,3 +9,4 @@ _nhl/nhl_settings.py
 CONFIDENTIAL-NBAgamebygame-2019-01-25.xlsx
 _nba/.env
 *.xlsx
+nba_log_injuries
