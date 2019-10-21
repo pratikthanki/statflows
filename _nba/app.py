@@ -5,6 +5,7 @@ import numpy as np
 from flask import Flask, url_for, session
 from flask_oauth import OAuth
 from dash_google_auth import GoogleOAuth
+from urllib.parse import urljoin
 
 import dash
 from dash.dependencies import Input, Output
@@ -32,19 +33,20 @@ app = dash.Dash(
     external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'],
     suppress_callback_exceptions=True)
 
-server.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
-server.config["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
-server.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 
-# one of the Redirect URIs from Google APIs console
-REDIRECT_URI = '/oauth2callback'
+# server.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
+# server.config["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+# server.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+#
+# # one of the Redirect URIs from Google APIs console
+# REDIRECT_URI = '/oauth2callback'
+#
+# os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
-auth = GoogleOAuth(
-    app,
-    authorized_app_emails,
-)
+# auth = GoogleOAuth(
+#     app,
+#     authorized_app_emails,
+# )
 
 
 def build_banner():
