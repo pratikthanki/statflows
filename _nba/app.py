@@ -2,11 +2,9 @@ import os
 import pandas as pd
 import numpy as np
 
-from flask import Flask, redirect, url_for, session
+from flask import Flask, url_for, session
 from flask_oauth import OAuth
 from dash_google_auth import GoogleOAuth
-
-from urllib.parse import urljoin
 
 import dash
 from dash.dependencies import Input, Output
@@ -65,9 +63,9 @@ def build_banner():
     )
 
 
-def get_shots(player):
+def get_shots(player, period, venue):
     if player:
-        shot_query = shot_chart_query.format(player, '', '')
+        shot_query = shot_chart_query.format(player, period, venue)
         shot_plot = load_data(shot_query, sql_config, 'nba', SHOT_PLOT_COLUMNS)
 
         return shot_plot
@@ -242,70 +240,91 @@ def division_image_header(conf, float, align):
     )
 
 
+def team_stats_layout(xaxis_title, chart_title):
+    layout = go.Layout(
+        title=chart_title,
+        xaxis=dict(
+            title=xaxis_title,
+            tickfont=dict(
+                size=14,
+                color='rgb(107, 107, 107)'
+            )
+        ),
+        yaxis=dict(
+            title='Value',
+            titlefont=dict(
+                size=16,
+                color='rgb(107, 107, 107)'
+            ),
+            tickfont=dict(
+                size=14,
+                color='rgb(107, 107, 107)'
+            )
+        ),
+        legend=dict(
+            x=0,
+            y=1.0,
+            bgcolor='rgba(255, 255, 255, 0)',
+            bordercolor='rgba(255, 255, 255, 0)'
+        ),
+        showlegend=True,
+        plot_bgcolor='#ffffff',
+        barmode='group',
+        bargap=0.15,
+        bargroupgap=0.1,
+        margin=go.layout.Margin(l=40, r=0, t=40, b=30)
+    )
+    return layout
+
+
 def team_stats_graph(team_id, value, option, metric, season):
-    # data_x = []
-    # data_y = []
+    metrics = [metric, None] if type(metric) == str else metric
 
-    metrics = [metric, None]
+    if team_id and team_id != '':
+        chart_title = 'Team: {0}'.format(TEAMS[team_id]['name'])
+    else:
+        chart_title = 'Select a team to get started'
 
-    if team_id and value == 'Current Roster':
+    # rgba = [tuple(int(colour[i:i+2], 16) for i in (0, 2, 4)) for colour in team_colours]
+
+    if team_id and value == 'Roster':
         if option == 'Compare':
             query = '{}'.format(team_season_stats_query)
-            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS)
-            temp = team_stats[team_stats['season'] == season]
+            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).to_dict('records')
 
-            data_x = temp['teamcode'].values.tolist()
-            # data_y = temp[metric].values.tolist()
-            colour = ['#{}'.format(TEAMS[str(tid)]['color']) for tid in temp['tid'].values.tolist()]
+            team_stats = [stat for stat in team_stats if stat['season'] == season]
+            data_x = [stat['teamcode'] for stat in team_stats]
 
             return go.Figure(
                 data=[
                     go.Bar(
                         x=data_x,
-                        y=temp[m].values.tolist(),
-                        name='{}'.format(m),
-                        # marker=go.bar.Marker(
-                        #     color=colour
-                        # )
+                        y=[stat[m] for stat in team_stats],
+                        text=[stat[m] for stat in team_stats],
+                        textposition='auto',
+                        name=m,
                     ) for m in metrics if m is not None
                 ],
-                layout=go.Layout(
-                    title='Team: {0} \n Metric: {1}'.format(TEAMS[team_id]['name'], metric),
-                    showlegend=True,
-                    legend=go.layout.Legend(
-                        x=0,
-                        y=1.0
-                    ),
-                    margin=go.layout.Margin(l=40, r=0, t=40, b=30)
-                )
+                layout=team_stats_layout('Team', chart_title),
             )
 
         elif option == 'Trend':
             query = '{} {}'.format(team_season_stats_query, team_id)
-            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by='season')
-            data_x = [str(i) for i in team_stats['season'].values.tolist()]
-            # data_y = team_stats[metric].values.tolist()
+            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by='season').to_dict(
+                'records')
+            data_x = [str(i['season']) for i in team_stats]
 
             return go.Figure(
                 data=[
                     go.Bar(
                         x=data_x,
-                        y=team_stats[m].values.tolist(),
-                        name='{}'.format(m),
-                        marker=go.bar.Marker(
-                            color='#{}'.format(TEAMS[team_id]['color'])
-                        )
+                        y=[stat[m] for stat in team_stats],
+                        text=[stat[m] for stat in team_stats],
+                        textposition='auto',
+                        name=m,
                     ) for m in metrics if m is not None
                 ],
-                layout=go.Layout(
-                    title='Team: {0} \n Metric: {1}'.format(TEAMS[team_id]['name'], metric),
-                    showlegend=True,
-                    legend=go.layout.Legend(
-                        x=0,
-                        y=1.0
-                    ),
-                    margin=go.layout.Margin(l=40, r=0, t=40, b=30)
-                )
+                layout=team_stats_layout('Season', chart_title),
             )
 
     else:
@@ -313,21 +332,11 @@ def team_stats_graph(team_id, value, option, metric, season):
             data=[
                 go.Bar(
                     x=[],
-                    y=[],
-                    name='',
-                    marker=go.bar.Marker(
-                        color='rgb(55, 83, 109)'
-                    )
+                    y=[]
                 )
             ],
             layout=go.Layout(
                 title='Select a team to get started',
-                showlegend=True,
-                legend=go.layout.Legend(
-                    x=0,
-                    y=1.0
-                ),
-                margin=go.layout.Margin(l=40, r=0, t=40, b=30)
             )
         )
 
@@ -339,12 +348,10 @@ def build_tabs():
         children=[
             dcc.Tabs(
                 id="div-tabs",
-                value='Current Roster',
+                value='Roster',
                 className='custom-tabs',
                 children=[
-                    dcc.Tab(label='ROSTER', value='Current Roster', style=SINGLE_TAB_STYLE,
-                            selected_style=SELECTED_TAB_STYLE),
-                    dcc.Tab(label='RESULTS', value='Results',
+                    dcc.Tab(label='ROSTER', value='Roster',
                             style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
                     dcc.Tab(label='STATS', value='Stats',
                             style=SINGLE_TAB_STYLE, selected_style=SELECTED_TAB_STYLE),
@@ -377,7 +384,7 @@ def update_layout():
 
             build_tabs(),
 
-            html.P('Select TREND to view team stats over time or COMPARE to see stats relative to the league',
+            html.P('Select TREND to view team stats over time or COMPARE to see stats for all teams in the league',
                    style={'font-size': '12px'}
                    ),
 
@@ -388,7 +395,7 @@ def update_layout():
                     {'label': 'COMPARE', 'value': 'Compare'}
                 ],
                 value='Trend',
-                labelStyle={'display': 'inline-block'}
+                labelStyle={'display': 'inline-block', 'padding': '5px'}
             ),
 
             dcc.RadioItems(
@@ -396,7 +403,7 @@ def update_layout():
                 options=[{'label': i, 'value': i} for i in
                          ['2014-2015', '2015-2016', '2016-2017', '2017-2018', '2018-2019', '2019-2020']],
                 value='2019-2020',
-                labelStyle={'display': 'inline-block'}
+                labelStyle={'display': 'inline-block', 'padding': '5px'}
             ),
 
             dcc.Dropdown(
@@ -412,7 +419,8 @@ def update_layout():
                 children=[html.Div(
                     dcc.Graph(
                         id='team-graph'
-                    )
+                    ),
+                    style={'padding': '10px'}
                 )],
                 type="default"
             ),
@@ -420,7 +428,8 @@ def update_layout():
             dcc.Loading(
                 id="loading-2",
                 children=html.Div(
-                    id='team_roster_container'
+                    id='team_roster_container',
+                    style={'padding': '10px'}
                 ),
                 type="default"
             ),
@@ -446,12 +455,9 @@ def update_team_roster_table(pathname, value):
     else:
         return html.P('Select a team to get started')
 
-    if value == 'Current Roster':
+    if value == 'Roster':
         _teamdf = current_roster(rosters, team_id)
         return build_table(_teamdf, 'Summary')
-
-    elif value == 'Results':
-        return html.P('Results')
 
     elif value == 'Shots':
         return html.P('Shots')
@@ -482,15 +488,9 @@ def update_shot_plot(pathname):
         else:
             return html.P('SELECT A TEAM ABOVE TO GET STARTED', style={'float': 'center'})
 
-        player_df = get_shots(player_id)
+        player_df = get_shots(player_id, period='', venue='')
 
         return shot_map(player_df)
-
-
-@server.route('/login')
-def login():
-    callback = url_for('authorized', _external=True)
-    return google.authorize(callback=callback)
 
 
 if __name__ == '__main__':
