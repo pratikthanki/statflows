@@ -25,7 +25,6 @@ oauth2==1.9.0.post1
 oauthlib==3.1.0
 pandas==0.25.1
 plotly==4.1.1
-pyodbc
 python-dateutil==2.8.0
 python-dotenv==0.10.3
 pytz==2019.3
