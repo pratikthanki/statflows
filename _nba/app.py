@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+import statistics
 
 from flask import Flask, url_for, session
 from flask_oauth import OAuth
@@ -272,11 +273,37 @@ def team_stats_layout(xaxis_title, chart_title):
         showlegend=True,
         plot_bgcolor='#ffffff',
         barmode='group',
-        bargap=0.15,
-        bargroupgap=0.1,
+        bargap=0.2,
+        bargroupgap=0.2,
         margin=go.layout.Margin(l=40, r=0, t=40, b=30)
     )
     return layout
+
+
+def team_stats_figure(team_stats, data_x, metrics, chart_title, chart_type):
+    return go.Figure(
+        data=[
+                 go.Bar(
+                     x=data_x,
+                     y=[stat[m] for stat in team_stats],
+                     text=[stat[m] for stat in team_stats],
+                     textposition='auto',
+                     name=m.upper(),
+                 ) for m in metrics if m is not None
+             ] +
+             [
+                 go.Scatter(
+                     x=data_x,
+                     y=[statistics.mean([stat[m] for stat in team_stats])] * len(data_x),
+                     mode='lines+markers',
+                     line=dict(
+                         width=7
+                     ),
+                     name='AVG {}'.format(m.upper()),
+                 ) for m in metrics if m is not None
+             ],
+        layout=team_stats_layout(chart_type, chart_title),
+    )
 
 
 def team_stats_graph(team_id, value, option, metric, season):
@@ -287,28 +314,16 @@ def team_stats_graph(team_id, value, option, metric, season):
     else:
         chart_title = 'Select a team to get started'
 
-    # rgba = [tuple(int(colour[i:i+2], 16) for i in (0, 2, 4)) for colour in team_colours]
-
     if team_id and value == 'Roster':
         if option == 'Compare':
             query = '{}'.format(team_season_stats_query)
-            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).to_dict('records')
+            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by='teamcode').to_dict(
+                'records')
 
             team_stats = [stat for stat in team_stats if stat['season'] == season]
             data_x = [stat['teamcode'] for stat in team_stats]
 
-            return go.Figure(
-                data=[
-                    go.Bar(
-                        x=data_x,
-                        y=[stat[m] for stat in team_stats],
-                        text=[stat[m] for stat in team_stats],
-                        textposition='auto',
-                        name=m,
-                    ) for m in metrics if m is not None
-                ],
-                layout=team_stats_layout('Team', chart_title),
-            )
+            return team_stats_figure(team_stats, data_x, metrics, chart_title, 'Team')
 
         elif option == 'Trend':
             query = '{} {}'.format(team_season_stats_query, team_id)
@@ -316,18 +331,7 @@ def team_stats_graph(team_id, value, option, metric, season):
                 'records')
             data_x = [str(i['season']) for i in team_stats]
 
-            return go.Figure(
-                data=[
-                    go.Bar(
-                        x=data_x,
-                        y=[stat[m] for stat in team_stats],
-                        text=[stat[m] for stat in team_stats],
-                        textposition='auto',
-                        name=m,
-                    ) for m in metrics if m is not None
-                ],
-                layout=team_stats_layout('Season', chart_title),
-            )
+            return team_stats_figure(team_stats, data_x, metrics, chart_title, 'Season')
 
     else:
         return go.Figure(
@@ -420,7 +424,7 @@ def update_layout():
                 id="loading-1",
                 children=[html.Div(
                     dcc.Graph(
-                        id='team-graph'
+                        id='team_graph'
                     ),
                     style={'padding': '10px'}
                 )],
@@ -466,7 +470,7 @@ def update_team_roster_table(pathname, value):
 
 
 @app.callback(
-    Output('team-graph', 'figure'),
+    Output('team_graph', 'figure'),
     [Input('team_url', 'pathname'),
      Input('div-tabs', 'value'),
      Input('stat-option', 'value'),
