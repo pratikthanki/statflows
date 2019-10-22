@@ -3,13 +3,12 @@ import pandas as pd
 import numpy as np
 import statistics
 
-from flask import Flask
-
 import dash
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
+from flask import Flask
 
 from teams import TEAMS
 from court import court_plot
