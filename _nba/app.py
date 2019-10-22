@@ -12,7 +12,7 @@ from flask import Flask
 
 from teams import TEAMS
 from court import court_plot
-from nba_settings import authorized_app_emails
+# from nba_settings import authorized_app_emails
 from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_STYLE, \
     SINGLE_TAB_STYLE, ALL_TAB_STYLE, EVENT_DEFINITIONS
 from sql_queries import team_roster_query, team_query, shot_chart_query, team_game_stats_query, \
