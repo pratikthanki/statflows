@@ -110,3 +110,7 @@ def execute_sql(table_name, data, key_columns, sql_cursor):
     sql_cursor.execute(query)
     logging.info('Table {0} updated: {1} records'.format(table_name, len(data)))
     print('Table {0} updated: {1} records'.format(table_name, len(data)))
+
+
+def convert_hex_to_rgba(team_colours):
+    return [tuple(int(colour[i:i + 2], 16) for i in (0, 2, 4)) for colour in team_colours]
