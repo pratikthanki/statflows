@@ -19,7 +19,7 @@ from sql_queries import team_roster_query, team_query, shot_chart_query, team_ga
     team_season_stats_query, SHOT_PLOT_COLUMNS, TEAM_COLUMNS, TEAM_STATS_COLUMNS, CURRENT_ROSTER_COLUMNS
 
 from shared_config import sql_config
-from shared_modules import load_data
+from shared_modules import load_data, SqlConnection
 
 server = Flask(__name__)
 
@@ -29,6 +29,8 @@ app = dash.Dash(
     url_base_pathname='/',
     external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'],
     suppress_callback_exceptions=True)
+
+sql = SqlConnection('nba')
 
 
 # server.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
@@ -65,7 +67,7 @@ def build_banner():
 def get_shots(player, period, venue):
     if player:
         shot_query = shot_chart_query.format(player, period, venue)
-        shot_plot = load_data(shot_query, sql_config, 'nba', SHOT_PLOT_COLUMNS)
+        shot_plot = sql.load_data(shot_query, SHOT_PLOT_COLUMNS)
 
         return shot_plot
 
@@ -313,8 +315,7 @@ def team_stats_graph(team_id, value, option, metric, season):
     if team_id and value == 'Roster':
         if option == 'Compare':
             query = '{}'.format(team_season_stats_query)
-            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by='teamcode').to_dict(
-                'records')
+            team_stats = sql.load_data(query, TEAM_STATS_COLUMNS).sort_values(by='teamcode').to_dict('records')
 
             team_stats = [stat for stat in team_stats if stat['season'] == season]
             data_x = [stat['teamcode'] for stat in team_stats]
@@ -323,8 +324,8 @@ def team_stats_graph(team_id, value, option, metric, season):
 
         elif option == 'Trend':
             query = '{} {}'.format(team_season_stats_query, team_id)
-            team_stats = load_data(query, sql_config, 'nba', TEAM_STATS_COLUMNS).sort_values(by='season').to_dict(
-                'records')
+            team_stats = sql.load_data(query, TEAM_STATS_COLUMNS).sort_values(by='season').to_dict('records')
+
             data_x = [str(i['season']) for i in team_stats]
 
             return team_stats_figure(team_stats, data_x, metrics, chart_title, 'Season')
@@ -365,10 +366,10 @@ def build_tabs():
     )
 
 
-rosters = load_data(team_roster_query, sql_config, 'nba', CURRENT_ROSTER_COLUMNS)
+rosters = sql.load_data(team_roster_query, CURRENT_ROSTER_COLUMNS)
 team_df = current_roster(rosters)
 
-teams = load_data(team_query, sql_config, 'nba', TEAM_COLUMNS)
+teams = sql.load_data(team_query, TEAM_COLUMNS)
 
 
 def update_layout():
