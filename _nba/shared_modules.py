@@ -1,8 +1,57 @@
+import os
 import pyodbc
 import logging
 import pandas as pd
 import logging
 import requests
+
+
+class SqlConnection:
+    def __init__(self, database):
+        self.server = '192.168.1.13'
+        self.port = 1433
+        self.database = database
+        self.username = os.environ.get("server_uid")
+        self.password = os.environ.get("server_pwd")
+        self.prod_driver = 'FreeTDS'
+        self.local_driver = '{/usr/local/lib/libmsodbcsql.13.dylib}'
+
+        self.autocommit = True
+        self.conn = self.sql_server_connection()
+        self.cursor = self.conn.cursor()
+
+    def sql_server_connection(self):
+        try:
+            return pyodbc.connect(
+                "DRIVER={0};SERVER={1},{2};DATABASE={3};UID={4};PWD={5}".format(
+                    # self.prod_driver,
+                    self.local_driver,
+                    self.server,
+                    self.port,
+                    self.database,
+                    self.username,
+                    self.password
+                )
+            )
+        except Exception as e:
+            logging.info(e)
+
+    def load_data(self, query, columns=None):
+        sql_data = []
+        self.cursor.execute(query)
+
+        if not columns:
+            return
+
+        rows = self.cursor.fetchall()
+
+        for row in rows:
+            sql_data.append(list(row))
+
+        df = pd.DataFrame(sql_data)
+        df.columns = columns
+
+        return df
 
 
 def sql_server_connection(config, database):
@@ -15,14 +64,6 @@ def sql_server_connection(config, database):
 
         return conn, cursor
     except Exception as e:
-        logging.info(e)
-
-
-def get_data(base_url):
-    try:
-        rqst = requests.request('GET', base_url)
-        return rqst.json()
-    except ValueError as e:
         logging.info(e)
 
 
@@ -45,6 +86,14 @@ def load_data(query, sql_config, database, columns):
     df.columns = columns
 
     return df
+
+
+def get_data(base_url):
+    try:
+        rqst = requests.request('GET', base_url)
+        return rqst.json()
+    except ValueError as e:
+        logging.info(e)
 
 
 def create_logger(file_name):
