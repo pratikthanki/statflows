@@ -12,14 +12,14 @@ from flask import Flask
 
 from teams import TEAMS
 from court import court_plot
-# from nba_settings import authorized_app_emails
-from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_STYLE, \
-    SINGLE_TAB_STYLE, ALL_TAB_STYLE, EVENT_DEFINITIONS
-from sql_queries import team_roster_query, team_query, shot_chart_query, team_game_stats_query, \
-    team_season_stats_query, SHOT_PLOT_COLUMNS, TEAM_COLUMNS, TEAM_STATS_COLUMNS, CURRENT_ROSTER_COLUMNS
-
+from nba_settings import authorized_app_emails
 from shared_config import sql_config
 from shared_modules import load_data, SqlConnection
+
+from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_STYLE, \
+    SINGLE_TAB_STYLE, ALL_TAB_STYLE, EVENT_DEFINITIONS
+from sql_queries import team_roster_query, team_query, shot_chart_query, team_season_stats_query, \
+    SHOT_PLOT_COLUMNS, TEAM_COLUMNS, TEAM_STATS_COLUMNS, CURRENT_ROSTER_COLUMNS
 
 server = Flask(__name__)
 
@@ -246,6 +246,7 @@ def team_stats_layout(xaxis_title, chart_title):
         title=chart_title,
         xaxis=dict(
             title=xaxis_title,
+            fixedrange=True,
             tickfont=dict(
                 size=14,
                 color='rgb(107, 107, 107)'
@@ -253,6 +254,7 @@ def team_stats_layout(xaxis_title, chart_title):
         ),
         yaxis=dict(
             title='Value',
+            fixedrange=True,
             titlefont=dict(
                 size=16,
                 color='rgb(107, 107, 107)'
@@ -285,7 +287,7 @@ def team_stats_figure(team_stats, data_x, metrics, chart_title, chart_type):
                      x=data_x,
                      y=[stat[m] for stat in team_stats],
                      text=[stat[m] for stat in team_stats],
-                     textposition='auto',
+                     textposition='inside',
                      name=m.upper(),
                  ) for m in metrics if m is not None
              ] +
@@ -401,6 +403,20 @@ def update_layout():
                 labelStyle={'display': 'inline-block', 'padding': '5px'}
             ),
 
+            html.P('Choose between PLAYER and TEAM level stats',
+                   style={'font-size': '12px'}
+                   ),
+
+            dcc.RadioItems(
+                id='xaxis-option',
+                options=[
+                    {'label': 'PLAYER', 'value': 'Player'},
+                    {'label': 'TEAM', 'value': 'Team'}
+                ],
+                value='Player',
+                labelStyle={'display': 'inline-block', 'padding': '5px'}
+            ),
+
             dcc.RadioItems(
                 id='season-option',
                 options=[{'label': i, 'value': i} for i in
@@ -421,7 +437,10 @@ def update_layout():
                 id="loading-1",
                 children=[html.Div(
                     dcc.Graph(
-                        id='team_graph'
+                        id='team_graph',
+                        config={
+                            'displayModeBar': False
+                        }
                     ),
                     style={'padding': '10px'}
                 )],
@@ -497,4 +516,4 @@ def update_shot_plot(pathname):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(host='0.0.0.0', debug=True, port=8050)
