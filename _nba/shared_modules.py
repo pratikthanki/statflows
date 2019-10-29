@@ -24,8 +24,8 @@ class SqlConnection:
         try:
             return pyodbc.connect(
                 "DRIVER={0};SERVER={1},{2};DATABASE={3};UID={4};PWD={5}".format(
-                    # self.prod_driver,
-                    self.local_driver,
+                    self.prod_driver,
+                    # self.local_driver,
                     self.server,
                     self.port,
                     self.database,
