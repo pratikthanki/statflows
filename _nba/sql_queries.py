@@ -1,10 +1,10 @@
 latest_game_query = 'EXEC [dbo].[sp_LatestPlayerApps]'
+shot_chart_query = "EXEC [dbo].[sp_ShotChart] @PlayerId='{0}', @Period='{1}', @Venue='{2}'"
 team_roster_query = 'EXEC [dbo].[sp_TeamRosters]'
-team_query = 'SELECT * FROM [dbo].[vwTeams]'
-shot_chart_query = "EXEC [dbo].[sp_PlayerShotChart] @PlayerId='{0}', @Period='{1}', @Venue='{2}'"
-standings_query = 'SELECT * FROM [dbo].[vwStandings]'
-team_game_stats_query = 'EXEC [dbo].[sp_TeamGameStats]'
 team_season_stats_query = 'EXEC [dbo].[sp_TeamSeasonStats]'
+
+team_query = 'SELECT * FROM [dbo].[vwTeams]'
+standings_query = 'SELECT * FROM [dbo].[vwStandings]'
 
 SHOT_PLOT_COLUMNS = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX', 'LocationY', 'Period', 'TeamID',
                      'PlayerID', 'Date', 'Season', 'Venue']
