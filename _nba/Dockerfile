@@ -44,8 +44,7 @@ ADD freetds.conf /etc/freetds/freetds.conf
 ADD odbcinst.ini /etc/odbcinst.ini
 ADD odbc.ini /home/odbc.ini
 
-
-COPY ["requirements.txt", "app.py", "teams.py", "court.py", "app_styles.py", "sql_queries.py", "shared_config.py", "shared_modules.py", "assets", "./"]
+COPY ["requirements.txt", "app.py", "nba_settings.py", "teams.py", "court.py", "app_styles.py", "sql_queries.py", "shared_config.py", "shared_modules.py", "assets", "./"]
 
 RUN pip3 install --upgrade pip
 
