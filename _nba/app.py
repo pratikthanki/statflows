@@ -117,7 +117,6 @@ def current_roster(df, team_id=None):
     return roster
 
 
-    if team_id is not None:
 def player_image(player):
     if player != '':
         img = rosters.loc[rosters['PlayerId'] == player, 'PlayerImg']
