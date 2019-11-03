@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 import numpy as np
 import statistics
@@ -13,7 +12,6 @@ from flask import Flask
 from teams import TEAMS
 from court import court_plot
 from nba_settings import authorized_app_emails
-from shared_config import sql_config
 from shared_modules import load_data, SqlConnection
 
 from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_STYLE, \
@@ -406,7 +404,7 @@ def update_layout():
                     {'label': 'PLAYER', 'value': 'Player'},
                     {'label': 'TEAM', 'value': 'Team'}
                 ],
-                value='Player',
+                value='Team',
                 labelStyle={'display': 'inline-block', 'padding': '5px'}
             ),
 
