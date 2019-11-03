@@ -14,6 +14,7 @@ class SqlConnection:
         self.username = os.environ.get("server_uid")
         self.password = os.environ.get("server_pwd")
         self.prod_driver = 'FreeTDS'
+        self.prod_driver_docker = '{ODBC DRIVER 17 FOR SQL SERVER}'
         self.local_driver = '{/usr/local/lib/libmsodbcsql.13.dylib}'
 
         self.autocommit = True
@@ -24,8 +25,9 @@ class SqlConnection:
         try:
             return pyodbc.connect(
                 "DRIVER={0};SERVER={1},{2};DATABASE={3};UID={4};PWD={5}".format(
-                    self.prod_driver,
-                    # self.local_driver,
+                    # self.prod_driver,
+                    # self.prod_driver_docker,
+                    self.local_driver,
                     self.server,
                     self.port,
                     self.database,
