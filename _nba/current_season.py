@@ -7,10 +7,10 @@ from shared_modules import sql_server_connection, execute_sql, create_logger, ge
 from nba_settings import current_season_1, current_season_2, current_season_3
 
 
-def get_schedule():
-    game_rqst = get_data(current_season_1)
+def get_schedule(url, offset):
+    game_rqst = get_data(url)
     now = datetime.strptime(time.strftime('%Y-%m-%d'), '%Y-%m-%d')
-    date_offset = now - timedelta(days=7)
+    date_offset = now - timedelta(days=offset)
 
     game = []
     for i in game_rqst['lscd']:
@@ -44,25 +44,26 @@ def get_game_stats(url, url_prop, games):
     return game_stats
 
 
-def game_detail_stats(prop, game_json):
+def game_detail_stats(game_json):
     lst = []
     for a in game_json:
         for b in [a['g']]:
-            if 'pstsg' not in b[prop]:
-                logging.info('**Issue with game:', b['gid'])
-                pass
-            else:
-                for c in b[prop]['pstsg']:
-                    c['gid'] = b['gid']
-                    c['mid'] = b['mid']
-                    c['tid'] = b[prop]['tid']
-                    c['ta'] = b[prop]['ta']
-                    lst.append(c)
+            for prop in ['vls', 'hls']:
+                if 'pstsg' not in b[prop]:
+                    logging.info('**Issue with game:', b['gid'])
+                    pass
+                else:
+                    for c in b[prop]['pstsg']:
+                        c['gid'] = b['gid']
+                        c['mid'] = b['mid']
+                        c['tid'] = b[prop]['tid']
+                        c['ta'] = b[prop]['ta']
+                        lst.append(c)
 
     return lst
 
 
-def game_pbp_stats(game_json):
+def game_pbp_stats(game_json, cursor):
     play_by_play = []
     for i in game_json:
         for j in i['g']['pd']:
@@ -75,7 +76,9 @@ def game_pbp_stats(game_json):
                     k['gid'] = i['g']['gid']
                     k['mid'] = i['g']['mid']
                     play_by_play.append(k)
-    return play_by_play
+
+        execute_sql('GamePlays', play_by_play, ['evt', 'gid', 'gid', 'pid', 'tid'], cursor)
+        play_by_play = []
 
 
 def roster_details(game_json):
@@ -97,27 +100,20 @@ def main():
     create_logger('nba_log')
     logging.info('Task started')
 
-    datetime.utcnow().strftime('%Y-%m-%d')
-    games = get_schedule()
+    conn, cursor = sql_server_connection(sql_config, database='nba')
 
+    games = get_schedule(current_season_1, offset=90)
     game_detail_json = get_game_stats(current_season_2, 'gamedetail', games)
     game_pbp_json = get_game_stats(current_season_3, 'full_pbp', games)
 
-    game_vls = game_detail_stats('vls', game_detail_json)
-    game_hls = game_detail_stats('hls', game_detail_json)
-    player_game_summary = game_vls + game_hls
-
-    play_by_play = game_pbp_stats(game_pbp_json)
-
+    player_game_summary = game_detail_stats(game_detail_json)
+    game_pbp_stats(game_pbp_json, cursor)
     players, teams = roster_details(player_game_summary)
-
-    conn, cursor = sql_server_connection(sql_config, database='nba')
 
     execute_sql('Teams', teams, ['TeamID'], cursor)
     execute_sql('Players', players, ['PlayerID', 'FirstName'], cursor)
     execute_sql('Schedule', games, ['GameID'], cursor)
     execute_sql('PlayerGameSummary', player_game_summary, ['pid', 'gid', 'tid'], cursor)
-    execute_sql('GamePlays', play_by_play, ['evt', 'gid', 'gid', 'pid', 'tid'], cursor)
 
     conn.commit()
     logging.info('Task completed')
