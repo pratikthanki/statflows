@@ -102,7 +102,7 @@ def main():
 
     conn, cursor = sql_server_connection(sql_config, database='nba')
 
-    games = get_schedule(current_season_1, offset=90)
+    games = get_schedule(current_season_1, offset=14)
     game_detail_json = get_game_stats(current_season_2, 'gamedetail', games)
     game_pbp_json = get_game_stats(current_season_3, 'full_pbp', games)
 
