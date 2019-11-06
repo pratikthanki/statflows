@@ -4,7 +4,6 @@ import logging
 import pandas as pd
 import logging
 import requests
-from shared_config import server_uid, server_pwd
 
 
 class SqlConnection:
@@ -12,8 +11,8 @@ class SqlConnection:
         self.server = '192.168.1.13'
         self.port = 1433
         self.database = database
-        self.username = ENV['uid']
-        self.password = ENV['pwd']
+        self.username = os.environ['uid']
+        self.password = os.environ['pwd']
         self.prod_driver = 'sql_server'
         self.local_driver = '{/usr/local/lib/libmsodbcsql.13.dylib}'
         self.autocommit = True
