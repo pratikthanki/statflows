@@ -4,6 +4,7 @@ import logging
 import pandas as pd
 import logging
 import requests
+from shared_config import server_uid, server_pwd
 
 
 class SqlConnection:
@@ -11,41 +12,41 @@ class SqlConnection:
         self.server = '192.168.1.13'
         self.port = 1433
         self.database = database
-        self.username = os.environ.get("server_uid")
-        self.password = os.environ.get("server_pwd")
-        self.prod_driver = 'FreeTDS'
-        self.prod_driver_docker = '{ODBC DRIVER 17 FOR SQL SERVER}'
+        self.username = ENV['uid']
+        self.password = ENV['pwd']
+        self.prod_driver = 'sql_server'
         self.local_driver = '{/usr/local/lib/libmsodbcsql.13.dylib}'
-
         self.autocommit = True
-        self.conn = self.sql_server_connection()
-        self.cursor = self.conn.cursor()
+        # self.conn = self.sql_server_connection()
+        # self.cursor = self.conn.cursor()
 
     def sql_server_connection(self):
         try:
             return pyodbc.connect(
-                "DRIVER={0};SERVER={1},{2};DATABASE={3};UID={4};PWD={5}".format(
-                    # self.prod_driver,
-                    # self.prod_driver_docker,
-                    self.local_driver,
-                    self.server,
-                    self.port,
-                    self.database,
-                    self.username,
-                    self.password
-                )
+                DRIVER='FreeTDS',
+                # DRIVER=self.local_driver,
+                TDS_Version='8.0',
+                ClientCharset='UTF8',
+                PORT=self.port,
+                SERVER=self.server,
+                DATABASE=self.database,
+                UID=self.username,
+                PWD=self.password
             )
+
         except Exception as e:
             logging.info(e)
 
     def load_data(self, query, columns=None):
-        sql_data = []
-        self.cursor.execute(query)
+        conn = self.sql_server_connection()
+        cursor = conn.cursor()
+        cursor.execute(query)
 
         if not columns:
             return
 
-        rows = self.cursor.fetchall()
+        rows = cursor.fetchall()
+        sql_data = []
 
         for row in rows:
             sql_data.append(list(row))
@@ -55,13 +56,30 @@ class SqlConnection:
 
         return df
 
+    def insert_data(self, table_name, data, key_columns):
+        query = 'SELECT * INTO #temp FROM ( VALUES {0} ) AS s ( {1} ) ' \
+                'MERGE INTO {2} as Target ' \
+                'USING #temp AS Source ' \
+                '{3} ' \
+                'WHEN NOT MATCHED THEN INSERT ( {1} ) VALUES ( {4} ) ' \
+                'WHEN MATCHED THEN UPDATE SET {5}; ' \
+                'DROP TABLE #temp; '.format(values_statement(data),
+                                            columns_statement(data),
+                                            table_name,
+                                            on_statement(data, key_columns),
+                                            source_columns_statement(data),
+                                            set_statement(data, key_columns))
+
+        self.cursor.execute(query)
+        logging.info('{0}: {1} rows inserted'.format(table_name, len(data)))
+
 
 def sql_server_connection(config, database):
     config['database'] = database
     try:
-        conn = pyodbc.connect(
-            'DRIVER={driver};SERVER={server},{port};DATABASE={database};UID={username};PWD={password}'.format(**config)
-        )
+        query = 'DRIVER={driver};SERVER={server},{port};DATABASE={database};UID={username};PWD={password}'.format(
+            **config)
+        conn = pyodbc.connect(query)
         cursor = conn.cursor()
 
         return conn, cursor
@@ -98,12 +116,35 @@ def get_data(base_url):
         logging.info(e)
 
 
+def execute_sql(table_name, data, key_columns, sql_cursor):
+    query = 'SELECT * INTO #temp FROM ( VALUES {0} ) AS s ( {1} ) ' \
+            'MERGE INTO {2} as Target ' \
+            'USING #temp AS Source ' \
+            '{3} ' \
+            'WHEN NOT MATCHED THEN INSERT ( {1} ) VALUES ( {4} ) ' \
+            'WHEN MATCHED THEN UPDATE SET {5}; ' \
+            'DROP TABLE #temp; '.format(values_statement(data),
+                                        columns_statement(data),
+                                        table_name,
+                                        on_statement(data, key_columns),
+                                        source_columns_statement(data),
+                                        set_statement(data, key_columns))
+
+    sql_cursor.execute(query)
+    logging.info('Table {0} updated: {1} records'.format(table_name, len(data)))
+    print('Table {0} updated: {1} records'.format(table_name, len(data)))
+
+
 def create_logger(file_name):
     logging.basicConfig(filename=file_name,
                         filemode='a',
                         format='%(asctime)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
                         level=logging.DEBUG)
+
+
+def convert_hex_to_rgba(team_colours):
+    return [tuple(int(colour[i:i + 2], 16) for i in (0, 2, 4)) for colour in team_colours]
 
 
 def remove_duplicates(lst):
@@ -142,26 +183,3 @@ def on_statement(lst, key_columns):
 
 def set_statement(lst, key_columns):
     return ', '.join([['[' + i + ']=Source.[' + i + ']' for i in l.keys() if i not in key_columns] for l in lst][0])
-
-
-def execute_sql(table_name, data, key_columns, sql_cursor):
-    query = 'SELECT * INTO #temp FROM ( VALUES {0} ) AS s ( {1} ) ' \
-            'MERGE INTO {2} as Target ' \
-            'USING #temp AS Source ' \
-            '{3} ' \
-            'WHEN NOT MATCHED THEN INSERT ( {1} ) VALUES ( {4} ) ' \
-            'WHEN MATCHED THEN UPDATE SET {5}; ' \
-            'DROP TABLE #temp; '.format(values_statement(data),
-                                        columns_statement(data),
-                                        table_name,
-                                        on_statement(data, key_columns),
-                                        source_columns_statement(data),
-                                        set_statement(data, key_columns))
-
-    sql_cursor.execute(query)
-    logging.info('Table {0} updated: {1} records'.format(table_name, len(data)))
-    print('Table {0} updated: {1} records'.format(table_name, len(data)))
-
-
-def convert_hex_to_rgba(team_colours):
-    return [tuple(int(colour[i:i + 2], 16) for i in (0, 2, 4)) for colour in team_colours]
