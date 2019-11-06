@@ -12,7 +12,7 @@ from flask import Flask
 
 from teams import TEAMS
 from court import court_plot
-from nba_settings import authorized_app_emails
+from shared_config import authorized_app_emails
 from shared_modules import SqlConnection
 
 from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_STYLE, \
