@@ -1,5 +1,4 @@
 *.pyc
-nba_log
 shared_config.py
 _afl/afl_settings.py
 _epl/epl_settings.py
@@ -9,4 +8,5 @@ _nhl/nhl_settings.py
 CONFIDENTIAL-NBAgamebygame-2019-01-25.xlsx
 _nba/.env
 *.xlsx
-nba_log_injuries
+logs
+*.log
