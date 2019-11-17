@@ -1,5 +1,4 @@
 def court_plot():
-
     # ---------- OUTER LINES ----------
     court_shapes = []
 
@@ -186,7 +185,6 @@ def court_plot():
     )
 
     court_shapes.append(free_throw_circle_shape)
-
 
     # ---------- RESTRICTED AREA ----------
     res_area_shape = dict(
