@@ -2,11 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b1328878-de93-411d-a1a7-cf94a7b788bb" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/_nba/nba_tables.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/statflows.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/statflows.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/draft_combine.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/draft_combine.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/shared_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/shared_modules.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -160,6 +156,7 @@
   </component>
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName="*.env" />
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.sql" />
     <option featureType="com.intellij.fileTypeFactory" implementationName="requirements.txt" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
