@@ -3,13 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="b1328878-de93-411d-a1a7-cf94a7b788bb" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/api_model.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/court.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/court.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/current_inuries.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/current_inuries.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/game_play_events.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/nba_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/nba_modules.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/runtime.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/shot_plot.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_nba/roster.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/roster.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
