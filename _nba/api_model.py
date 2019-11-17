@@ -4,7 +4,7 @@ from flask_restful import Resource, Api
 from flask import jsonify
 from flask.views import View
 from marshmallow import Schema
-from _nba.settings import *
+from nba_settings import *
 
 # Create the Flask application and the Flask-SQLAlchemy object.
 app = flask.Flask(__name__)
