@@ -10,3 +10,4 @@ _nba/.env
 *.xlsx
 logs
 *.log
+_nba/nba_log
