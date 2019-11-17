@@ -3,13 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="b1328878-de93-411d-a1a7-cf94a7b788bb" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/api_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/api_model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/current_season.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/current_season.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_nba/currents_speed_loads.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/currents_speed_loads.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/shared_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/shared_modules.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
