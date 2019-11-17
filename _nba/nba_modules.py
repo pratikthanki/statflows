@@ -17,3 +17,22 @@ def calculate_time_elapsed(row):
         return (12 * 60 * 4) + ((period - 5) * 5 * 60) + time_in_period_now
     else:
         return ((period - 1) * 12 * 60) + time_in_period_now
+
+
+pbp_e_types = {
+    1: 'Shot made',
+    2: 'Shot Missed',
+    3: 'Free Throw',
+    4: 'Rebound',
+    5: 'Turnover',
+    6: 'Foul',
+    7: 'Violation:Kicked Ball',
+    8: 'Substitution',
+    9: 'Team Timeout',
+    10: 'Jump Ball',
+    11: 'Ejection',
+    12: 'Start Period',
+    13: 'End Period',
+    18: 'Instant Replay',
+    20: 'Stoppagee'
+}
