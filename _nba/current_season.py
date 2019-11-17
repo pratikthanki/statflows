@@ -98,7 +98,7 @@ def roster_details(game_json):
 
 
 def main():
-    create_logger('nba_log')
+    create_logger(__file__)
     logging.info('Task started')
 
     conn, cursor = sql_server_connection(sql_config, database='nba')
@@ -122,5 +122,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
