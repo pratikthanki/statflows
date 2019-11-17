@@ -22,8 +22,8 @@ class SqlConnection:
     def sql_server_connection(self):
         try:
             return pyodbc.connect(
-                DRIVER='FreeTDS',
-                # DRIVER=self.local_driver,
+                # DRIVER='FreeTDS',
+                DRIVER=self.local_driver,
                 TDS_Version='8.0',
                 ClientCharset='UTF8',
                 PORT=self.port,
@@ -135,7 +135,16 @@ def execute_sql(table_name, data, key_columns, sql_cursor):
 
 
 def create_logger(file_name):
-    logging.basicConfig(filename=file_name,
+    log_file = file_name.replace('.py', '.log')
+    log_dir = os.path.join(os.getcwd(), 'logs')
+
+    folder, log = log_file.split('/')
+    log_path = os.path.join(log_dir, folder)
+
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+
+    logging.basicConfig(filename=os.path.join(log_path, log),
                         filemode='a',
                         format='%(asctime)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
