@@ -2,7 +2,7 @@ import requests
 import datetime
 import time
 from teams import TEAMS
-from nba_settings import current_roster_1, roster_headers
+from nba_settings import current_roster_1, headers
 from shared_config import sql_config
 from shared_modules import sql_server_connection, execute_sql
 
@@ -23,17 +23,20 @@ def current_roster():
     current_season = current_nba_season()
     teams = [TEAMS[i]['id'] for i in TEAMS.keys()]
 
+    data_headers = []
     roster_lst = []
     failed_responses = []
     for t in teams:
         try:
             url = '{0}{1}&TeamID={2}'.format(current_roster_1, str(current_season), str(t))
-            roster_rqst = requests.request('GET', url, headers=roster_headers)
+            roster_rqst = requests.request('GET', url, headers=headers)
 
             print(t, roster_rqst.status_code)
 
             roster = roster_rqst.json()
             roster_lst.append(roster['resultSets'][0]['rowSet'])
+
+            data_headers = roster['resultSets'][0]['headers']
 
             time.sleep(3)
             pass
@@ -41,9 +44,7 @@ def current_roster():
             print(t, e)
             failed_responses.append(t)
 
-    headers = roster['resultSets'][0]['headers']
-
-    return [dict(zip(headers, player)) for team in roster_lst for player in team]
+    return [dict(zip(data_headers, player)) for team in roster_lst for player in team]
 
 
 def main():
