@@ -4,6 +4,7 @@ import logging
 import pandas as pd
 import logging
 import requests
+from nba_settings import headers
 
 
 class SqlConnection:
@@ -109,7 +110,7 @@ def load_data(query, sql_config, database, columns):
 
 def get_data(base_url):
     try:
-        rqst = requests.request('GET', base_url)
+        rqst = requests.request('GET', base_url, headers=headers)
         return rqst.json()
     except ValueError as e:
         logging.info(e)
