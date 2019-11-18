@@ -17,8 +17,8 @@ class SqlConnection:
         self.prod_driver = 'sql_server'
         self.local_driver = '{/usr/local/lib/libmsodbcsql.13.dylib}'
         self.autocommit = True
-        # self.conn = self.sql_server_connection()
-        # self.cursor = self.conn.cursor()
+        self.conn = self.sql_server_connection()
+        self.cursor = self.conn.cursor()
 
     def sql_server_connection(self):
         try:
@@ -31,32 +31,64 @@ class SqlConnection:
                 SERVER=self.server,
                 DATABASE=self.database,
                 UID=self.username,
-                PWD=self.password
+                PWD=self.password,
+                autocommit=self.autocommit
             )
 
         except Exception as e:
             logging.info(e)
 
     def load_data(self, query, columns=None):
-        conn = self.sql_server_connection()
-        cursor = conn.cursor()
-        cursor.execute(query)
+        self.cursor.execute(query)
 
         if not columns:
             return
 
-        rows = cursor.fetchall()
-        sql_data = []
+        rows = self.cursor.fetchall()
 
+        sql_data = []
         for row in rows:
             sql_data.append(list(row))
 
-        df = pd.DataFrame(sql_data)
-        df.columns = columns
+        df = pd.DataFrame(sql_data, columns=columns)
 
         return df
 
+    def add_table_constraint(self, table_name):
+        alter_table_query = 'ALTER TABLE [dbo].[{0}] ADD CONSTRAINT [last_updated_{0}] ' \
+                            'DEFAULT (getdate()) FOR [LastUpdated]'
+        self.cursor.execute(alter_table_query.format(table_name))
+
+    def create_table(self, table_name, table_columns):
+        create_table_query = '''
+            CREATE TABLE [dbo].[{0}](
+            {1}, [LastUpdated] [datetime] NOT NULL
+            ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+        '''
+
+        self.cursor.execute(create_table_query.format(
+            table_name,
+            create_table_columns_statement(table_columns)
+        ))
+        self.add_table_constraint(table_name)
+
+    def drop_table(self, table_name):
+        query = 'DROP TABLE {0}'
+        self.cursor.execute(query.format(table_name))
+
+    def check_if_table_exists(self, table_name, table_columns=None, override=False, create=True):
+        if override:
+            self.drop_table(table_name)
+
+        query = "IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = N'{0}') SELECT 1 ELSE SELECT 0"
+        table_check = self.load_data(query.format(table_name), ['A'])
+
+        if table_check['A'].loc[0] == 0 and create:
+            self.create_table(table_name, table_columns)
+
     def insert_data(self, table_name, data, key_columns):
+        self.check_if_table_exists(table_name, list(data[0].keys()))
+
         query = 'SELECT * INTO #temp FROM ( VALUES {0} ) AS s ( {1} ) ' \
                 'MERGE INTO {2} as Target ' \
                 'USING #temp AS Source ' \
@@ -72,6 +104,7 @@ class SqlConnection:
 
         self.cursor.execute(query)
         logging.info('{0}: {1} rows inserted'.format(table_name, len(data)))
+        print('{0}: {1} rows inserted'.format(table_name, len(data)))
 
 
 def sql_server_connection(config, database):
@@ -150,6 +183,11 @@ def create_logger(file_name):
                         format='%(asctime)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
                         level=logging.DEBUG)
+
+
+def create_table_columns_statement(lst):
+    if lst:
+        return ', '.join(['[' + i + '] [varchar](max) NULL' for i in lst])
 
 
 def convert_hex_to_rgba(team_colours):
