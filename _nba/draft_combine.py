@@ -1,8 +1,7 @@
 import time
 import requests
 import logging
-from shared_config import sql_config
-from shared_modules import SqlConnection, sql_server_connection, execute_sql, create_logger, get_data
+from shared_modules import SqlConnection, create_logger, get_data
 from nba_settings import draft_combine_1, draft_combine_2, headers
 
 """
