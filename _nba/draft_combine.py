@@ -20,7 +20,7 @@ activity_types = [
 
 def get_seasons():
     seasons = []
-    for x in range(2018, 2020):
+    for x in range(2000, 2020):
         seasons.append(str(x) + '-' + str(x + 1)[2:4])
     return seasons
 
@@ -40,7 +40,7 @@ def draft_history(nba_sql):
     draft_keys = draft_history_data['resultSets'][0]['headers']
     drafts = [dict(zip(draft_keys, draft_val)) for draft_val in drafts]
 
-    nba_sql.insert_data('DraftHistory', drafts, ['TEAM_ID', 'PERSON_ID'])
+    nba_sql.insert_data('DraftHistory'.upper(), drafts, ['TEAM_ID', 'PERSON_ID'])
 
 
 def combine_stats(data, activity_type, nba_sql):
@@ -52,17 +52,17 @@ def combine_stats(data, activity_type, nba_sql):
             for rows in j['rowSet']:
                 if len(j['rowSet']) > 0 and (j['name'] == 'Results' or j['name'] == 'DraftCombineStats'):
                     result_list.append(rows + [i['parameters']['SeasonYear']])
-                    headers_list = j['headers'] + ['Season_Year']
+                    headers_list = j['headers'] + ['SeasonYear']
 
-    table_name = activity_type.replace('draftcombine', '')
+    table_name = activity_type.replace('draftcombine', '').upper()
     data = [dict(zip(headers_list, result)) for result in result_list]
 
-    nba_sql.insert_data(table_name, data, ['Season_Year', 'PLAYER_ID'])
+    nba_sql.insert_data(table_name, data, ['FIRST_NAME', 'LAST_NAME', 'SeasonYear'])
 
 
 def combine_results(activity_type, nba_sql):
-    draft_data = []
     for s in get_seasons():
+        draft_data = []
         params = {
             'LeagueID': '00',
             'SeasonYear': str(s)
@@ -76,7 +76,7 @@ def combine_results(activity_type, nba_sql):
         print(s, activity_type, drill_request.status_code)
         time.sleep(1)
 
-    combine_stats(draft_data, activity_type, nba_sql)
+        combine_stats(draft_data, activity_type, nba_sql)
 
 
 def main():
