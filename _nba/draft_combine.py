@@ -14,8 +14,9 @@ activity_types = [
     'draftcombinedrillresults',
     'draftcombinenonstationaryshooting',
     'draftcombineplayeranthro',
-    'draftcombinespotshooting',
-    'draftcombinestats']
+    'draftcombinespotshooting'
+    # 'draftcombinestats'
+]
 
 
 def get_seasons():
@@ -23,10 +24,6 @@ def get_seasons():
     for x in range(2000, 2020):
         seasons.append(str(x) + '-' + str(x + 1)[2:4])
     return seasons
-
-
-def convert(word):
-    return ''.join(x.capitalize() or '_' for x in word.split('_'))
 
 
 def draft_history(nba_sql):
@@ -40,7 +37,7 @@ def draft_history(nba_sql):
     draft_keys = draft_history_data['resultSets'][0]['headers']
     drafts = [dict(zip(draft_keys, draft_val)) for draft_val in drafts]
 
-    nba_sql.insert_data('DraftHistory'.upper(), drafts, ['TEAM_ID', 'PERSON_ID'])
+    nba_sql.insert_data('DRAFTHISTORY', drafts, ['TEAM_ID', 'PERSON_ID'])
 
 
 def combine_stats(data, activity_type, nba_sql):
