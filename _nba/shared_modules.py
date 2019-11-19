@@ -72,6 +72,8 @@ class SqlConnection:
         ))
         self.add_table_constraint(table_name)
 
+        print(f'Table created: {table_name}')
+
     def drop_table(self, table_name):
         query = 'DROP TABLE {0}'
         self.cursor.execute(query.format(table_name))
@@ -86,8 +88,13 @@ class SqlConnection:
         if table_check['A'].loc[0] == 0 and create:
             self.create_table(table_name, table_columns)
 
-    def insert_data(self, table_name, data, key_columns):
-        self.check_if_table_exists(table_name, list(data[0].keys()))
+    def insert_data(self, table_name, data, key_columns, verbose=0):
+        all_keys = set().union(*(d.keys() for d in data))
+
+        self.check_if_table_exists(table_name, all_keys)
+
+        conn = self.sql_server_connection()
+        cursor = conn.cursor()
 
         query = 'SELECT * INTO #temp FROM ( VALUES {0} ) AS s ( {1} ) ' \
                 'MERGE INTO {2} as Target ' \
@@ -102,9 +109,12 @@ class SqlConnection:
                                             source_columns_statement(data),
                                             set_statement(data, key_columns))
 
-        self.cursor.execute(query)
+        cursor.execute(query)
+        conn.commit()
         logging.info('{0}: {1} rows inserted'.format(table_name, len(data)))
-        print('{0}: {1} rows inserted'.format(table_name, len(data)))
+
+        if verbose > 0:
+            print('{0}: {1} rows inserted'.format(table_name, len(data)))
 
 
 def sql_server_connection(config, database):
