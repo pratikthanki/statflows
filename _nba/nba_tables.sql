@@ -1,427 +1,368 @@
-CREATE TABLE [dbo].[DrillResults](
-	[TempPlayerId] [float] NULL,
-	[PlayerId] [float] NULL,
-	[FirstName] [varchar](max) NULL,
-	[LastName] [varchar](max) NULL,
-	[PlayerName] [varchar](max) NULL,
-	[Position] [varchar](max) NULL,
-	[StandingVerticalLeap] [float] NULL,
-	[MaxVerticalLeap] [float] NULL,
-	[LaneAgilityTime] [float] NULL,
-	[ModifiedLaneAgilityTime] [float] NULL,
-	[ThreeQuarterSprint] [float] NULL,
-	[BenchPress] [float] NULL,
-	[Seasonyear] [varchar](max) NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[DrillResults] ADD  CONSTRAINT [last_updated_DrillResults]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS LeagueStandings(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	Abbr varchar(255),
+	Conference varchar(255),
+	TeamId varchar(255),
+	TeamName varchar(255),
+	ConfRank varchar(255),
+	Wins varchar(255),
+	Losses varchar(255),
+	Streak varchar(255),
+	`Win%` varchar(255),
+	DivLosses varchar(255),
+	DivWins varchar(255),
+	DivRank varchar(255),
+	Last10 varchar(255),
+	HomeWins varchar(255),
+	HomeLosses varchar(255),
+	RoadWins varchar(255),
+	RoadLosses varchar(255),
+	RoadStreak varchar(255),
+	HomeStreak varchar(255),
+	LastUpdates datetime,
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
-CREATE TABLE [dbo].[GameBoxScore](
-	[Game] [varchar](max) NULL,
-	[GameID] [bigint] NOT NULL,
-	[BoxScoreBreakdown] [varchar](max) NULL,
-	[HomeTeamCode] [varchar](max) NULL,
-	[HomeTeamName] [varchar](max) NULL,
-	[HomeTeamNickname] [varchar](max) NULL,
-	[AwayTeamCode] [varchar](max) NULL,
-	[AwayTeamName] [varchar](max) NULL,
-	[AwayTeamNickname] [varchar](max) NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[GameBoxScore] ADD  CONSTRAINT [last_updated_GameBoxScore]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS Schedule(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	GameID varchar(50),
+	GameCode varchar(50),
+	Venue varchar(50),
+	Date datetime,
+	DateString varchar(10),
+	AwayTeamID bigint,
+	AwayScore int,
+	HomeTeamID bigint,
+	HomeScore int,
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	Season varchar(9)
+);
 
 
-CREATE TABLE [dbo].[GamePlays](
-	[cl] [varchar](max) NULL,
-	[de] [varchar](max) NULL,
-	[epid] [varchar](max) NULL,
-	[etype] [bigint] NULL,
-	[evt] [bigint] NULL,
-	[gid] [bigint] NOT NULL,
-	[hs] [bigint] NULL,
-	[locX] [bigint] NULL,
-	[locY] [bigint] NULL,
-	[mid] [bigint] NULL,
-	[mtype] [bigint] NULL,
-	[oftid] [bigint] NULL,
-	[opid] [varchar](max) NULL,
-	[opt1] [bigint] NULL,
-	[opt2] [bigint] NULL,
-	[ord] [float] NULL,
-	[period] [bigint] NULL,
-	[pid] [bigint] NOT NULL,
-	[tid] [bigint] NOT NULL,
-	[vs] [bigint] NULL,
-	[Id] [uniqueidentifier] NOT NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-CREATE CLUSTERED INDEX [IX_GamePlays_GameID] ON [dbo].[GamePlays]
-(
-	[gid] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-GO
-CREATE NONCLUSTERED INDEX [IX_GamePlays_1] ON [dbo].[GamePlays]
-(
-	[pid] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-GO
-CREATE NONCLUSTERED INDEX [IX_GamePlays_2] ON [dbo].[GamePlays]
-(
-	[gid] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[GamePlays] ADD  DEFAULT (newid()) FOR [Id]
-GO
-ALTER TABLE [dbo].[GamePlays] ADD  CONSTRAINT [last_updated_pbp]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS LatestInjuries(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	Team varchar(3),
+	Name varchar(255),
+	Date datetime(6),
+	Status varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
-CREATE TABLE [dbo].[LatestInjuries](
-	[Team] [varchar](3) NULL,
-	[Name] [varchar](255) NULL,
-	[Date] [datetime2](7) NULL,
-	[Status] [varchar](255) NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[LatestInjuries] ADD  CONSTRAINT [last_updated_LatestInjuries]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS GameBoxScore(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	Game varchar(255),
+	GameID bigint NOT NULL,
+	BoxScoreBreakdown varchar(255),
+	HomeTeamCode varchar(255),
+	HomeTeamName varchar(255),
+	HomeTeamNickname varchar(255),
+	AwayTeamCode varchar(255),
+	AwayTeamName varchar(255),
+	AwayTeamNickname varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
-CREATE TABLE [dbo].[LeagueStandings](
-	[Abbr] [varchar](255) NULL,
-	[Conference] [varchar](255) NULL,
-	[TeamId] [varchar](255) NULL,
-	[TeamName] [varchar](255) NULL,
-	[ConfRank] [varchar](255) NULL,
-	[Wins] [varchar](255) NULL,
-	[Losses] [varchar](255) NULL,
-	[Streak] [varchar](255) NULL,
-	[Win%] [varchar](255) NULL,
-	[DivLosses] [varchar](255) NULL,
-	[DivWins] [varchar](255) NULL,
-	[DivRank] [varchar](255) NULL,
-	[Last10] [varchar](255) NULL,
-	[HomeWins] [varchar](255) NULL,
-	[HomeLosses] [varchar](255) NULL,
-	[RoadWins] [varchar](255) NULL,
-	[RoadLosses] [varchar](255) NULL,
-	[RoadStreak] [varchar](255) NULL,
-	[HomeStreak] [varchar](255) NULL,
-	[LastUpdates] [datetime] NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[LeagueStandings] ADD  CONSTRAINT [last_updated_LeagueStandings]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS GamePlays(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	cl varchar(255),
+	de varchar(255),
+	epid varchar(255),
+	etype bigint,
+	evt bigint,
+	gid bigint NOT NULL,
+	hs bigint,
+	locX bigint,
+	locY bigint,
+	mid bigint,
+	mtype bigint,
+	oftid bigint,
+	opid varchar(255),
+	opt1 bigint,
+	opt2 bigint,
+	ord float,
+	period bigint,
+	pid bigint NOT NULL,
+	tid bigint NOT NULL,
+	vs bigint,
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (gid, tid)
+);
 
 
-CREATE TABLE [dbo].[NonStationaryShooting](
-	[TempPlayerId] [float] NULL,
-	[PlayerId] [float] NULL,
-	[FirstName] [varchar](max) NULL,
-	[LastName] [varchar](max) NULL,
-	[PlayerName] [varchar](max) NULL,
-	[Position] [varchar](max) NULL,
-	[OffDribFifteenBreakLeftMade] [float] NULL,
-	[OffDribFifteenBreakLeftAttempt] [float] NULL,
-	[OffDribFifteenBreakLeftPct] [float] NULL,
-	[OffDribFifteenTopKeyMade] [float] NULL,
-	[OffDribFifteenTopKeyAttempt] [float] NULL,
-	[OffDribFifteenTopKeyPct] [float] NULL,
-	[OffDribFifteenBreakRightMade] [float] NULL,
-	[OffDribFifteenBreakRightAttempt] [float] NULL,
-	[OffDribFifteenBreakRightPct] [float] NULL,
-	[OffDribCollegeBreakLeftMade] [float] NULL,
-	[OffDribCollegeBreakLeftAttempt] [float] NULL,
-	[OffDribCollegeBreakLeftPct] [float] NULL,
-	[OffDribCollegeTopKeyMade] [float] NULL,
-	[OffDribCollegeTopKeyAttempt] [float] NULL,
-	[OffDribCollegeTopKeyPct] [float] NULL,
-	[OffDribCollegeBreakRightMade] [float] NULL,
-	[OffDribCollegeBreakRightAttempt] [float] NULL,
-	[OffDribCollegeBreakRightPct] [float] NULL,
-	[OnMoveFifteenMade] [float] NULL,
-	[OnMoveFifteenAttempt] [float] NULL,
-	[OnMoveFifteenPct] [float] NULL,
-	[OnMoveCollegeMade] [float] NULL,
-	[OnMoveCollegeAttempt] [float] NULL,
-	[OnMoveCollegePct] [float] NULL,
-	[Seasonyear] [varchar](max) NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[NonStationaryShooting] ADD  CONSTRAINT [last_updated_NonStationaryShooting]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS PlayerGameSummary(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	ast bigint,
+	blk bigint,
+	blka bigint,
+	court bigint,
+	dreb bigint,
+	fbpts bigint,
+	fbptsa bigint,
+	fbptsm bigint,
+	fga bigint,
+	fgm bigint,
+	fn varchar(255),
+	fta bigint,
+	ftm bigint,
+	gid bigint NOT NULL,
+	ln varchar(255),
+	memo varchar(255),
+	mid bigint,
+	min bigint,
+	num varchar(255),
+	oreb bigint,
+	pf bigint,
+	pid bigint NOT NULL,
+	pip bigint,
+	pipa bigint,
+	pipm bigint,
+	pm bigint,
+	pos varchar(255),
+	pts bigint,
+	reb bigint,
+	sec bigint,
+	status varchar(255),
+	stl bigint,
+	ta varchar(255),
+	tf bigint,
+	tid bigint NOT NULL,
+	totsec bigint,
+	tov bigint,
+	tpa bigint,
+	tpm bigint,
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (gid),
+    INDEX (tid),
+    INDEX (pid)
+);
 
 
-CREATE TABLE [dbo].[PlayerAnthro](
-	[TempPlayerId] [float] NULL,
-	[PlayerId] [float] NULL,
-	[FirstName] [varchar](max) NULL,
-	[LastName] [varchar](max) NULL,
-	[PlayerName] [varchar](max) NULL,
-	[Position] [varchar](max) NULL,
-	[HeightWoShoes] [float] NULL,
-	[HeightWoShoesFtIn] [varchar](max) NULL,
-	[HeightWShoes] [float] NULL,
-	[HeightWShoesFtIn] [varchar](max) NULL,
-	[Weight] [varchar](max) NULL,
-	[Wingspan] [float] NULL,
-	[WingspanFtIn] [varchar](max) NULL,
-	[StandingReach] [float] NULL,
-	[StandingReachFtIn] [varchar](max) NULL,
-	[BodyFatPct] [float] NULL,
-	[HandLength] [float] NULL,
-	[HandWidth] [float] NULL,
-	[Seasonyear] [varchar](max) NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[PlayerAnthro] ADD  CONSTRAINT [last_updated_PlayerAnthro]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS Players(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	PlayerID bigint NOT NULL,
+	FirstName varchar(255),
+	LastName varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
-CREATE TABLE [dbo].[PlayerGameSummary](
-	[ast] [bigint] NULL,
-	[blk] [bigint] NULL,
-	[blka] [bigint] NULL,
-	[court] [bigint] NULL,
-	[dreb] [bigint] NULL,
-	[fbpts] [bigint] NULL,
-	[fbptsa] [bigint] NULL,
-	[fbptsm] [bigint] NULL,
-	[fga] [bigint] NULL,
-	[fgm] [bigint] NULL,
-	[fn] [varchar](max) NULL,
-	[fta] [bigint] NULL,
-	[ftm] [bigint] NULL,
-	[gid] [bigint] NOT NULL,
-	[ln] [varchar](max) NULL,
-	[memo] [varchar](max) NULL,
-	[mid] [bigint] NULL,
-	[min] [bigint] NULL,
-	[num] [varchar](max) NULL,
-	[oreb] [bigint] NULL,
-	[pf] [bigint] NULL,
-	[pid] [bigint] NOT NULL,
-	[pip] [bigint] NULL,
-	[pipa] [bigint] NULL,
-	[pipm] [bigint] NULL,
-	[pm] [bigint] NULL,
-	[pos] [varchar](max) NULL,
-	[pts] [bigint] NULL,
-	[reb] [bigint] NULL,
-	[sec] [bigint] NULL,
-	[status] [varchar](max) NULL,
-	[stl] [bigint] NULL,
-	[ta] [varchar](max) NULL,
-	[tf] [bigint] NULL,
-	[tid] [bigint] NOT NULL,
-	[totsec] [bigint] NULL,
-	[tov] [bigint] NULL,
-	[tpa] [bigint] NULL,
-	[tpm] [bigint] NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-CREATE NONCLUSTERED INDEX [IX_PlayerGameSummary_1] ON [dbo].[PlayerGameSummary]
-(
-	[gid] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-GO
-CREATE NONCLUSTERED INDEX [IX_PlayerGameSummary_2] ON [dbo].[PlayerGameSummary]
-(
-	[tid] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-GO
-CREATE NONCLUSTERED INDEX [IX_PlayerGameSummary_3] ON [dbo].[PlayerGameSummary]
-(
-	[pid] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[PlayerGameSummary] ADD  CONSTRAINT [last_updated_game_summary]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS Teams(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	TeamID bigint NOT NULL,
+	TeamCode varchar(255),
+	TeamLogo varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+UPDATE  Teams
+SET TeamLogo = IF(LENGTH(TeamID)=(10), 'https://stats.nba.com/media/img/teams/logos/'+TeamCode+'_logo.svg','');
 
 
-CREATE TABLE [dbo].[Players](
-	[PlayerID] [bigint] NOT NULL,
-	[FirstName] [varchar](max) NULL,
-	[LastName] [varchar](max) NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[Players] ADD  CONSTRAINT [last_updated]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS TeamRosters(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	TeamID varchar(255),
+	SEASON varchar(255),
+	LeagueID varchar(255),
+	PLAYER varchar(255),
+	NUM varchar(255),
+	POSITION varchar(255),
+	HEIGHT varchar(255),
+	WEIGHT varchar(255),
+	BIRTH_DATE varchar(255),
+	AGE varchar(255),
+	EXP varchar(255),
+	SCHOOL varchar(255),
+	PLAYER_ID varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
-CREATE TABLE [dbo].[Schedule](
-	[GameID] [varchar](50) NULL,
-	[GameCode] [varchar](50) NULL,
-	[Venue] [varchar](50) NULL,
-	[Date] [datetime] NULL,
-	[DateString] [varchar](10) NULL,
-	[AwayTeamID] [bigint] NULL,
-	[AwayScore] [int] NULL,
-	[HomeTeamID] [bigint] NULL,
-	[HomeScore] [int] NULL,
-	[LastUpdated] [datetime] NOT NULL,
-	[Season] [varchar](9) NULL
-) ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[Schedule] ADD  CONSTRAINT [last_updated_Schedule]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS DRAFTHISTORY(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	TEAM_CITY varchar(255),
+	TEAM_ID varchar(255),
+	PERSON_ID varchar(255),
+	DRAFT_TYPE varchar(255),
+	ROUND_PICK varchar(255),
+	ORGANIZATION varchar(255),
+	TEAM_NAME varchar(255),
+	OVERALL_PICK varchar(255),
+	PLAYER_NAME varchar(255),
+	SEASON varchar(255),
+	ROUND_NUMBER varchar(255),
+	TEAM_ABBREVIATION varchar(255),
+	ORGANIZATION_TYPE varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
-CREATE TABLE [dbo].[SpotShooting](
-	[TempPlayerId] [float] NULL,
-	[PlayerId] [float] NULL,
-	[FirstName] [varchar](max) NULL,
-	[LastName] [varchar](max) NULL,
-	[PlayerName] [varchar](max) NULL,
-	[Position] [varchar](max) NULL,
-	[FifteenCornerLeftMade] [float] NULL,
-	[FifteenCornerLeftAttempt] [float] NULL,
-	[FifteenCornerLeftPct] [float] NULL,
-	[FifteenBreakLeftMade] [float] NULL,
-	[FifteenBreakLeftAttempt] [float] NULL,
-	[FifteenBreakLeftPct] [float] NULL,
-	[FifteenTopKeyMade] [float] NULL,
-	[FifteenTopKeyAttempt] [float] NULL,
-	[FifteenTopKeyPct] [float] NULL,
-	[FifteenBreakRightMade] [float] NULL,
-	[FifteenBreakRightAttempt] [float] NULL,
-	[FifteenBreakRightPct] [float] NULL,
-	[FifteenCornerRightMade] [float] NULL,
-	[FifteenCornerRightAttempt] [float] NULL,
-	[FifteenCornerRightPct] [float] NULL,
-	[CollegeCornerLeftMade] [float] NULL,
-	[CollegeCornerLeftAttempt] [float] NULL,
-	[CollegeCornerLeftPct] [float] NULL,
-	[CollegeBreakLeftMade] [float] NULL,
-	[CollegeBreakLeftAttempt] [float] NULL,
-	[CollegeBreakLeftPct] [float] NULL,
-	[CollegeTopKeyMade] [float] NULL,
-	[CollegeTopKeyAttempt] [float] NULL,
-	[CollegeTopKeyPct] [float] NULL,
-	[CollegeBreakRightMade] [float] NULL,
-	[CollegeBreakRightAttempt] [float] NULL,
-	[CollegeBreakRightPct] [float] NULL,
-	[CollegeCornerRightMade] [float] NULL,
-	[CollegeCornerRightAttempt] [float] NULL,
-	[CollegeCornerRightPct] [float] NULL,
-	[NbaCornerLeftMade] [float] NULL,
-	[NbaCornerLeftAttempt] [float] NULL,
-	[NbaCornerLeftPct] [float] NULL,
-	[NbaBreakLeftMade] [float] NULL,
-	[NbaBreakLeftAttempt] [float] NULL,
-	[NbaBreakLeftPct] [float] NULL,
-	[NbaTopKeyMade] [float] NULL,
-	[NbaTopKeyAttempt] [float] NULL,
-	[NbaTopKeyPct] [float] NULL,
-	[NbaBreakRightMade] [float] NULL,
-	[NbaBreakRightAttempt] [float] NULL,
-	[NbaBreakRightPct] [float] NULL,
-	[NbaCornerRightMade] [float] NULL,
-	[NbaCornerRightAttempt] [float] NULL,
-	[NbaCornerRightPct] [float] NULL,
-	[Seasonyear] [varchar](max) NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[SpotShooting] ADD  CONSTRAINT [last_updated_SpotShooting]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS DRILLRESULTS(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	LAST_NAME varchar(255),
+	STANDING_VERTICAL_LEAP varchar(255),
+	LANE_AGILITY_TIME varchar(255),
+	PLAYER_NAME varchar(255),
+	PLAYER_ID varchar(255),
+	MODIFIED_LANE_AGILITY_TIME varchar(255),
+	BENCH_PRESS varchar(255),
+	SeasonYear varchar(255),
+	TEMP_PLAYER_ID varchar(255),
+	POSITION varchar(255),
+	MAX_VERTICAL_LEAP varchar(255),
+	THREE_QUARTER_SPRINT varchar(255),
+	FIRST_NAME varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
-CREATE TABLE [dbo].[Stats](
-	[Season] [varchar](max) NULL,
-	[PlayerId] [float] NULL,
-	[FirstName] [varchar](max) NULL,
-	[LastName] [varchar](max) NULL,
-	[PlayerName] [varchar](max) NULL,
-	[Position] [varchar](max) NULL,
-	[HeightWoShoes] [float] NULL,
-	[HeightWoShoesFtIn] [varchar](max) NULL,
-	[HeightWShoes] [float] NULL,
-	[HeightWShoesFtIn] [varchar](max) NULL,
-	[Weight] [varchar](max) NULL,
-	[Wingspan] [float] NULL,
-	[WingspanFtIn] [varchar](max) NULL,
-	[StandingReach] [float] NULL,
-	[StandingReachFtIn] [varchar](max) NULL,
-	[BodyFatPct] [float] NULL,
-	[HandLength] [float] NULL,
-	[HandWidth] [float] NULL,
-	[StandingVerticalLeap] [float] NULL,
-	[MaxVerticalLeap] [float] NULL,
-	[LaneAgilityTime] [float] NULL,
-	[ModifiedLaneAgilityTime] [float] NULL,
-	[ThreeQuarterSprint] [float] NULL,
-	[BenchPress] [float] NULL,
-	[SpotFifteenCornerLeft] [varchar](max) NULL,
-	[SpotFifteenBreakLeft] [varchar](max) NULL,
-	[SpotFifteenTopKey] [varchar](max) NULL,
-	[SpotFifteenBreakRight] [varchar](max) NULL,
-	[SpotFifteenCornerRight] [varchar](max) NULL,
-	[SpotCollegeCornerLeft] [varchar](max) NULL,
-	[SpotCollegeBreakLeft] [varchar](max) NULL,
-	[SpotCollegeTopKey] [varchar](max) NULL,
-	[SpotCollegeBreakRight] [varchar](max) NULL,
-	[SpotCollegeCornerRight] [varchar](max) NULL,
-	[SpotNbaCornerLeft] [varchar](max) NULL,
-	[SpotNbaBreakLeft] [varchar](max) NULL,
-	[SpotNbaTopKey] [varchar](max) NULL,
-	[SpotNbaBreakRight] [varchar](max) NULL,
-	[SpotNbaCornerRight] [varchar](max) NULL,
-	[OffDribFifteenBreakLeft] [varchar](max) NULL,
-	[OffDribFifteenTopKey] [varchar](max) NULL,
-	[OffDribFifteenBreakRight] [varchar](max) NULL,
-	[OffDribCollegeBreakLeft] [varchar](max) NULL,
-	[OffDribCollegeTopKey] [varchar](max) NULL,
-	[OffDribCollegeBreakRight] [varchar](max) NULL,
-	[OnMoveFifteen] [varchar](max) NULL,
-	[OnMoveCollege] [varchar](max) NULL,
-	[SeasonYear] [varchar](max) NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[Stats] ADD  CONSTRAINT [last_updated_Stats]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS NONSTATIONARYSHOOTING(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	OFF_DRIB_FIFTEEN_BREAK_RIGHT_ATTEMPT varchar(255),
+	OFF_DRIB_COLLEGE_BREAK_RIGHT_ATTEMPT varchar(255),
+	OFF_DRIB_COLLEGE_BREAK_LEFT_MADE varchar(255),
+	ON_MOVE_FIFTEEN_PCT varchar(255),
+	PLAYER_ID varchar(255),
+	OFF_DRIB_FIFTEEN_BREAK_RIGHT_MADE varchar(255),
+	OFF_DRIB_COLLEGE_BREAK_LEFT_ATTEMPT varchar(255),
+	OFF_DRIB_COLLEGE_TOP_KEY_MADE varchar(255),
+	OFF_DRIB_FIFTEEN_BREAK_RIGHT_PCT varchar(255),
+	OFF_DRIB_COLLEGE_BREAK_LEFT_PCT varchar(255),
+	FIRST_NAME varchar(255),
+	OFF_DRIB_COLLEGE_TOP_KEY_ATTEMPT varchar(255),
+	SeasonYear varchar(255),
+	TEMP_PLAYER_ID varchar(255),
+	ON_MOVE_FIFTEEN_MADE varchar(255),
+	OFF_DRIB_COLLEGE_BREAK_RIGHT_MADE varchar(255),
+	OFF_DRIB_FIFTEEN_BREAK_LEFT_PCT varchar(255),
+	OFF_DRIB_COLLEGE_BREAK_RIGHT_PCT varchar(255),
+	LAST_NAME varchar(255),
+	OFF_DRIB_FIFTEEN_BREAK_LEFT_ATTEMPT varchar(255),
+	ON_MOVE_FIFTEEN_ATTEMPT varchar(255),
+	OFF_DRIB_FIFTEEN_BREAK_LEFT_MADE varchar(255),
+	ON_MOVE_COLLEGE_PCT varchar(255),
+	PLAYER_NAME varchar(255),
+	ON_MOVE_COLLEGE_MADE varchar(255),
+	OFF_DRIB_FIFTEEN_TOP_KEY_MADE varchar(255),
+	POSITION varchar(255),
+	OFF_DRIB_FIFTEEN_TOP_KEY_ATTEMPT varchar(255),
+	ON_MOVE_COLLEGE_ATTEMPT varchar(255),
+	OFF_DRIB_COLLEGE_TOP_KEY_PCT varchar(255),
+	OFF_DRIB_FIFTEEN_TOP_KEY_PCT varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
-CREATE TABLE [dbo].[TeamRosters](
-	[TeamID] [varchar](255) NULL,
-	[SEASON] [varchar](255) NULL,
-	[LeagueID] [varchar](255) NULL,
-	[PLAYER] [varchar](255) NULL,
-	[NUM] [varchar](255) NULL,
-	[POSITION] [varchar](255) NULL,
-	[HEIGHT] [varchar](255) NULL,
-	[WEIGHT] [varchar](255) NULL,
-	[BIRTH_DATE] [varchar](255) NULL,
-	[AGE] [varchar](255) NULL,
-	[EXP] [varchar](255) NULL,
-	[SCHOOL] [varchar](255) NULL,
-	[PLAYER_ID] [varchar](255) NULL,
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[TeamRosters] ADD  CONSTRAINT [last_updated_TeamRosters]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS PLAYERANTHRO(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	WINGSPAN_FT_IN varchar(255),
+	PLAYER_ID varchar(255),
+	HEIGHT_W_SHOES_FT_IN varchar(255),
+	WINGSPAN varchar(255),
+	HEIGHT_W_SHOES varchar(255),
+	STANDING_REACH_FT_IN varchar(255),
+	FIRST_NAME varchar(255),
+	HAND_WIDTH varchar(255),
+	SeasonYear varchar(255),
+	TEMP_PLAYER_ID varchar(255),
+	WEIGHT varchar(255),
+	LAST_NAME varchar(255),
+	HAND_LENGTH varchar(255),
+	HEIGHT_WO_SHOES_FT_IN varchar(255),
+	HEIGHT_WO_SHOES varchar(255),
+	BODY_FAT_PCT varchar(255),
+	PLAYER_NAME varchar(255),
+	STANDING_REACH varchar(255),
+	`POSITION` varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
-CREATE TABLE [dbo].[Teams](
-	[TeamID] [bigint] NOT NULL,
-	[TeamCode] [varchar](max) NULL,
-	[TeamLogo]  AS (case when len([TeamID])=(10) then ('https://stats.nba.com/media/img/teams/logos/'+[TeamCode])+'_logo.svg' else '' end),
-	[LastUpdated] [datetime] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[Teams] ADD  CONSTRAINT [last_updated_team]  DEFAULT (getdate()) FOR [LastUpdated]
-GO
+CREATE TABLE IF NOT EXISTS SPOTSHOOTING(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	FIFTEEN_CORNER_LEFT_MADE varchar(255),
+	COLLEGE_CORNER_LEFT_PCT varchar(255),
+	NBA_TOP_KEY_PCT varchar(255),
+	PLAYER_ID varchar(255),
+	NBA_BREAK_RIGHT_ATTEMPT varchar(255),
+	COLLEGE_TOP_KEY_PCT varchar(255),
+	NBA_BREAK_RIGHT_PCT varchar(255),
+	NBA_BREAK_LEFT_PCT varchar(255),
+	COLLEGE_CORNER_LEFT_MADE varchar(255),
+	FIFTEEN_BREAK_RIGHT_ATTEMPT varchar(255),
+	FIRST_NAME varchar(255),
+	NBA_CORNER_RIGHT_MADE varchar(255),
+	NBA_CORNER_LEFT_PCT varchar(255),
+	FIFTEEN_BREAK_LEFT_ATTEMPT varchar(255),
+	FIFTEEN_BREAK_LEFT_PCT varchar(255),
+	SeasonYear varchar(255),
+	TEMP_PLAYER_ID varchar(255),
+	FIFTEEN_BREAK_RIGHT_PCT varchar(255),
+	FIFTEEN_CORNER_LEFT_PCT varchar(255),
+	COLLEGE_CORNER_RIGHT_PCT varchar(255),
+	NBA_TOP_KEY_ATTEMPT varchar(255),
+	COLLEGE_CORNER_RIGHT_ATTEMPT varchar(255),
+	NBA_BREAK_LEFT_ATTEMPT varchar(255),
+	FIFTEEN_BREAK_RIGHT_MADE varchar(255),
+	LAST_NAME varchar(255),
+	FIFTEEN_TOP_KEY_PCT varchar(255),
+	FIFTEEN_TOP_KEY_ATTEMPT varchar(255),
+	FIFTEEN_CORNER_RIGHT_ATTEMPT varchar(255),
+	FIFTEEN_BREAK_LEFT_MADE varchar(255),
+	COLLEGE_BREAK_RIGHT_PCT varchar(255),
+	NBA_TOP_KEY_MADE varchar(255),
+	FIFTEEN_CORNER_LEFT_ATTEMPT varchar(255),
+	COLLEGE_BREAK_LEFT_PCT varchar(255),
+	COLLEGE_TOP_KEY_ATTEMPT varchar(255),
+	NBA_CORNER_LEFT_ATTEMPT varchar(255),
+	NBA_BREAK_LEFT_MADE varchar(255),
+	COLLEGE_CORNER_LEFT_ATTEMPT varchar(255),
+	FIFTEEN_TOP_KEY_MADE varchar(255),
+	NBA_CORNER_RIGHT_PCT varchar(255),
+	COLLEGE_TOP_KEY_MADE varchar(255),
+	NBA_BREAK_RIGHT_MADE varchar(255),
+	PLAYER_NAME varchar(255),
+	NBA_CORNER_LEFT_MADE varchar(255),
+	COLLEGE_BREAK_RIGHT_MADE varchar(255),
+	`POSITION` varchar(255),
+	FIFTEEN_CORNER_RIGHT_PCT varchar(255),
+	COLLEGE_BREAK_LEFT_MADE varchar(255),
+	COLLEGE_BREAK_LEFT_ATTEMPT varchar(255),
+	NBA_CORNER_RIGHT_ATTEMPT varchar(255),
+	COLLEGE_BREAK_RIGHT_ATTEMPT varchar(255),
+	COLLEGE_CORNER_RIGHT_MADE varchar(255),
+	FIFTEEN_CORNER_RIGHT_MADE varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE IF NOT EXISTS STATS(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+	WINGSPAN_FT_IN varchar(255),
+	PLAYER_ID varchar(255),
+	HEIGHT_W_SHOES_FT_IN varchar(255),
+	WINGSPAN varchar(255),
+	HEIGHT_W_SHOES varchar(255),
+	STANDING_REACH_FT_IN varchar(255),
+	FIRST_NAME varchar(255),
+	SEASON varchar(255),
+	HAND_WIDTH varchar(255),
+	LANE_AGILITY_TIME varchar(255),
+	MODIFIED_LANE_AGILITY_TIME varchar(255),
+	BENCH_PRESS varchar(255),
+	SeasonYear varchar(255),
+	WEIGHT varchar(255),
+	LAST_NAME varchar(255),
+	HAND_LENGTH varchar(255),
+	HEIGHT_WO_SHOES_FT_IN varchar(255),
+	HEIGHT_WO_SHOES varchar(255),
+	MAX_VERTICAL_LEAP varchar(255),
+	BODY_FAT_PCT varchar(255),
+	STANDING_VERTICAL_LEAP varchar(255),
+	PLAYER_NAME varchar(255),
+	STANDING_REACH varchar(255),
+	`POSITION` varchar(255),
+	THREE_QUARTER_SPRINT varchar(255),
+	LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
