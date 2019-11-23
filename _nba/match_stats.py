@@ -63,8 +63,8 @@ def game_detail_stats(game_json):
 
 
 def game_pbp_stats(game_json, cursor):
-    play_by_play = []
     for i in game_json:
+        play_by_play = []
         for j in i['g']['pd']:
             for k in j['pla']:
                 if 'pla' not in j:
@@ -77,7 +77,6 @@ def game_pbp_stats(game_json, cursor):
                     play_by_play.append(k)
 
         execute_sql('GamePlays', play_by_play, ['evt', 'gid', 'gid', 'pid', 'tid'], cursor)
-        play_by_play = []
 
 
 def roster_details(game_json):
