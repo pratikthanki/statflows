@@ -7,6 +7,9 @@ import requests
 from urllib.parse import quote
 from pymongo import MongoClient
 from nba_settings import headers
+from dotenv import load_dotenv
+
+load_dotenv(verbose=True)
 
 
 class SqlConnection:
@@ -123,7 +126,7 @@ class MongoConnection:
     def __init__(self):
         self.uid = os.environ['mongodb_uid']
         self.pwd = quote(os.environ['mongodb_pwd'], safe='')
-        self.cluster = 'cluster0-canc6.azure.mongodb.net'
+        self.cluster = os.environ['mongodb_cluster']
         self.params = 'ssl=true&ssl_cert_reqs=CERT_NONE&retryWrites=true&w=majority'
         self.client = MongoClient(f'mongodb+srv://{self.uid}:{self.pwd}@{self.cluster}/test?{self.params}')
 
