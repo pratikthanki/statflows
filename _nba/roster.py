@@ -1,25 +1,12 @@
-import requests
-import datetime
 import time
+import requests
 from teams import TEAMS
+from shared_modules import MongoConnection
+from nba_modules import current_nba_season
 from nba_settings import current_roster_1, headers
-from shared_config import sql_config
-from shared_modules import sql_server_connection, execute_sql
 
 
-def current_nba_season():
-    today = datetime.date.today()
-    if today.month in (7, 8, 9, 10, 11, 12):
-        y = datetime.date.today().year
-        current_season = str(y) + '-' + str(y + 1)[-2:]
-    else:
-        y = today.year
-        current_season = str(y - 1) + '-' + str(y)[-2:]
-
-    return current_season
-
-
-def current_roster():
+def current_roster(mongodb_connector, collection):
     current_season = current_nba_season()
     teams = [TEAMS[i]['id'] for i in TEAMS.keys()]
 
@@ -44,15 +31,16 @@ def current_roster():
             print(t, e)
             failed_responses.append(t)
 
-    return [dict(zip(data_headers, player)) for team in roster_lst for player in team]
+    team_rosters = [dict(zip(data_headers, player)) for team in roster_lst for player in team]
+
+    mongodb_connector.insert_documents(collection, team_rosters)
 
 
 def main():
-    team_rosters = current_roster()
-    conn, cursor = sql_server_connection(sql_config, 'nba')
-
-    execute_sql('TeamRosters', team_rosters, ['TeamID'], cursor)
-    conn.commit()
+    mongodb_connector = MongoConnection()
+    nba_db = mongodb_connector.db_connect('nba')
+    rosters = nba_db.roster
+    current_roster(mongodb_connector, rosters)
 
 
 if __name__ == '__main__':
