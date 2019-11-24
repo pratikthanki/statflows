@@ -1,7 +1,7 @@
 import time
 import requests
 from teams import TEAMS
-from shared_modules import MongoConnection
+from shared_modules import MongoConnection, create_logger
 from nba_modules import current_nba_season
 from nba_settings import current_roster_1, headers
 
@@ -37,6 +37,7 @@ def current_roster(mongodb_connector, collection):
 
 
 def main():
+    create_logger(__file__)
     mongodb_connector = MongoConnection()
     nba_db = mongodb_connector.db_connect('nba')
     rosters = nba_db.roster
