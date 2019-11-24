@@ -4,6 +4,8 @@ import logging
 import pandas as pd
 import logging
 import requests
+from urllib.parse import quote
+from pymongo import MongoClient
 from nba_settings import headers
 
 
@@ -115,6 +117,22 @@ class SqlConnection:
 
         if verbose > 0:
             print('{0}: {1} rows inserted'.format(table_name, len(data)))
+
+
+class MongoConnection:
+    def __init__(self):
+        self.uid = os.environ['mongodb_uid']
+        self.pwd = quote(os.environ['mongodb_pwd'], safe='')
+        self.cluster = 'cluster0-canc6.azure.mongodb.net'
+        self.params = 'ssl=true&ssl_cert_reqs=CERT_NONE&retryWrites=true&w=majority'
+        self.client = MongoClient(f'mongodb+srv://{self.uid}:{self.pwd}@{self.cluster}/test?{self.params}')
+
+    def db_connect(self, database):
+        return self.client[database]
+
+    def insert_documents(self, collection, data):
+        result = collection.insert_many(data)
+        print(f'Collection: {collection}; Documents inserted: {len(result.inserted_ids)}')
 
 
 def sql_server_connection(config, database):
