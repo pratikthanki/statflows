@@ -1,8 +1,7 @@
 import logging
 import time
 from datetime import datetime, timedelta
-from shared_config import sql_config
-from shared_modules import sql_server_connection, execute_sql, create_logger, get_data, remove_duplicates
+from shared_modules import create_logger, get_data, remove_duplicates, MongoConnection
 from nba_settings import current_season_1, current_season_2, current_season_3
 
 
@@ -62,9 +61,9 @@ def game_detail_stats(game_json):
     return lst
 
 
-def game_pbp_stats(game_json, cursor):
+def game_pbp_stats(game_json):
+    play_by_play = []
     for i in game_json:
-        play_by_play = []
         for j in i['g']['pd']:
             for k in j['pla']:
                 if 'pla' not in j:
@@ -76,17 +75,12 @@ def game_pbp_stats(game_json, cursor):
                     k['mid'] = i['g']['mid']
                     play_by_play.append(k)
 
-        execute_sql('GamePlays', play_by_play, ['evt', 'gid', 'gid', 'pid', 'tid'], cursor)
+    return play_by_play
 
 
 def roster_details(game_json):
-    players = [
-        {'PlayerID': i['pid'], 'LastName': i['ln'], 'FirstName': i['fn']} for i in game_json
-    ]
-
-    teams = [
-        {'TeamID': i['tid'], 'TeamCode': i['ta']} for i in game_json
-    ]
+    players = [{'PlayerID': i['pid'], 'LastName': i['ln'], 'FirstName': i['fn']} for i in game_json]
+    teams = [{'TeamID': i['tid'], 'TeamCode': i['ta']} for i in game_json]
 
     players = remove_duplicates(players)
     teams = remove_duplicates(teams)
@@ -98,22 +92,28 @@ def main():
     create_logger(__file__)
     logging.info('Task started')
 
-    conn, cursor = sql_server_connection(sql_config, database='nba')
+    mongodb_connector = MongoConnection()
+    nba_db = mongodb_connector.db_connect('nba')
 
-    games = get_schedule(current_season_1, offset=14)
+    games = get_schedule(current_season_1, offset=90)
     game_detail_json = get_game_stats(current_season_2, 'gamedetail', games)
     game_pbp_json = get_game_stats(current_season_3, 'full_pbp', games)
 
     player_game_summary = game_detail_stats(game_detail_json)
-    game_pbp_stats(game_pbp_json, cursor)
     players, teams = roster_details(player_game_summary)
 
-    execute_sql('Teams', teams, ['TeamID'], cursor)
-    execute_sql('Players', players, ['PlayerID', 'FirstName'], cursor)
-    execute_sql('Schedule', games, ['GameID'], cursor)
-    execute_sql('PlayerGameSummary', player_game_summary, ['pid', 'gid', 'tid'], cursor)
+    play_by_play = game_pbp_stats(game_pbp_json)
 
-    conn.commit()
+    start = time.time()
+
+    mongodb_connector.insert_documents(nba_db.players, players)
+    mongodb_connector.insert_documents(nba_db.teams, teams)
+    mongodb_connector.insert_documents(nba_db.games, games)
+    mongodb_connector.insert_documents(nba_db.match_pbp, play_by_play)
+    mongodb_connector.insert_documents(nba_db.match_stats, player_game_summary)
+
+    print(f'Total time: {time.time() - start}')
+
     logging.info('Task completed')
 
 
