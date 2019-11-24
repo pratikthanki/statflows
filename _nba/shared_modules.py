@@ -1,15 +1,13 @@
 import os
 import pyodbc
+import time
 import logging
 import pandas as pd
 import logging
 import requests
 from urllib.parse import quote
 from pymongo import MongoClient
-from nba_settings import headers
-from dotenv import load_dotenv
-
-load_dotenv(verbose=True)
+from nba_settings import headers, mongodb_uid, mongodb_pwd, mongodb_cluster, sql_uid, sql_pwd
 
 
 class SqlConnection:
@@ -17,8 +15,8 @@ class SqlConnection:
         self.server = '192.168.1.13'
         self.port = 1433
         self.database = database
-        self.username = os.environ['uid']
-        self.password = os.environ['pwd']
+        self.username = sql_uid
+        self.password = sql_pwd
         self.prod_driver = 'sql_server'
         self.local_driver = '{/usr/local/lib/libmsodbcsql.13.dylib}'
         self.autocommit = True
@@ -124,9 +122,9 @@ class SqlConnection:
 
 class MongoConnection:
     def __init__(self):
-        self.uid = os.environ['mongodb_uid']
-        self.pwd = quote(os.environ['mongodb_pwd'], safe='')
-        self.cluster = os.environ['mongodb_cluster']
+        self.uid = mongodb_uid
+        self.pwd = quote(mongodb_pwd, safe='')
+        self.cluster = mongodb_cluster
         self.params = 'ssl=true&ssl_cert_reqs=CERT_NONE&retryWrites=true&w=majority'
         self.client = MongoClient(f'mongodb+srv://{self.uid}:{self.pwd}@{self.cluster}/test?{self.params}')
 
@@ -134,8 +132,9 @@ class MongoConnection:
         return self.client[database]
 
     def insert_documents(self, collection, data):
+        start = time.time()
         result = collection.insert_many(data)
-        print(f'Collection: {collection}; Documents inserted: {len(result.inserted_ids)}')
+        print(f'Documents inserted: {len(result.inserted_ids)}; Time taken: {time.time() - start}')
 
 
 def sql_server_connection(config, database):
