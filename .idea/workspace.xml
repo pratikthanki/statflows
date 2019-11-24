@@ -2,9 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b1328878-de93-411d-a1a7-cf94a7b788bb" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/match_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/match_stats.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/nba_tables.sql" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/nba_tables.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_nba/nba_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/nba_modules.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_nba/roster.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/roster.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_nba/shared_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/shared_modules.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
