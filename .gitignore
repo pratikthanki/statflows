@@ -4,7 +4,6 @@ _afl/afl_settings.py
 _epl/epl_settings.py
 _nba/nba_settings.py
 _nfl/nfl_settings.py
-_nhl/nhl_settings.py
 CONFIDENTIAL-NBAgamebygame-2019-01-25.xlsx
 _nba/.env
 *.xlsx
