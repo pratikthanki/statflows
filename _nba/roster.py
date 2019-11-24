@@ -40,8 +40,8 @@ def main():
     create_logger(__file__)
     mongodb_connector = MongoConnection()
     nba_db = mongodb_connector.db_connect('nba')
-    rosters = nba_db.roster
-    current_roster(mongodb_connector, rosters)
+    roster = nba_db.roster
+    current_roster(mongodb_connector, roster)
 
 
 if __name__ == '__main__':
