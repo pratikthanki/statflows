@@ -1,3 +1,6 @@
+import datetime
+
+
 def parse_time_elapsed(time_str, period):
     max_minutes = 12 if period < 5 else 5
 
@@ -17,6 +20,18 @@ def calculate_time_elapsed(row):
         return (12 * 60 * 4) + ((period - 5) * 5 * 60) + time_in_period_now
     else:
         return ((period - 1) * 12 * 60) + time_in_period_now
+
+
+def current_nba_season():
+    today = datetime.date.today()
+    if today.month in (7, 8, 9, 10, 11, 12):
+        y = today.year
+        current_season = str(y) + '-' + str(y + 1)[-2:]
+    else:
+        y = today.year
+        current_season = str(y - 1) + '-' + str(y)[-2:]
+
+    return current_season
 
 
 pbp_e_types = {
