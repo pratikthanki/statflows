@@ -131,10 +131,17 @@ class MongoConnection:
     def db_connect(self, database):
         return self.client[database]
 
-    def insert_documents(self, collection, data):
+    def insert_documents(self, db, collection, data):
+        collection_name = str(collection).replace(')', '').rpartition(', ')[-1]
+        self.check_collection_exists(db, collection_name.replace("'", ""))
+
         start = time.time()
         result = collection.insert_many(data)
         print(f'Documents inserted: {len(result.inserted_ids)}; Time taken: {time.time() - start}')
+
+    def check_collection_exists(self, db, collection):
+        if collection not in db.list_collection_names():
+            return db.create_collection(name=collection)
 
 
 def sql_server_connection(config, database):
@@ -171,9 +178,9 @@ def load_data(query, sql_config, database, columns):
     return df
 
 
-def get_data(base_url):
+def get_data(base_url, h=headers):
     try:
-        rqst = requests.request('GET', base_url, headers=headers)
+        rqst = requests.request('GET', base_url, headers=h)
         return rqst.json()
     except ValueError as e:
         logging.info(e)
