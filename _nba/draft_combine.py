@@ -1,7 +1,7 @@
 import time
 import requests
 import logging
-from shared_modules import SqlConnection, create_logger, get_data
+from shared_modules import MongoConnection, create_logger, get_data
 from nba_settings import draft_combine_1, draft_combine_2, headers
 
 """
@@ -26,7 +26,7 @@ def get_seasons():
     return seasons
 
 
-def draft_history(nba_sql):
+def draft_history(mongodb_connector, nba_db):
     draft_history_data = get_data(draft_combine_1)
 
     drafts = []
@@ -37,10 +37,10 @@ def draft_history(nba_sql):
     draft_keys = draft_history_data['resultSets'][0]['headers']
     drafts = [dict(zip(draft_keys, draft_val)) for draft_val in drafts]
 
-    nba_sql.insert_data('DRAFTHISTORY', drafts, ['TEAM_ID', 'PERSON_ID'])
+    mongodb_connector.insert_documents(nba_db, nba_db['draft_history'], drafts)
 
 
-def combine_stats(data, activity_type, nba_sql):
+def combine_stats(data, activity_type, mongodb_connector, nba_db):
     result_list = []
     headers_list = []
 
@@ -51,18 +51,19 @@ def combine_stats(data, activity_type, nba_sql):
                     result_list.append(rows + [i['parameters']['SeasonYear']])
                     headers_list = j['headers'] + ['SeasonYear']
 
-    table_name = activity_type.replace('draftcombine', '').upper()
+    table_name = activity_type.replace('draftcombine', '')
     data = [dict(zip(headers_list, result)) for result in result_list]
 
-    nba_sql.insert_data(table_name, data, ['FIRST_NAME', 'LAST_NAME', 'SeasonYear'])
+    # nba_sql.insert_data(table_name, data, ['FIRST_NAME', 'LAST_NAME', 'SeasonYear'])
+    mongodb_connector.insert_documents(nba_db, nba_db[table_name], data)
 
 
-def combine_results(activity_type, nba_sql):
-    for s in get_seasons():
+def combine_results(activity_type, mongodb_connector, nba_db):
+    for season in get_seasons():
         draft_data = []
         params = {
             'LeagueID': '00',
-            'SeasonYear': str(s)
+            'SeasonYear': str(season)
         }
 
         url = f'{draft_combine_2}{activity_type}'
@@ -70,22 +71,23 @@ def combine_results(activity_type, nba_sql):
         drill_request = requests.request('GET', url, headers=headers, params=params)
         draft_data.append(drill_request.json())
 
-        print(s, activity_type, drill_request.status_code)
+        print(season, activity_type, drill_request.status_code)
         time.sleep(1)
 
-        combine_stats(draft_data, activity_type, nba_sql)
+        combine_stats(draft_data, activity_type, mongodb_connector, nba_db)
 
 
 def main():
     create_logger(__file__)
     logging.info('Task started')
 
-    nba_sql = SqlConnection(database='nba')
+    mongodb_connector = MongoConnection()
+    nba_db = mongodb_connector.db_connect('nba')
 
-    draft_history(nba_sql)
+    draft_history(mongodb_connector, nba_db)
 
     for activity in activity_types:
-        combine_results(activity, nba_sql)
+        combine_results(activity, mongodb_connector, nba_db)
 
 
 if __name__ == '__main__':
