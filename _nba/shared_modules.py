@@ -137,7 +137,8 @@ class MongoConnection:
 
         start = time.time()
         result = collection.insert_many(data)
-        print(f'Documents inserted: {len(result.inserted_ids)}; Time taken: {time.time() - start}')
+        print(f'Collection: {collection_name}; Documents inserted: {len(result.inserted_ids)}; '
+              f'Time taken: {time.time() - start}')
 
     def check_collection_exists(self, db, collection):
         if collection not in db.list_collection_names():
