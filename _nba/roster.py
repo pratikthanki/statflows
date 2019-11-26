@@ -6,7 +6,10 @@ from nba_modules import current_nba_season
 from nba_settings import current_roster_1, headers
 
 
-def current_roster(mongodb_connector, collection):
+def current_roster(mongodb_connector):
+    nba_db = mongodb_connector.db_connect('nba')
+    roster_col = nba_db['roster']
+
     current_season = current_nba_season()
     teams = [TEAMS[i]['id'] for i in TEAMS.keys()]
 
@@ -33,15 +36,14 @@ def current_roster(mongodb_connector, collection):
 
     team_rosters = [dict(zip(data_headers, player)) for team in roster_lst for player in team]
 
-    mongodb_connector.insert_documents(collection, team_rosters)
+    mongodb_connector.insert_documents(nba_db, roster_col, team_rosters)
 
 
 def main():
     create_logger(__file__)
     mongodb_connector = MongoConnection()
-    nba_db = mongodb_connector.db_connect('nba')
-    roster = nba_db.roster
-    current_roster(mongodb_connector, roster)
+
+    current_roster(mongodb_connector)
 
 
 if __name__ == '__main__':
