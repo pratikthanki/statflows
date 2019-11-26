@@ -37,55 +37,61 @@ def get_game_stats(url, url_prop, games):
             stats_req = get_data(base_url=stats_url)
             game_stats.append(stats_req)
         except ValueError as e:
-            logging.info(i, e)
+            logging.error(i, e)
 
     return game_stats
 
 
-def game_detail_stats(game_json):
+def game_detail_stats(game_json, mongodb_connector, nba_db):
     lst = []
     for a in game_json:
+        if a is None:
+            continue
         for b in [a['g']]:
             for prop in ['vls', 'hls']:
                 if 'pstsg' not in b[prop]:
-                    logging.info('**Issue with game:', b['gid'])
-                    pass
-                else:
-                    for c in b[prop]['pstsg']:
-                        c['gid'] = b['gid']
-                        c['mid'] = b['mid']
-                        c['tid'] = b[prop]['tid']
-                        c['ta'] = b[prop]['ta']
-                        lst.append(c)
+                    logging.warning(f"'pstsg' not in game_id: {b['gid']}")
+                    continue
 
-    return lst
+                for c in b[prop]['pstsg']:
+                    c['gid'] = b['gid']
+                    c['mid'] = b['mid']
+                    c['tid'] = b[prop]['tid']
+                    c['ta'] = b[prop]['ta']
+                    lst.append(c)
+
+    mongodb_connector.insert_documents(nba_db, nba_db['match_stats'], lst)
+    roster_details(lst, mongodb_connector, nba_db)
 
 
 def game_pbp_stats(game_json):
     play_by_play = []
     for i in game_json:
+        if i is None:
+            continue
         for j in i['g']['pd']:
             for k in j['pla']:
                 if 'pla' not in j:
-                    logging.info('**Issue with game:', i['g']['gid'])
-                    pass
-                else:
-                    k['period'] = j['p']
-                    k['gid'] = i['g']['gid']
-                    k['mid'] = i['g']['mid']
-                    play_by_play.append(k)
+                    logging.warning(f"'pla' not in game_id: {i['g']['gid']}")
+                    continue
+
+                k['period'] = j['p']
+                k['gid'] = i['g']['gid']
+                k['mid'] = i['g']['mid']
+                play_by_play.append(k)
 
     return play_by_play
 
 
-def roster_details(game_json):
+def roster_details(game_json, mongodb_connector, nba_db):
     players = [{'PlayerID': i['pid'], 'LastName': i['ln'], 'FirstName': i['fn']} for i in game_json]
     teams = [{'TeamID': i['tid'], 'TeamCode': i['ta']} for i in game_json]
 
     players = remove_duplicates(players)
     teams = remove_duplicates(teams)
 
-    return players, teams
+    mongodb_connector.insert_documents(nba_db, nba_db['players'], players)
+    mongodb_connector.insert_documents(nba_db, nba_db['teams'], teams)
 
 
 def main():
@@ -95,24 +101,20 @@ def main():
     mongodb_connector = MongoConnection()
     nba_db = mongodb_connector.db_connect('nba')
 
-    games = get_schedule(current_season_1, offset=90)
-    game_detail_json = get_game_stats(current_season_2, 'gamedetail', games)
-    game_pbp_json = get_game_stats(current_season_3, 'full_pbp', games)
+    season = '2019'
 
-    player_game_summary = game_detail_stats(game_detail_json)
-    players, teams = roster_details(player_game_summary)
+    # for season in ['2016', '2017', '2018']:
+    #     print(f'Getting data for {season} season')
 
+    games = get_schedule(current_season_1.format(season), offset=14)
+    mongodb_connector.insert_documents(nba_db, nba_db['games'], games)
+
+    game_detail_json = get_game_stats(current_season_2.format(season), 'gamedetail', games)
+    game_detail_stats(game_detail_json, mongodb_connector, nba_db)
+
+    game_pbp_json = get_game_stats(current_season_3.format(season), 'full_pbp', games)
     play_by_play = game_pbp_stats(game_pbp_json)
-
-    start = time.time()
-
-    mongodb_connector.insert_documents(nba_db.players, players)
-    mongodb_connector.insert_documents(nba_db.teams, teams)
-    mongodb_connector.insert_documents(nba_db.games, games)
-    mongodb_connector.insert_documents(nba_db.match_pbp, play_by_play)
-    mongodb_connector.insert_documents(nba_db.match_stats, player_game_summary)
-
-    print(f'Total time: {time.time() - start}')
+    mongodb_connector.insert_documents(nba_db, nba_db['match_pbp'], play_by_play)
 
     logging.info('Task completed')
 
