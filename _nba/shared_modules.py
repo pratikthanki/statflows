@@ -131,18 +131,35 @@ class MongoConnection:
     def db_connect(self, database):
         return self.client[database]
 
-    def insert_documents(self, db, collection, data):
+    def check_collection_exists(self, db, collection):
+        if collection not in db.list_collection_names():
+            return db.create_collection(name=collection)
+
+    def insert_documents(self, db, collection, data, keys, upsert=False):
         collection_name = str(collection).replace(')', '').rpartition(', ')[-1]
         self.check_collection_exists(db, collection_name.replace("'", ""))
 
         start = time.time()
-        result = collection.insert_many(data)
-        print(f'Collection: {collection_name}; Documents inserted: {len(result.inserted_ids)}; '
-              f'Time taken: {time.time() - start}')
 
-    def check_collection_exists(self, db, collection):
-        if collection not in db.list_collection_names():
-            return db.create_collection(name=collection)
+        if not upsert:
+            result = collection.insert_many(data)
+            print(f'Collection: {collection_name}; '
+                  f'Docs inserted: {len(result.inserted_ids)}; '
+                  f'Time taken: {time.time() - start}')
+
+        else:
+            docs_updated = 0
+            docs_inserted = 0
+
+            for doc in data:
+                key_data = {key: doc[key] for key in keys if key in doc.keys()}
+                result = collection.update(key_data, {'$set': doc}, upsert=True)
+
+                docs_inserted += 1 if 'upserted' in result.keys() else 0
+                docs_updated += result['nModified']
+
+            print(f'Collection: {collection_name}; Docs updated: {docs_updated}; '
+                  f'Docs inserted: {docs_inserted}; Time taken: {time.time() - start}')
 
 
 def sql_server_connection(config, database):
