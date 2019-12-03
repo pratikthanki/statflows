@@ -2,7 +2,7 @@ import time
 import requests
 import logging
 from shared_modules import MongoConnection, create_logger, get_data
-from nba_settings import draft_combine_1, draft_combine_2, headers
+from nba_settings import draft_combine_1, draft_combine_2, headers, mongo_details
 
 """
 League ID: NBA = 00     ABA = 01
@@ -54,7 +54,6 @@ def combine_stats(data, activity_type, mongodb_connector, nba_db):
     table_name = activity_type.replace('draftcombine', '')
     data = [dict(zip(headers_list, result)) for result in result_list]
 
-    # nba_sql.insert_data(table_name, data, ['FIRST_NAME', 'LAST_NAME', 'SeasonYear'])
     mongodb_connector.insert_documents(nba_db, nba_db[table_name], data)
 
 
@@ -81,7 +80,8 @@ def main():
     create_logger(__file__)
     logging.info('Task started')
 
-    mongodb_connector = MongoConnection()
+    mongodb_connector = MongoConnection(project='draft-combine', upsert=False)
+
     nba_db = mongodb_connector.db_connect('nba')
 
     draft_history(mongodb_connector, nba_db)
