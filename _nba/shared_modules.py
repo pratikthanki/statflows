@@ -7,7 +7,7 @@ import logging
 import requests
 from urllib.parse import quote
 from pymongo import MongoClient
-from nba_settings import headers, mongodb_uid, mongodb_pwd, mongodb_cluster, sql_uid, sql_pwd
+from nba_settings import headers, sql_uid, sql_pwd, mongo_details
 
 
 class SqlConnection:
@@ -121,12 +121,13 @@ class SqlConnection:
 
 
 class MongoConnection:
-    def __init__(self):
-        self.uid = mongodb_uid
-        self.pwd = quote(mongodb_pwd, safe='')
-        self.cluster = mongodb_cluster
+    def __init__(self, project, upsert=False):
+        self.uid = mongo_details[project]['uid']
+        self.pwd = quote(mongo_details[project]['pwd'], safe='')
+        self.cluster = mongo_details[project]['cluster']
         self.params = 'ssl=true&ssl_cert_reqs=CERT_NONE&retryWrites=true&w=majority'
         self.client = MongoClient(f'mongodb+srv://{self.uid}:{self.pwd}@{self.cluster}/test?{self.params}')
+        self.upsert = upsert
 
     def db_connect(self, database):
         return self.client[database]
@@ -135,31 +136,32 @@ class MongoConnection:
         if collection not in db.list_collection_names():
             return db.create_collection(name=collection)
 
-    def insert_documents(self, db, collection, data, keys, upsert=False):
+    def insert_documents(self, db, collection, data, keys=None):
         collection_name = str(collection).replace(')', '').rpartition(', ')[-1]
         self.check_collection_exists(db, collection_name.replace("'", ""))
 
         start = time.time()
 
-        if not upsert:
+        if not self.upsert or not keys:
             result = collection.insert_many(data)
             print(f'Collection: {collection_name}; '
                   f'Docs inserted: {len(result.inserted_ids)}; '
                   f'Time taken: {time.time() - start}')
+            return
 
-        else:
-            docs_updated = 0
-            docs_inserted = 0
+        assert keys
+        docs_updated = 0
+        docs_inserted = 0
 
-            for doc in data:
-                key_data = {key: doc[key] for key in keys if key in doc.keys()}
-                result = collection.update(key_data, {'$set': doc}, upsert=True)
+        for doc in data:
+            key_data = {key: doc[key] for key in keys if key in doc.keys()}
+            result = collection.update(key_data, {'$set': doc}, upsert=True)
 
-                docs_inserted += 1 if 'upserted' in result.keys() else 0
-                docs_updated += result['nModified']
+            docs_inserted += 1 if 'upserted' in result.keys() else 0
+            docs_updated += result['nModified']
 
-            print(f'Collection: {collection_name}; Docs updated: {docs_updated}; '
-                  f'Docs inserted: {docs_inserted}; Time taken: {time.time() - start}')
+        print(f'Collection: {collection_name}; Docs updated: {docs_updated}; '
+              f'Docs inserted: {docs_inserted}; Time taken: {time.time() - start}')
 
 
 def sql_server_connection(config, database):
