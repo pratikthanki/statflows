@@ -3,7 +3,7 @@ import requests
 from teams import TEAMS
 from shared_modules import MongoConnection, create_logger
 from nba_modules import current_nba_season
-from nba_settings import current_roster_1, headers
+from nba_settings import current_roster_1, headers, mongo_details
 
 
 def current_roster(mongodb_connector):
@@ -41,7 +41,8 @@ def current_roster(mongodb_connector):
 
 def main():
     create_logger(__file__)
-    mongodb_connector = MongoConnection()
+
+    mongodb_connector = MongoConnection(project='draft-combine', upsert=False)
 
     current_roster(mongodb_connector)
 
