@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import datetime, timedelta
 from shared_modules import create_logger, get_data, MongoConnection
-from nba_settings import current_season_1, current_season_2, current_season_3
+from nba_settings import current_season_1, current_season_2, current_season_3, mongo_details
 
 upsert_keys = {
     'games': ['game_id'],
@@ -21,7 +21,7 @@ def get_schedule(url, mongodb_connector, nba_db, offset):
     for i in game_rqst['lscd']:
         for j in i['mscd']['g']:
             game_date = datetime.strptime(j['gdte'], '%Y-%m-%d')
-            if date_offset < game_date < now:
+            if game_date < now:
                 games.append({
                     'game_id': j['gid'],
                     'game_code': j['gcode'],
@@ -94,7 +94,7 @@ def game_pbp_stats(game_json, mongodb_connector, nba_db):
 def update_stats(mongodb_connector, season):
     nba_db = mongodb_connector.db_connect('nba')
 
-    games = get_schedule(current_season_1.format(season), mongodb_connector, nba_db, offset=14)
+    games = get_schedule(current_season_1.format(season), mongodb_connector, nba_db, offset=7)
 
     game_detail_json = get_game_stats(current_season_2.format(season), 'gamedetail', games)
     game_detail_stats(game_detail_json, mongodb_connector, nba_db)
@@ -108,8 +108,8 @@ def main():
 
     logging.info('Task started')
 
-    mongodb_connector = MongoConnection()
-    update_stats(mongodb_connector, season='2019')
+    mongodb_connector = MongoConnection(project='match-stats', upsert=True)
+    update_stats(mongodb_connector=mongodb_connector, season='2019')
 
     logging.info('Task completed')
 
