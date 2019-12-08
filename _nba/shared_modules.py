@@ -121,13 +121,12 @@ class SqlConnection:
 
 
 class MongoConnection:
-    def __init__(self, project, upsert=False):
+    def __init__(self, project):
         self.uid = mongo_details[project]['uid']
         self.pwd = quote(mongo_details[project]['pwd'], safe='')
         self.cluster = mongo_details[project]['cluster']
         self.params = 'ssl=true&ssl_cert_reqs=CERT_NONE&retryWrites=true&w=majority'
         self.client = MongoClient(f'mongodb+srv://{self.uid}:{self.pwd}@{self.cluster}/test?{self.params}')
-        self.upsert = upsert
 
     def db_connect(self, database):
         return self.client[database]
@@ -142,25 +141,23 @@ class MongoConnection:
 
         start = time.time()
 
-        if not self.upsert or not keys:
-            result = collection.insert_many(data)
-            print(f'Collection: {collection_name}; '
-                  f'Docs inserted: {len(result.inserted_ids)}; '
-                  f'Time taken: {time.time() - start}')
-            return
-
-        assert keys
-        docs_updated = 0
+        docs_skipped = 0
         docs_inserted = 0
 
         for doc in data:
             key_data = {key: doc[key] for key in keys if key in doc.keys()}
-            result = collection.update(key_data, {'$set': doc}, upsert=True)
 
-            docs_inserted += 1 if 'upserted' in result.keys() else 0
-            docs_updated += result['nModified']
+            finder = collection.find(key_data)
+            output = [row for row in finder]
 
-        print(f'Collection: {collection_name}; Docs updated: {docs_updated}; '
+            if len(output) > 0:
+                docs_skipped += 1
+                continue
+
+            result = collection.insert_one(doc)
+            docs_inserted += 1
+
+        print(f'Collection: {collection_name}; Docs skipped: {docs_skipped}; '
               f'Docs inserted: {docs_inserted}; Time taken: {time.time() - start}')
 
 
