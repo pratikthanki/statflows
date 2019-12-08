@@ -42,7 +42,7 @@ def current_roster(mongodb_connector):
 def main():
     create_logger(__file__)
 
-    mongodb_connector = MongoConnection(project='draft-combine', upsert=False)
+    mongodb_connector = MongoConnection(project='draft-combine')
 
     current_roster(mongodb_connector)
 
