@@ -37,7 +37,7 @@ def draft_history(mongodb_connector, nba_db):
     draft_keys = draft_history_data['resultSets'][0]['headers']
     drafts = [dict(zip(draft_keys, draft_val)) for draft_val in drafts]
 
-    mongodb_connector.insert_documents(nba_db, nba_db['draft_history'], drafts)
+    mongodb_connector.insert_documents(nba_db, nba_db['draft_history'], drafts, ['PERSON_ID', 'SEASON', 'TEAM_ID'])
 
 
 def combine_stats(data, activity_type, mongodb_connector, nba_db):
@@ -54,7 +54,7 @@ def combine_stats(data, activity_type, mongodb_connector, nba_db):
     table_name = activity_type.replace('draftcombine', '')
     data = [dict(zip(headers_list, result)) for result in result_list]
 
-    mongodb_connector.insert_documents(nba_db, nba_db[table_name], data)
+    mongodb_connector.insert_documents(nba_db, nba_db[table_name], data, ['PLAYER_ID', 'SeasonYear'])
 
 
 def combine_results(activity_type, mongodb_connector, nba_db):
@@ -80,7 +80,7 @@ def main():
     create_logger(__file__)
     logging.info('Task started')
 
-    mongodb_connector = MongoConnection(project='draft-combine', upsert=False)
+    mongodb_connector = MongoConnection(project='draft-combine')
 
     nba_db = mongodb_connector.db_connect('nba')
 
