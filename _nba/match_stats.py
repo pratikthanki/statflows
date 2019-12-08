@@ -73,8 +73,8 @@ def game_detail_stats(game_json, mongodb_connector, nba_db):
 
 
 def game_pbp_stats(game_json, mongodb_connector, nba_db):
-    play_by_play = []
     for i in game_json:
+        play_by_play = []
         if i is None:
             continue
         for j in i['g']['pd']:
@@ -88,7 +88,7 @@ def game_pbp_stats(game_json, mongodb_connector, nba_db):
                 k['mid'] = i['g']['mid']
                 play_by_play.append(k)
 
-    mongodb_connector.insert_documents(nba_db, nba_db['match_pbp'], play_by_play, upsert_keys['pbp'])
+        mongodb_connector.insert_documents(nba_db, nba_db['match_pbp'], play_by_play, upsert_keys['pbp'])
 
 
 def update_stats(mongodb_connector, season):
@@ -108,7 +108,7 @@ def main():
 
     logging.info('Task started')
 
-    mongodb_connector = MongoConnection(project='match-stats', upsert=True)
+    mongodb_connector = MongoConnection(project='match-stats')
     update_stats(mongodb_connector=mongodb_connector, season='2019')
 
     logging.info('Task completed')
