@@ -143,18 +143,20 @@ class MongoConnection:
 
         docs_skipped = 0
         docs_inserted = 0
+        output = []
 
         for doc in data:
-            key_data = {key: doc[key] for key in keys if key in doc.keys()}
+            if keys:
+                key_data = {key: doc[key] for key in keys if key in doc.keys()}
 
-            finder = collection.find(key_data)
-            output = [row for row in finder]
+                finder = collection.find(key_data)
+                output = [row for row in finder]
 
             if len(output) > 0:
                 docs_skipped += 1
                 continue
 
-            result = collection.insert_one(doc)
+            collection.insert_one(doc)
             docs_inserted += 1
 
         print(f'Collection: {collection_name}; Docs skipped: {docs_skipped}; '
