@@ -1,19 +1,15 @@
-import pyodbc
 import logging
-import requests
-from shared_config import sql_config
-from nba_settings import standings_1, headers
-from shared_modules import sql_server_connection, execute_sql, create_logger
+from nba_settings import standings_1
+from shared_modules import create_logger, MongoConnection, get_data
 
 
-def get_standings(cursor):
-    standings_request = requests.request('GET', standings_1, headers=headers)
-    standings_request = standings_request.json()
+def get_standings(mongodb_connector):
+    standings_request = get_data(base_url=standings_1)
+    nba_db = mongodb_connector.db_connect('nba')
 
     standings = []
     for i in standings_request['payload']['standingGroups']:
         for j in i['teams']:
-            print(j['profile']['id'])
             standings.append({
                 'Abbr': j['profile']['abbr'],
                 'Conference': j['profile']['conference'],
@@ -36,19 +32,17 @@ def get_standings(cursor):
                 'HomeStreak': j['standings']['homeStreak']
             })
 
-    execute_sql('LeagueStandings', standings, ['TeamName'], cursor)
+    nba_db['standings'].drop()
+    mongodb_connector.insert_documents(nba_db, nba_db['standings'], standings)
 
 
 def main():
     create_logger(__file__)
     logging.info('Task started')
 
-    conn, cursor = sql_server_connection(sql_config, 'nba')
+    mongodb_connector = MongoConnection(project='match-stats')
 
-    cursor.execute('DELETE FROM LeagueStandings')
-    get_standings(cursor)
-
-    conn.commit()
+    get_standings(mongodb_connector)
 
     logging.info('Task completed')
 
