@@ -6,8 +6,8 @@ from nba_settings import current_season_1, current_season_2, current_season_3, m
 
 upsert_keys = {
     'games': ['game_id'],
-    'match_stats': ['pid', 'gid', 'tid'],
-    'pbp': ['evt', 'gid', 'gid', 'pid', 'tid']
+    'match_stats': ['gid', 'tid'],
+    'pbp': ['gid', 'pid', 'tid']
 }
 
 
@@ -94,7 +94,7 @@ def game_pbp_stats(game_json, mongodb_connector, nba_db):
 def update_stats(mongodb_connector, season):
     nba_db = mongodb_connector.db_connect('nba')
 
-    games = get_schedule(current_season_1.format(season), mongodb_connector, nba_db, offset=7)
+    games = get_schedule(current_season_1.format(season), mongodb_connector, nba_db, offset=10)
 
     game_detail_json = get_game_stats(current_season_2.format(season), 'gamedetail', games)
     game_detail_stats(game_detail_json, mongodb_connector, nba_db)
