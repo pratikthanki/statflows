@@ -3,10 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="b1328878-de93-411d-a1a7-cf94a7b788bb" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/draft_combine.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/draft_combine.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_nba/match_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/match_stats.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/roster.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/roster.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/shared_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/shared_modules.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_nba/standings.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/standings.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -29,8 +26,8 @@
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="PropertiesComponent">
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/_nba/currents_speed_loads.py" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../epl_predictions" />
+    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
