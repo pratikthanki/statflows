@@ -226,7 +226,7 @@ def create_logger(file_name):
     log_file = file_name.replace('.py', '.log')
     log_dir = os.path.join(os.getcwd(), 'logs')
 
-    folder, log = log_file.split('/')
+    folder, log = log_file.split('/')[-2:]
     log_path = os.path.join(log_dir, folder)
 
     if not os.path.exists(log_path):
