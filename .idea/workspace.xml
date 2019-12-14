@@ -4,6 +4,7 @@
     <list default="true" id="b1328878-de93-411d-a1a7-cf94a7b788bb" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_nba/match_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/match_stats.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_nba/shared_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/shared_modules.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_nba/standings.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/standings.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -26,7 +27,7 @@
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="PropertiesComponent">
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../epl_predictions" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/_nba/match_stats.py" />
     <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
   <component name="RecentsManager">
@@ -52,7 +53,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.currents_speed_loads">
+  <component name="RunManager" selected="Python.match_stats">
     <configuration name="currents_speed_loads" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="statflows" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -81,9 +82,9 @@
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="/usr/bin/python2.7" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/_nba" />
-      <option name="IS_MODULE_SDK" value="false" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/" />
+      <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/_nba/match_stats.py" />
