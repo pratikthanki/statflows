@@ -141,23 +141,27 @@ class MongoConnection:
 
         start = time.time()
 
-        docs_skipped = 0
-        docs_inserted = 0
-        output = []
+        collection.insert_many(data)
+        print(f'Collection: {collection_name}; Docs inserted: {len(data)}; Time taken: {time.time() - start}')
+        return
 
-        for doc in data:
-            if keys:
-                key_data = {key: doc[key] for key in keys if key in doc.keys()}
+        # docs_skipped = 0
+        # docs_inserted = 0
+        # output = []
 
-                finder = collection.find(key_data)
-                output = [row for row in finder]
-
-            if len(output) > 0:
-                docs_skipped += 1
-                continue
-
-            collection.insert_one(doc)
-            docs_inserted += 1
+        # for doc in data:
+        #     if keys:
+        #         key_data = {key: doc[key] for key in keys if key in doc.keys()}
+        #
+        #         finder = collection.find(key_data)
+        #         output = [row for row in finder]
+        #
+        #     if len(output) > 0:
+        #         docs_skipped += 1
+        #         continue
+        #
+        #     collection.insert_one(doc)
+        #     docs_inserted += 1
 
         print(f'Collection: {collection_name}; Docs skipped: {docs_skipped}; '
               f'Docs inserted: {docs_inserted}; Time taken: {time.time() - start}')
