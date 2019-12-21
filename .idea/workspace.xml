@@ -3,8 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="b1328878-de93-411d-a1a7-cf94a7b788bb" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_nba/match_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/match_stats.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_nba/shared_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/shared_modules.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/standings.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/standings.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -52,7 +52,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.standings">
+  <component name="RunManager" selected="Python.match_stats">
     <configuration name="currents_speed_loads" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="statflows" />
       <option name="INTERPRETER_OPTIONS" value="" />
