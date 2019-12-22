@@ -1,3 +1,4 @@
+import os
 import logging
 import time
 from datetime import datetime, timedelta
@@ -15,13 +16,21 @@ def get_schedule(url, mongodb_connector, nba_db, offset):
     game_rqst = get_data(url)
 
     now = datetime.strptime(time.strftime('%Y-%m-%d'), '%Y-%m-%d')
-    date_offset = now - timedelta(days=offset)
+    date_offset_str = now - timedelta(days=offset)
+    date_offset = datetime.strftime(date_offset_str, '%Y-%m-%d')
+
+    last = nba_db.games.find({'date': {'$gt': date_offset}})
+    last_date = max([l['date'] for l in last])
+
+    print(last_date, date_offset, now)
+
+    earliest_date = datetime.strptime(max(last_date, date_offset), '%Y-%m-%d')
 
     games = []
     for i in game_rqst['lscd']:
         for j in i['mscd']['g']:
             game_date = datetime.strptime(j['gdte'], '%Y-%m-%d')
-            if game_date < now:
+            if earliest_date < game_date < now:
                 games.append({
                     'game_id': j['gid'],
                     'game_code': j['gcode'],
@@ -91,16 +100,21 @@ def game_pbp_stats(game_json, mongodb_connector, nba_db):
         mongodb_connector.insert_documents(nba_db, nba_db['match_pbp'], play_by_play, upsert_keys['pbp'])
 
 
-def update_stats(mongodb_connector, season):
+def update_stats(project, season):
+    print(project, season)
+
+    mongodb_connector = MongoConnection(project=project)
     nba_db = mongodb_connector.db_connect('nba')
 
     games = get_schedule(current_season_1.format(season), mongodb_connector, nba_db, offset=10)
 
-    game_detail_json = get_game_stats(current_season_2.format(season), 'gamedetail', games)
-    game_detail_stats(game_detail_json, mongodb_connector, nba_db)
+    if project == 'match-stats':
+        game_detail_json = get_game_stats(current_season_2.format(season), 'gamedetail', games)
+        game_detail_stats(game_detail_json, mongodb_connector, nba_db)
 
-    game_pbp_json = get_game_stats(current_season_3.format(season), 'full_pbp', games)
-    game_pbp_stats(game_pbp_json, mongodb_connector, nba_db)
+    elif project == 'match-pbp':
+        game_pbp_json = get_game_stats(current_season_3.format(season), 'full_pbp', games)
+        game_pbp_stats(game_pbp_json, mongodb_connector, nba_db)
 
 
 def main():
@@ -108,8 +122,15 @@ def main():
 
     logging.info('Task started')
 
-    mongodb_connector = MongoConnection(project='match-stats')
-    update_stats(mongodb_connector=mongodb_connector, season='2019')
+    os.environ['TZ'] = 'US/Eastern'
+
+    projects = ['match-stats', 'match-pbp']
+    season = '2019'
+
+    update_stats(project=projects[0], season=season)
+
+    # for season in ['2016', '2017', '2018', '2019']:
+    #     update_stats(project=projects[1], season=season)
 
     logging.info('Task completed')
 
