@@ -12,7 +12,7 @@ upsert_keys = {
 }
 
 
-def get_schedule(url, mongodb_connector, nba_db, offset):
+def get_schedule(url, mongodb_connector, nba_db, logger, offset=10):
     game_rqst = get_data(url)
 
     now = datetime.strptime(time.strftime('%Y-%m-%d'), '%Y-%m-%d')
@@ -22,9 +22,9 @@ def get_schedule(url, mongodb_connector, nba_db, offset):
     last = nba_db.games.find({'date': {'$gt': date_offset}})
     last_date = max([l['date'] for l in last])
 
-    print(last_date, date_offset, now)
-
     earliest_date = datetime.strptime(max(last_date, date_offset), '%Y-%m-%d')
+
+    logger.info(f'Fetching games between: {earliest_date} - {now}')
 
     games = []
     for i in game_rqst['lscd']:
@@ -42,6 +42,11 @@ def get_schedule(url, mongodb_connector, nba_db, offset):
                     'home_team_id': j['h']['tid'],
                     'home_score': j['h']['s']
                 })
+
+    if len(games) == 0:
+        logging.info('No games to import')
+        print(f'0 new games to import between; {earliest_date} - {now}')
+        raise SystemExit(0)
 
     mongodb_connector.insert_documents(nba_db, nba_db['games'], games, upsert_keys['games'])
     return [i['game_id'] for i in games]
@@ -100,13 +105,13 @@ def game_pbp_stats(game_json, mongodb_connector, nba_db):
         mongodb_connector.insert_documents(nba_db, nba_db['match_pbp'], play_by_play, upsert_keys['pbp'])
 
 
-def update_stats(project, season):
-    print(project, season)
+def update_stats(project, season, logger):
+    logger.info(f'Project: {project}; Season: {season}')
 
     mongodb_connector = MongoConnection(project=project)
     nba_db = mongodb_connector.db_connect('nba')
 
-    games = get_schedule(current_season_1.format(season), mongodb_connector, nba_db, offset=10)
+    games = get_schedule(current_season_1.format(season), mongodb_connector, nba_db, logger)
 
     if project == 'match-stats':
         game_detail_json = get_game_stats(current_season_2.format(season), 'gamedetail', games)
@@ -127,7 +132,7 @@ def main():
     projects = ['match-stats', 'match-pbp']
     season = '2019'
 
-    update_stats(project=projects[0], season=season)
+    update_stats(project=projects[0], season=season, logger=logging)
 
     # for season in ['2016', '2017', '2018', '2019']:
     #     update_stats(project=projects[1], season=season)
