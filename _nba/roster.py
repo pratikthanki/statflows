@@ -1,5 +1,6 @@
 import time
 import requests
+import datetime
 from teams import TEAMS
 from shared_modules import MongoConnection, create_logger
 from nba_modules import current_nba_season
@@ -12,6 +13,8 @@ def current_roster(mongodb_connector):
 
     current_season = current_nba_season()
     teams = [TEAMS[i]['id'] for i in TEAMS.keys()]
+
+    now = datetime.datetime.now()
 
     data_headers = []
     roster_lst = []
@@ -36,13 +39,15 @@ def current_roster(mongodb_connector):
 
     team_rosters = [dict(zip(data_headers, player)) for team in roster_lst for player in team]
 
+    [item.update({"LAST_UPDATED": now}) for item in team_rosters]
+
     mongodb_connector.insert_documents(nba_db, roster_col, team_rosters)
 
 
 def main():
     create_logger(__file__)
 
-    mongodb_connector = MongoConnection(project='draft-combine')
+    mongodb_connector = MongoConnection(project='match-stats')
 
     current_roster(mongodb_connector)
 
