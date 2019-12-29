@@ -12,7 +12,7 @@ upsert_keys = {
 }
 
 
-def get_schedule(url, mongodb_connector, nba_db, logger, offset=10):
+def get_schedule(url, mongodb_connector, nba_db, logger, offset=14):
     game_rqst = get_data(url)
 
     now = datetime.strptime(time.strftime('%Y-%m-%d'), '%Y-%m-%d')
@@ -24,6 +24,7 @@ def get_schedule(url, mongodb_connector, nba_db, logger, offset=10):
 
     earliest_date = datetime.strptime(max(last_date, date_offset), '%Y-%m-%d')
 
+    print(f'Fetching games between: {earliest_date} - {now}')
     logger.info(f'Fetching games between: {earliest_date} - {now}')
 
     games = []
