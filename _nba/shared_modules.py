@@ -126,7 +126,11 @@ class MongoConnection:
         self.pwd = quote(mongo_details[project]['pwd'], safe='')
         self.cluster = mongo_details[project]['cluster']
         self.params = 'ssl=true&ssl_cert_reqs=CERT_NONE&retryWrites=true&w=majority'
-        self.client = MongoClient(f'mongodb+srv://{self.uid}:{self.pwd}@{self.cluster}/test?{self.params}')
+        self.conn_str = f'mongodb+srv://{self.uid}:{self.pwd}@{self.cluster}/test'
+        self.client = MongoClient(f'{self.conn_str}?{self.params}')
+
+    def api_str(self):
+        return self.conn_str
 
     def db_connect(self, database):
         return self.client[database]
@@ -162,9 +166,9 @@ class MongoConnection:
         #
         #     collection.insert_one(doc)
         #     docs_inserted += 1
-
-        print(f'Collection: {collection_name}; Docs skipped: {docs_skipped}; '
-              f'Docs inserted: {docs_inserted}; Time taken: {time.time() - start}')
+        #
+        # print(f'Collection: {collection_name}; Docs skipped: {docs_skipped}; '
+        #       f'Docs inserted: {docs_inserted}; Time taken: {time.time() - start}')
 
 
 def sql_server_connection(config, database):
