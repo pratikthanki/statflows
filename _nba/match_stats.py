@@ -126,8 +126,6 @@ def update_stats(project, season, logger):
 def main():
     create_logger(__file__)
 
-    logging.info('Task started')
-
     os.environ['TZ'] = 'US/Eastern'
 
     projects = ['match-stats', 'match-pbp']
