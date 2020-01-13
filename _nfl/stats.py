@@ -1,54 +1,49 @@
+import requests
+import collections
 import pandas as pd
-import requests 
-from sqlalchemy import create_engine
-import pyodbc
-import os 
+from nfl_settings import base_url, stat_types, season_phases, headers
 
-os.chdir('C:\\Users\\PratikThanki\\OneDrive - EDGE10 (UK) Ltd\\Pratik\\Python\\statflows-nfl')
-from Settings import *
+pd.set_option('max_columns', 50)
+pd.set_option('max_rows', 600)
+pd.set_option('max_width', 1000)
 
 
-pd.set_option('display.max_rows', 200)
-pd.set_option('display.max_columns', 30)
-
-def getStats(stat):
-    emptylist = []
-    playerlist = []
-    #for s in stats:
-    for i in seasons:
-        for x in range(1, 23):
-            if x <= 17:
-                query = requests.request('GET', baseurl + str(stat) + '?season=' + str(i) + '&seasonType=REG&week=' + str(x), headers=headers)
-            else:
-                query = requests.request('GET', baseurl + str(stat) + '?season=' + str(i) + '&seasonType=POST&week=' + str(x), headers=headers)
-
-            print(i, x, query.status_code)
-            emptylist.append(query.json())
-            playerlist.append(query.json())
-
-    temp = []
-    player = []
-    new = []
-    for weeks in emptylist:
-        for stats in weeks['stats']:
-            player.append(stats['player'])
-            if 'player' in stats:
-                del stats['player']
-            temp.append(stats)
-
-    tempdf = pd.DataFrame(temp)
-
-    return tempdf
+def flatten(d, parent_key='', sep='_'):
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
 
 
-passinglist = getStats('passing')
-rushinglist = getStats('rushing')
-receivinglist = getStats('receiving')
+def parse_stats(data):
+    output = []
+    for week in data:
+        for stats in week['stats']:
+            output.append(flatten(stats))
 
-# engine = create_engine(str(mssql) + 'nfldata')
-# cursor = engine.connect()
 
-# passinglist.to_sql('Passing', engine, schema='dbo', if_exists='replace', index=None, chunksize=1000)
-# rushinglist.to_sql('Rushing', engine, schema='dbo', if_exists='replace', index=None, chunksize=10000)
-# receivinglist.to_sql('Receiving', engine, schema='dbo', if_exists='replace', index=None, chunksize=10000)
+def get_stats(season, stat):
+    play_stats = []
+    for week in range(1, 23):
+        season_phase = 'REG' if week <= 17 else 'POST'
+        url = f'{base_url}/{stat}?season={season}&seasonType={season_phase}&week={week}'
 
+        query = requests.request('GET', url, headers=headers)
+
+        print(season, week, query.status_code)
+        play_stats.append(query.json())
+
+    parse_stats(play_stats)
+
+
+def main():
+    for stat in stat_types:
+        get_stats(2019, stat)
+
+
+if __name__ == '__main__':
+    main()
