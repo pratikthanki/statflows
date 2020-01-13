@@ -171,65 +171,12 @@ class MongoConnection:
         #       f'Docs inserted: {docs_inserted}; Time taken: {time.time() - start}')
 
 
-def sql_server_connection(config, database):
-    config['database'] = database
-    try:
-        query = 'DRIVER={driver};SERVER={server},{port};DATABASE={database};UID={username};PWD={password}'.format(
-            **config)
-        conn = pyodbc.connect(query)
-        cursor = conn.cursor()
-
-        return conn, cursor
-    except Exception as e:
-        logging.info(e)
-
-
-def load_data(query, sql_config, database, columns):
-    sql_data = []
-    conn, cursor = sql_server_connection(sql_config, database)
-
-    try:
-        cursor.execute(query)
-        rows = cursor.fetchall()
-        pass
-    except Exception as e:
-        print(e)
-        rows = pd.read_sql(query, conn)
-
-    for row in rows:
-        sql_data.append(list(row))
-
-    df = pd.DataFrame(sql_data)
-    df.columns = columns
-
-    return df
-
-
 def get_data(base_url, h=headers):
     try:
         rqst = requests.request('GET', base_url, headers=h)
         return rqst.json()
     except ValueError as e:
         logging.info(e)
-
-
-def execute_sql(table_name, data, key_columns, sql_cursor):
-    query = 'SELECT * INTO #temp FROM ( VALUES {0} ) AS s ( {1} ) ' \
-            'MERGE INTO {2} as Target ' \
-            'USING #temp AS Source ' \
-            '{3} ' \
-            'WHEN NOT MATCHED THEN INSERT ( {1} ) VALUES ( {4} ) ' \
-            'WHEN MATCHED THEN UPDATE SET {5}; ' \
-            'DROP TABLE #temp; '.format(values_statement(data),
-                                        columns_statement(data),
-                                        table_name,
-                                        on_statement(data, key_columns),
-                                        source_columns_statement(data),
-                                        set_statement(data, key_columns))
-
-    sql_cursor.execute(query)
-    logging.info('Table {0} updated: {1} records'.format(table_name, len(data)))
-    print('Table {0} updated: {1} records'.format(table_name, len(data)))
 
 
 def create_logger(file_name):
@@ -247,6 +194,8 @@ def create_logger(file_name):
                         format='%(asctime)s %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
                         level=logging.DEBUG)
+
+    logging.info('Task started')
 
 
 def create_table_columns_statement(lst):
