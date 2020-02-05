@@ -91,7 +91,7 @@ class SqlConnection:
         if table_check['A'].loc[0] == 0 and create:
             self.create_table(table_name, table_columns)
 
-    def insert_data(self, table_name, data, key_columns, verbose=0):
+    def insert_data(self, table_name, data, key_columns, verbose=1):
         all_keys = set().union(*(d.keys() for d in data))
 
         self.check_if_table_exists(table_name, all_keys)
