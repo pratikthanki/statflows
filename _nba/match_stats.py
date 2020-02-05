@@ -2,7 +2,7 @@ import os
 import logging
 import time
 from datetime import datetime, timedelta
-from shared_modules import create_logger, get_data, MongoConnection
+from shared_modules import create_logger, get_data, MongoConnection, SqlConnection
 from nba_settings import current_season_1, current_season_2, current_season_3, mongo_details
 
 upsert_keys = {
@@ -12,7 +12,7 @@ upsert_keys = {
 }
 
 
-def get_schedule(url, mongodb_connector, nba_db, logger, offset=14):
+def get_schedule(url, mongodb_connector, nba_db, logger, offset=250):
     game_rqst = get_data(url)
 
     now = datetime.strptime(time.strftime('%Y-%m-%d'), '%Y-%m-%d')
@@ -66,8 +66,8 @@ def get_game_stats(url, url_prop, list_of_games):
     return game_stats
 
 
-def game_detail_stats(game_json, mongodb_connector, nba_db):
-    lst = []
+def game_detail_stats(game_json, mongodb_connector, nba_db, sql):
+    stats = []
     for a in game_json:
         if a is None:
             continue
@@ -82,12 +82,13 @@ def game_detail_stats(game_json, mongodb_connector, nba_db):
                     c['mid'] = b['mid']
                     c['tid'] = b[prop]['tid']
                     c['ta'] = b[prop]['ta']
-                    lst.append(c)
+                    stats.append(c)
 
-    mongodb_connector.insert_documents(nba_db, nba_db['match_stats'], lst, upsert_keys['match_stats'])
+                # sql.insert_data('PlayerGameSummary', [c], ['pid', 'gid', 'tid'])
+    mongodb_connector.insert_documents(nba_db, nba_db['match_stats'], stats, upsert_keys['match_stats'])
 
 
-def game_pbp_stats(game_json, mongodb_connector, nba_db):
+def game_pbp_stats(game_json, mongodb_connector, nba_db, sql):
     for i in game_json:
         play_by_play = []
         if i is None:
@@ -103,11 +104,14 @@ def game_pbp_stats(game_json, mongodb_connector, nba_db):
                 k['mid'] = i['g']['mid']
                 play_by_play.append(k)
 
+        # sql.insert_data('GamePlays', play_by_play, ['evt', 'gid', 'pid', 'tid'])
         mongodb_connector.insert_documents(nba_db, nba_db['match_pbp'], play_by_play, upsert_keys['pbp'])
 
 
 def update_stats(project, season, logger):
     logger.info(f'Project: {project}; Season: {season}')
+
+    sql = SqlConnection('nba')
 
     mongodb_connector = MongoConnection(project=project)
     nba_db = mongodb_connector.db_connect('nba')
@@ -116,11 +120,11 @@ def update_stats(project, season, logger):
 
     if project == 'match-stats':
         game_detail_json = get_game_stats(current_season_2.format(season), 'gamedetail', games)
-        game_detail_stats(game_detail_json, mongodb_connector, nba_db)
+        game_detail_stats(game_detail_json, mongodb_connector, nba_db, sql)
 
     elif project == 'match-pbp':
         game_pbp_json = get_game_stats(current_season_3.format(season), 'full_pbp', games)
-        game_pbp_stats(game_pbp_json, mongodb_connector, nba_db)
+        game_pbp_stats(game_pbp_json, mongodb_connector, nba_db, sql)
 
 
 def main():
@@ -131,6 +135,7 @@ def main():
     projects = ['match-stats', 'match-pbp']
     season = '2019'
 
+    # Storage full for pbp, only inserting into stats
     update_stats(project=projects[0], season=season, logger=logging)
 
     # for season in ['2016', '2017', '2018', '2019']:
