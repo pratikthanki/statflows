@@ -22,14 +22,18 @@ def calculate_time_elapsed(row):
         return ((period - 1) * 12 * 60) + time_in_period_now
 
 
-def current_nba_season():
-    today = datetime.date.today()
+def current_nba_season(dt=None):
+    if not dt:
+        today = datetime.date.today()
+    else:
+        today = dt
+
     if today.month in (7, 8, 9, 10, 11, 12):
         y = today.year
-        current_season = str(y) + '-' + str(y + 1)[-2:]
+        current_season = str(y) + '-' + str(y + 1)
     else:
         y = today.year
-        current_season = str(y - 1) + '-' + str(y)[-2:]
+        current_season = str(y - 1) + '-' + str(y)
 
     return current_season
 
