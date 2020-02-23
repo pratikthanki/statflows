@@ -29,7 +29,7 @@ app = dash.Dash(
     external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'],
     suppress_callback_exceptions=True)
 
-sql = SqlConnection('nba')
+sql = SqlConnection('NBA')
 
 
 # server.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")

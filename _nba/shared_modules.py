@@ -5,9 +5,7 @@ import logging
 import pandas as pd
 import logging
 import requests
-from urllib.parse import quote
-from pymongo import MongoClient
-from nba_settings import headers, sql_uid, sql_pwd, mongo_details
+from nba_settings import headers, sql_uid, sql_pwd
 
 
 class SqlConnection:
@@ -57,24 +55,19 @@ class SqlConnection:
 
         return df
 
-    def add_table_constraint(self, table_name):
-        alter_table_query = 'ALTER TABLE [dbo].[{0}] ADD CONSTRAINT [last_updated_{0}] ' \
-                            'DEFAULT (getdate()) FOR [LastUpdated]'
-        self.cursor.execute(alter_table_query.format(table_name))
-
     def create_table(self, table_name, table_columns):
         create_table_query = '''
-            CREATE TABLE [dbo].[{0}](
-            {1}, [LastUpdated] [datetime] NOT NULL
-            ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+            CREATE TABLE [dbo].[{0}]
+            (
+            {1}, 
+            [LastUpdated] [datetime] NOT NULL DEFAULT (getdate())
+            )
         '''
 
         self.cursor.execute(create_table_query.format(
             table_name,
             create_table_columns_statement(table_columns)
         ))
-        self.add_table_constraint(table_name)
-
         print(f'Table created: {table_name}')
 
     def drop_table(self, table_name):
@@ -91,7 +84,7 @@ class SqlConnection:
         if table_check['A'].loc[0] == 0 and create:
             self.create_table(table_name, table_columns)
 
-    def insert_data(self, table_name, data, key_columns, verbose=1):
+    def insert_data(self, table_name, data, key_columns=None, verbose=1):
         all_keys = set().union(*(d.keys() for d in data))
 
         self.check_if_table_exists(table_name, all_keys)
@@ -99,18 +92,26 @@ class SqlConnection:
         conn = self.sql_server_connection()
         cursor = conn.cursor()
 
-        query = 'SELECT * INTO #temp FROM ( VALUES {0} ) AS s ( {1} ) ' \
-                'MERGE INTO {2} as Target ' \
-                'USING #temp AS Source ' \
-                '{3} ' \
-                'WHEN NOT MATCHED THEN INSERT ( {1} ) VALUES ( {4} ) ' \
-                'WHEN MATCHED THEN UPDATE SET {5}; ' \
-                'DROP TABLE #temp; '.format(values_statement(data),
-                                            columns_statement(data),
-                                            table_name,
-                                            on_statement(data, key_columns),
-                                            source_columns_statement(data),
-                                            set_statement(data, key_columns))
+        if key_columns:
+            query = 'SELECT * INTO #temp FROM ( VALUES {0} ) AS s ( {1} ) ' \
+                    'MERGE INTO [{6}].[dbo].[{2}] as Target ' \
+                    'USING #temp AS Source ' \
+                    '{3} ' \
+                    'WHEN NOT MATCHED THEN INSERT ( {1} ) VALUES ( {4} ) ' \
+                    'WHEN MATCHED THEN UPDATE SET {5}; ' \
+                    'DROP TABLE #temp; '.format(values_statement(data),
+                                                columns_statement(data),
+                                                table_name,
+                                                on_statement(data, key_columns),
+                                                source_columns_statement(data),
+                                                set_statement(data, key_columns),
+                                                self.database)
+
+        else:
+            query = 'INSERT INTO [dbo].[{0}] ( {1} )' \
+                    'SELECT {1} FROM ( VALUES {2} ) AS s ( {1} )'.format(table_name,
+                                                                         columns_statement(data),
+                                                                         values_statement(data))
 
         cursor.execute(query)
         conn.commit()
@@ -118,57 +119,6 @@ class SqlConnection:
 
         if verbose > 0:
             print('{0}: {1} rows inserted'.format(table_name, len(data)))
-
-
-class MongoConnection:
-    def __init__(self, project):
-        self.uid = mongo_details[project]['uid']
-        self.pwd = quote(mongo_details[project]['pwd'], safe='')
-        self.cluster = mongo_details[project]['cluster']
-        self.params = 'ssl=true&ssl_cert_reqs=CERT_NONE&retryWrites=true&w=majority'
-        self.conn_str = f'mongodb+srv://{self.uid}:{self.pwd}@{self.cluster}/test'
-        self.client = MongoClient(f'{self.conn_str}?{self.params}')
-
-    def api_str(self):
-        return self.conn_str
-
-    def db_connect(self, database):
-        return self.client[database]
-
-    def check_collection_exists(self, db, collection):
-        if collection not in db.list_collection_names():
-            return db.create_collection(name=collection)
-
-    def insert_documents(self, db, collection, data, keys=None):
-        collection_name = str(collection).replace(')', '').rpartition(', ')[-1]
-        self.check_collection_exists(db, collection_name.replace("'", ""))
-
-        start = time.time()
-
-        collection.insert_many(data)
-        print(f'Collection: {collection_name}; Docs inserted: {len(data)}; Time taken: {time.time() - start}')
-        return
-
-        # docs_skipped = 0
-        # docs_inserted = 0
-        # output = []
-
-        # for doc in data:
-        #     if keys:
-        #         key_data = {key: doc[key] for key in keys if key in doc.keys()}
-        #
-        #         finder = collection.find(key_data)
-        #         output = [row for row in finder]
-        #
-        #     if len(output) > 0:
-        #         docs_skipped += 1
-        #         continue
-        #
-        #     collection.insert_one(doc)
-        #     docs_inserted += 1
-        #
-        # print(f'Collection: {collection_name}; Docs skipped: {docs_skipped}; '
-        #       f'Docs inserted: {docs_inserted}; Time taken: {time.time() - start}')
 
 
 def get_data(base_url, h=headers):
@@ -243,3 +193,11 @@ def on_statement(lst, key_columns):
 
 def set_statement(lst, key_columns):
     return ', '.join([['[' + i + ']=Source.[' + i + ']' for i in l.keys() if i not in key_columns] for l in lst][0])
+
+
+def insert_statement(table_name, columns):
+    return f'''
+CREATE TABLE [dbo].[{table_name}]
+{columns}
+,LastUpdated DATETIME2 GETDATE()    
+'''
