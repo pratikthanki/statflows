@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 import logging
 import requests
-from nba_settings import headers, sql_uid, sql_pwd
+from shared_config import sql_uid, sql_pwd, headers
 
 
 class SqlConnection:
@@ -84,7 +84,7 @@ class SqlConnection:
         if table_check['A'].loc[0] == 0 and create:
             self.create_table(table_name, table_columns)
 
-    def insert_data(self, table_name, data, key_columns=None, verbose=1):
+    def insert_data(self, table_name, data, key_columns=None, verbose=1, debug=False):
         all_keys = set().union(*(d.keys() for d in data))
 
         self.check_if_table_exists(table_name, all_keys)
@@ -112,6 +112,15 @@ class SqlConnection:
                     'SELECT {1} FROM ( VALUES {2} ) AS s ( {1} )'.format(table_name,
                                                                          columns_statement(data),
                                                                          values_statement(data))
+
+        if debug:
+            print(query)
+            print(values_statement(data))
+            print(columns_statement(data))
+            print(table_name)
+            print(set_statement(data, key_columns))
+            print(source_columns_statement(data))
+            print(on_statement(data, key_columns))
 
         cursor.execute(query)
         conn.commit()

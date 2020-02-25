@@ -2,22 +2,24 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b1328878-de93-411d-a1a7-cf94a7b788bb" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/_nba/schema.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_nba/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/db_api.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/draft_combine.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/draft_combine.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/match_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/match_stats.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/nba_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/nba_modules.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_nba/inuries.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/_nba/roster.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/roster.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_nba/shared_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/shared_modules.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_nba/standings.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_nba/sql_queries.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nba/sql_queries.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_nfl/stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/_nfl/stats.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DaemonCodeAnalyzer">
+    <disable_hints>
+      <file url="file://$PROJECT_DIR$/_nfl/stats.py" />
+    </disable_hints>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -28,6 +30,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/_nfl/stats.py" root0="SKIP_INSPECTION" />
   </component>
   <component name="ProjectId" id="1ThOA6k6O5RZr4KmZYVhd81P3eT" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -42,10 +47,10 @@
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/_nba" />
+      <recent name="$PROJECT_DIR$/_nfl" />
       <recent name="$PROJECT_DIR$/_afl" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/shared" />
-      <recent name="$PROJECT_DIR$/nba" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -60,7 +65,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.roster">
+  <component name="RunManager" selected="Python.nba/app">
     <configuration name="db_api" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="statflows" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -132,7 +137,7 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/_nba" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />

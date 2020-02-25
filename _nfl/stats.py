@@ -1,12 +1,8 @@
+import datetime
 import requests
 import collections
-import pandas as pd
-from shared_modules import create_logger, get_data, MongoConnection
-from nfl_settings import base_url, stat_types, headers, mongo_details, upsert_keys
-
-pd.set_option('max_columns', 50)
-pd.set_option('max_rows', 600)
-pd.set_option('max_width', 1000)
+from shared_modules import create_logger, get_data, SqlConnection
+from nfl_settings import base_url, stat_types, headers, upsert_keys
 
 
 def flatten(d, parent_key='', sep='_'):
@@ -20,39 +16,62 @@ def flatten(d, parent_key='', sep='_'):
     return dict(items)
 
 
-def parse_stats(data, mongodb_connector, nfl_db):
+def parse_stats(data, sql, table_name):
     output = []
     for week in data:
         for stats in week['stats']:
             output.append(flatten(stats))
 
-    # mongodb_connector.insert_documents(nfl_db, nfl_db['match_pbp'], output, upsert_keys)
+    # some dicts contains keys that others don't, so this check for and adds NULL records
+    sorted_data = []
+    all_keys = frozenset().union(*output)
+    for row in output:
+        for k in all_keys:
+            if k not in row:
+                row[k] = None
+
+        sorted_data.append(collections.OrderedDict(sorted(row.items())))
+
+    sql.insert_data(table_name, sorted_data, upsert_keys)
 
 
-def get_stats(season, stat, mongodb_connector, nfl_db):
+def get_stats(season, stat, sql):
     play_stats = []
-    for week in range(1, 23):
+    for week in range(1, 24, 1):
         season_phase = 'REG' if week <= 17 else 'POST'
         url = f'{base_url}/{stat}?season={season}&seasonType={season_phase}&week={week}'
 
         query = requests.request('GET', url, headers=headers)
 
-        print(season, week, query.status_code)
+        print(query.status_code, stat, season, week)
         play_stats.append(query.json())
 
-    parse_stats(play_stats, mongodb_connector, nfl_db)
+    parse_stats(play_stats, sql, stat)
+
+
+def bulk_writer(sql):
+    for season in range(2015, 2020, 1):
+        for stat in stat_types:
+            get_stats(season, stat, sql)
+
+
+def current_season():
+    today = datetime.datetime.now()
+    if today.month > 3 and today.day > 0:
+        season = today.year
+    else:
+        season = today.year - 1
+    return season
 
 
 def main():
     create_logger(__file__)
 
-    project = 'match-stats'
-    mongodb_connector = MongoConnection(project=project)
-    nfl_db = mongodb_connector.db_connect('nfl')
+    sql = SqlConnection('NFL')
 
-    season = 2019
+    season = current_season()
     for stat in stat_types:
-        get_stats(season, stat, mongodb_connector, nfl_db)
+        get_stats(season, stat, sql)
 
 
 if __name__ == '__main__':
