@@ -17,8 +17,9 @@ from shared_modules import SqlConnection
 
 from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_STYLE, \
     SINGLE_TAB_STYLE, ALL_TAB_STYLE, EVENT_DEFINITIONS
-from sql_queries import team_roster_query, team_query, shot_chart_query, team_season_stats_query, \
+from sql_queries import team_roster_query, shot_chart_query, team_season_stats_query, \
     SHOT_PLOT_COLUMNS, TEAM_COLUMNS, TEAM_STATS_COLUMNS, CURRENT_ROSTER_COLUMNS
+from nba_settings import player_img_url, team_img_url
 
 server = Flask(__name__)
 
@@ -73,11 +74,10 @@ def get_shots(player, period, venue):
 
 def player_card(player):
     rows = []
-    df = rosters[rosters['PlayerId'] == str(player)]
+    df = rosters[rosters['player_id'] == str(player)]
 
     if len(df) > 0:
-        df = df[['Height', 'Weight', 'Position', 'DoB',
-                 'Age', 'Experience', 'School']].copy()
+        df = df[['Height', 'Weight', 'Position', 'DoB', 'Age', 'Experience', 'School']].copy()
         df = pd.DataFrame({'Metric': df.columns, 'Value': df.iloc[-1].values})
 
     for i in range(len(df)):
@@ -100,14 +100,14 @@ def player_card(player):
 
 def current_roster(df, team_id=None):
     if team_id is not None:
-        df = df[df['TeamId'] == str(team_id)]
+        df = df[df['team_id'] == str(team_id)]
 
     team_dict = {}
     cols = df['Position'].unique()
 
     for position in cols:
         team_dict[position] = np.array(
-            df.loc[df['Position'] == position, 'PlayerId'])
+            df.loc[df['Position'] == position, 'player_id'])
 
     roster = pd.DataFrame(dict([(k, pd.Series(v))
                                 for k, v in team_dict.items()]))
@@ -118,10 +118,9 @@ def current_roster(df, team_id=None):
 
 def player_image(player):
     if player != '':
-        img = rosters.loc[rosters['PlayerId'] == player, 'PlayerImg']
-        img = img.iloc[0] if len(img) > 0 else DEFAULT_IMAGE
+        img = get_player_img(player)
 
-        name = rosters.loc[rosters['PlayerId'] == player, 'Player']
+        name = rosters.loc[rosters['player_id'] == player, 'Player']
         name = name.iloc[0] if len(name) > 0 else 'Name Missing'
 
         return html.Div(children=[
@@ -221,14 +220,14 @@ def shot_map(data):
 def division_image_header(conf, float, align):
     return html.Div(
         [dcc.Link(
-            html.Img(src=teams.loc[teams['TeamID'] == i['TeamID'], 'TeamLogo'].iloc[0],
+            html.Img(src=teams.loc[teams['id'] == i['id'], 'teamLogo'].iloc[0],
                      style={'height': 'auto', 'width': '75px'},
                      className='team-overlay',
-                     id='team-logo-' + str(i['TeamID'])),
-            href='/team/' + str(i['TeamID']),
+                     id='team-logo-' + str(i['id'])),
+            href='/team/' + str(i['id']),
             style={'padding-{}'.format(align): '20px'})
-            for i in teams.sort_values(by=['Division', 'TeamCode']).to_dict('records') if
-            i['TeamID'] is not None and i['Conference'] == conf],
+            for i in teams.sort_values(by=['division', 'abbr']).to_dict('records') if
+            i['id'] is not None and i['conference'] == conf],
         style={'float': float, 'width': '50%', 'text-align': align, 'padding': '0px 0px 0px 0px'}
     )
 
@@ -282,8 +281,7 @@ def team_stats_figure(team_stats, data_x, metrics, chart_title, chart_type):
                      textposition='inside',
                      name=m.upper(),
                  ) for m in metrics if m is not None
-             ] +
-             [
+             ] + [
                  go.Scatter(
                      x=data_x,
                      y=[statistics.mean([stat[m] for stat in team_stats])] * len(data_x),
@@ -360,10 +358,27 @@ def build_tabs():
     )
 
 
+def generate_teams_df():
+    data = []
+    for team in TEAMS.keys():
+        TEAMS[team]['teamLogo'] = team_img_url.format(TEAMS[team]['abbr'])
+        data.append(TEAMS[team])
+
+    return pd.DataFrame(data)
+
+
+def get_team_img(team_id):
+    return team_img_url.format(team_id)
+
+
+def get_player_img(player_id):
+    return player_img_url.format(player_id)
+
+
 rosters = sql.load_data(team_roster_query, CURRENT_ROSTER_COLUMNS)
 team_df = current_roster(rosters)
 
-teams = sql.load_data(team_query, TEAM_COLUMNS)
+teams = generate_teams_df()
 
 
 def update_layout():
