@@ -13,7 +13,7 @@ upsert_keys = {
 }
 
 
-def get_schedule(url, logger, sql, offset=14):
+def get_schedule(url, logger, sql, offset=7):
     game_rqst = get_data(url)
 
     now = datetime.strptime(time.strftime('%Y-%m-%d'), '%Y-%m-%d')

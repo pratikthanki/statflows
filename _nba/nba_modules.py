@@ -53,5 +53,5 @@ pbp_e_types = {
     12: 'Start Period',
     13: 'End Period',
     18: 'Instant Replay',
-    20: 'Stoppagee'
+    20: 'Stoppage'
 }

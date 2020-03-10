@@ -10,7 +10,7 @@ from shared_config import sql_uid, sql_pwd, headers
 
 class SqlConnection:
     def __init__(self, database):
-        self.server = '192.168.1.13'
+        self.server = 'localhost'  # '192.168.1.13'
         self.port = 1433
         self.database = database
         self.username = sql_uid
