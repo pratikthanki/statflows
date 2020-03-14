@@ -84,7 +84,6 @@ JOIN (
 team_trend_query = '''
 SELECT 
     t.team_id
-    ,t.team_code
     ,g.season
     ,AVG([ast])
     ,COUNT(gid) AS [games]
@@ -141,18 +140,15 @@ FROM (
     AND tid = {0}
     GROUP BY [gid], [tid]
 ) gs
-JOIN teams t ON t.team_id = gs.tid
 JOIN games g ON g.game_id = gs.gid
 GROUP BY 
 t.team_id
-,t.team_code
 ,g.season
 '''
 
 team_compare_query = '''
 SELECT 
     team_id
-    ,team_code
     ,season
     ,AVG([ast])
     ,COUNT(game_id) AS [games]
@@ -180,7 +176,6 @@ SELECT
 FROM (
     SELECT 
         t.team_id
-        ,t.team_code
         ,g.season
         ,g.[game_id]
         ,SUM([ast]) ast
@@ -207,22 +202,19 @@ FROM (
         ,SUM([tpa]) tpa
         ,SUM([tpm]) tpm
     FROM [NBA].[dbo].[game_stats] gs
-    JOIN teams t ON t.team_id = gs.tid
     JOIN games g ON g.game_id = gs.gid
     WHERE LEN(tid) = 10
     AND g.season = '{0}'
     GROUP BY 
         t.team_id
-        ,t.team_code
         ,g.season
         ,g.[game_id]
 ) gs
 GROUP BY 
     team_id
-    ,team_code
     ,season
 '''
 
-TEAM_STATS_COLUMNS = ['tid', 'teamcode', 'season', 'ast', 'games', 'blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
+TEAM_STATS_COLUMNS = ['tid', 'season', 'ast', 'games', 'blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
                       'fbptsm', 'fga', 'fgm', 'fta', 'ftm', 'oreb', 'pf', 'pip', 'pipa', 'pipm',
                       'pts', 'reb', 'stl', 'tov', 'tpa', 'tpm']

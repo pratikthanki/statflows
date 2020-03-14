@@ -6,10 +6,11 @@ from shared_modules import create_logger, get_data, SqlConnection
 from nba_settings import current_season_1, current_season_2, current_season_3
 from nba_modules import current_nba_season
 
+
 upsert_keys = {
     'games': ['game_id'],
-    'game_stats': ['gid', 'tid'],
-    'game_pbp': ['gid', 'pid', 'tid']
+    'game_stats': ['gid', 'tid', 'pid'],
+    'game_pbp': ['gid', 'tid', 'pid', 'evt']
 }
 
 
@@ -25,16 +26,17 @@ def get_schedule(url, logger, sql, offset=7):
     for i in game_rqst['lscd']:
         for j in i['mscd']['g']:
             game_date = datetime.strptime(j['gdte'], '%Y-%m-%d')
-            if date_offset_str < game_date < now:
+            # if date_offset_str < game_date < now:
+            if game_date < date_offset_str:
                 games.append({
                     'game_id': j['gid'],
                     'game_code': j['gcode'],
                     'venue': j['an'],
                     'date': j['gdte'],
-                    'away_team_id': j['v']['tid'],
-                    'away_score': j['v']['s'],
-                    'home_team_id': j['h']['tid'],
-                    'home_score': j['h']['s'],
+                    'away_team_id': int(j['v']['tid']),
+                    'away_score': check_score(j['v']['s']),
+                    'home_team_id': int(j['h']['tid']),
+                    'home_score': check_score(j['h']['s']),
                     'season': current_nba_season(game_date)
                 })
 
@@ -44,7 +46,11 @@ def get_schedule(url, logger, sql, offset=7):
         raise SystemExit(0)
 
     sql.insert_data('games', games, upsert_keys['games'])
-    return [i['game_id'] for i in games]
+    return [i['game_id'] for i in games if i['home_score'] != 0 and i['away_score'] != 0]
+
+
+def check_score(score):
+    return 0 if score == '' else int(score)
 
 
 def get_game_stats(url, url_prop, list_of_games):
@@ -69,20 +75,20 @@ def game_detail_stats(game_json, sql):
         for b in [a['g']]:
             for prop in ['vls', 'hls']:
                 if 'pstsg' not in b[prop] or 'tstsg' not in b[prop]:
-                    logging.warning(f"'pstsg'/'tstsg' not in game_id: {b['gid']}")
+                    logging.warning(
+                        f"'pstsg'/'tstsg' not in game_id: {b['gid']}")
                     continue
 
                 for c in b[prop]['pstsg']:
-                    c['gid'] = b['gid']
-                    c['mid'] = b['mid']
-                    c['tid'] = b[prop]['tid']
+                    c['mid'] = int(b['mid'])
+                    c['gid'] = int(b['gid'])
+                    c['tid'] = int(b[prop]['tid'])
                     c['ta'] = b[prop]['ta']
                     stats.append(c)
-        try:
+
+        if stats:
+            print(int(b['gid']))
             sql.insert_data('game_stats', stats, upsert_keys['game_stats'])
-        except Exception as e:
-            print(e)
-            print(stats)
 
 
 def game_pbp_stats(game_json, sql):
@@ -96,22 +102,37 @@ def game_pbp_stats(game_json, sql):
                     logging.warning(f"'pla' not in game_id: {i['g']['gid']}")
                     continue
 
-                k['period'] = j['p']
-                k['gid'] = i['g']['gid']
-                k['mid'] = i['g']['mid']
-                play_by_play.append(k)
+                play_by_play.append({
+                    'evt': int(k['evt']),
+                    'cl': k['cl'],
+                    'de': k['de'],
+                    'locX': int(k['locX']),
+                    'locY': int(k['locY']),
+                    'opt1': int(k['opt1']),
+                    'opt2': int(k['opt2']),
+                    'mtype': int(k['mtype']),
+                    'etype': int(k['etype']),
+                    'opid': int(k['opid'].replace('', '0')),
+                    'tid': int(k['tid']),
+                    'pid': int(k['pid']),
+                    'hs': int(k['hs']),
+                    'vs': int(k['vs']),
+                    'epid': int(k['epid'].replace('', '0')),
+                    'oftid': int(k['oftid']),
+                    'ord': int(k['ord']),
+                    'period': int(j['p']),
+                    'gid': i['g']['gid'],
+                    'mid': int(i['g']['mid'])
+                })
 
-        try:
+        if play_by_play:
             sql.insert_data('game_pbp', play_by_play, upsert_keys['game_pbp'])
-        except Exception as e:
-            print(e)
-            print(play_by_play)
 
 
 def update_stats(season, logger):
     logger.info(f'Season: {season}')
 
-    sql = SqlConnection('NBA')
+    sql = SqlConnection('nba')
 
     games = get_schedule(current_season_1.format(season), logger, sql)
 

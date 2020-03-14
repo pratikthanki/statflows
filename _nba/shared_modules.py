@@ -1,39 +1,32 @@
 import os
 import pyodbc
+import psycopg2
 import time
 import logging
 import pandas as pd
 import logging
 import requests
-from shared_config import sql_uid, sql_pwd, headers
+from shared_config import uid, pwd, headers
 
 
 class SqlConnection:
-    def __init__(self, database):
-        self.server = 'localhost'  # '192.168.1.13'
-        self.port = 1433
-        self.database = database
-        self.username = sql_uid
-        self.password = sql_pwd
-        self.prod_driver = 'sql_server'
-        self.local_driver = '{/usr/local/lib/libmsodbcsql.13.dylib}'
-        self.autocommit = True
-        self.conn = self.sql_server_connection()
+    def __init__(self, dbname):
+        self.host = '192.168.1.13'
+        self.dbname = dbname
+        self.username = uid
+        self.password = pwd
+        self.port = 5432
+        self.conn = self.creat_conn()
         self.cursor = self.conn.cursor()
 
-    def sql_server_connection(self):
+    def creat_conn(self):
         try:
-            return pyodbc.connect(
-                # DRIVER='FreeTDS',
-                DRIVER=self.local_driver,
-                TDS_Version='8.0',
-                ClientCharset='UTF8',
-                PORT=self.port,
-                SERVER=self.server,
-                DATABASE=self.database,
-                UID=self.username,
-                PWD=self.password,
-                autocommit=self.autocommit
+            return psycopg2.connect(
+                host=self.host,
+                dbname=self.dbname,
+                port=self.port,
+                user=self.username,
+                password=self.password
             )
 
         except Exception as e:
@@ -84,46 +77,39 @@ class SqlConnection:
         if table_check['A'].loc[0] == 0 and create:
             self.create_table(table_name, table_columns)
 
-    def insert_data(self, table_name, data, key_columns=None, verbose=1, debug=False):
-        all_keys = set().union(*(d.keys() for d in data))
-
-        self.check_if_table_exists(table_name, all_keys)
-
-        conn = self.sql_server_connection()
-        cursor = conn.cursor()
+    def insert_data(self, table_name, data, key_columns=None, verbose=1):
+        # all_keys = set().union(*(d.keys() for d in data))
+        # self.check_if_table_exists(table_name, all_keys)
 
         if key_columns:
-            query = 'SELECT * INTO #temp FROM ( VALUES {0} ) AS s ( {1} ) ' \
-                    'MERGE INTO [{6}].[dbo].[{2}] as Target ' \
-                    'USING #temp AS Source ' \
-                    '{3} ' \
-                    'WHEN NOT MATCHED THEN INSERT ( {1} ) VALUES ( {4} ) ' \
-                    'WHEN MATCHED THEN UPDATE SET {5}; ' \
-                    'DROP TABLE #temp; '.format(values_statement(data),
-                                                columns_statement(data),
-                                                table_name,
-                                                on_statement(data, key_columns),
-                                                source_columns_statement(data),
-                                                set_statement(data, key_columns),
-                                                self.database)
+            # query = 'INSERT INTO {0} ({1}) ' \
+            #         'SELECT {1} FROM ( VALUES {2} ) AS s ( {1} ) ' \
+            #         'ON CONFLICT ({3}) ' \
+            #         'DO UPDATE SET {4} '.format(
+            #             table_name,
+            #             columns_statement(data),
+            #             values_statement(data),
+            #             ', '.join(key_columns),
+            #             set_statement(data, key_columns)
+            #         )
+
+            query = 'INSERT INTO {0} ({1}) ' \
+                    'SELECT {1} FROM ( VALUES {2} ) AS s ( {1} ) '.format(
+                        table_name,
+                        columns_statement(data),
+                        values_statement(data)
+                    )
 
         else:
-            query = 'INSERT INTO [dbo].[{0}] ( {1} )' \
-                    'SELECT {1} FROM ( VALUES {2} ) AS s ( {1} )'.format(table_name,
-                                                                         columns_statement(data),
-                                                                         values_statement(data))
+            query = 'INSERT INTO {0} ({1})' \
+                    'SELECT {1} FROM ( VALUES {2} ) AS s ( {1} ) '.format(
+                        table_name,
+                        columns_statement(data),
+                        values_statement(data)
+                    )
 
-        if debug:
-            print(query)
-            print(values_statement(data))
-            print(columns_statement(data))
-            print(table_name)
-            print(set_statement(data, key_columns))
-            print(source_columns_statement(data))
-            print(on_statement(data, key_columns))
-
-        cursor.execute(query)
-        conn.commit()
+        self.cursor.execute(query)
+        self.conn.commit()
         logging.info('{0}: {1} rows inserted'.format(table_name, len(data)))
 
         if verbose > 0:
@@ -172,14 +158,16 @@ def remove_duplicates(lst):
 
 def values_statement(lst):
     if lst:
-        _ = [tuple([str(l).replace("'", "") for l in ls.values()])
-             for ls in lst]
+        # _ = [tuple([str(l).replace("'", "") for l in ls.values()]) for ls in lst]
+        _ = [tuple([l.replace("'", " ") if type(
+            l) == str and "'" in l else l for l in ls.values()]) for ls in lst]
         return ','.join([str(i) for i in _])
 
 
 def columns_statement(lst):
     if lst:
-        return ', '.join([['[' + i + ']' for i in l.keys()] for l in lst][0])
+        # return ', '.join([['[' + i + ']' for i in l.keys()] for l in lst][0])
+        return ', '.join([[i for i in l.keys()] for l in lst][0])
 
 
 def source_columns_statement(lst):
@@ -201,7 +189,8 @@ def on_statement(lst, key_columns):
 
 
 def set_statement(lst, key_columns):
-    return ', '.join([['[' + i + ']=Source.[' + i + ']' for i in l.keys() if i not in key_columns] for l in lst][0])
+    # return ', '.join([['[' + i + ']=Source.[' + i + ']' for i in l.keys() if i not in key_columns] for l in lst][0])
+    return ', '.join([[i + '=excluded.' + i for i in l.keys() if i not in key_columns] for l in lst][0])
 
 
 def insert_statement(table_name, columns):
