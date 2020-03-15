@@ -94,7 +94,7 @@ CREATE TABLE [dbo].[teams]
 (
 	[team_id] [bigint] NOT NULL,
 	[team_code] [varchar](255) NULL,
-	[team_logo]  AS (case when len([TeamID])=(10) then ('https://stats.nba.com/media/img/teams/logos/'+[TeamCode])+'_logo.svg' else '' end),
+	[team_logo]  AS (case when len([team_id])=(10) then ('https://stats.nba.com/media/img/teams/logos/'+[team_code])+'_logo.svg' else '' end),
 	[LastUpdated] [datetime] NOT NULL DEFAULT (getdate())
 );
 GO

@@ -5,18 +5,19 @@ import logging
 import pandas as pd
 import logging
 import requests
-from shared_config import sql_uid, sql_pwd, headers
+from nba_settings import headers
+from shared_config import uid, pwd
 
 
 class SqlConnection:
     def __init__(self, database):
-        self.server = '192.168.1.13'
+        self.server = 'localhost'
         self.port = 1433
         self.database = database
-        self.username = sql_uid
-        self.password = sql_pwd
-        self.prod_driver = 'sql_server'
-        self.local_driver = '{/usr/local/lib/libmsodbcsql.13.dylib}'
+        self.username = uid
+        self.password = pwd
+        self.driver = '{/usr/local/lib/libtdsodbc.so}'
+        self.prod_driver = 'FreeTDS'
         self.autocommit = True
         self.conn = self.sql_server_connection()
         self.cursor = self.conn.cursor()
@@ -24,15 +25,13 @@ class SqlConnection:
     def sql_server_connection(self):
         try:
             return pyodbc.connect(
-                # DRIVER='FreeTDS',
-                DRIVER=self.local_driver,
-                TDS_Version='8.0',
-                ClientCharset='UTF8',
-                PORT=self.port,
-                SERVER=self.server,
-                DATABASE=self.database,
-                UID=self.username,
-                PWD=self.password,
+                driver=self.driver,
+                server=self.server,
+                port=self.port,
+                database=self.database,
+                user=self.username,
+                password=self.password,
+                tds_version='7.4',
                 autocommit=self.autocommit
             )
 
@@ -84,13 +83,10 @@ class SqlConnection:
         if table_check['A'].loc[0] == 0 and create:
             self.create_table(table_name, table_columns)
 
-    def insert_data(self, table_name, data, key_columns=None, verbose=1, debug=False):
+    def insert_data(self, table_name, data, key_columns=None, verbose=1):
         all_keys = set().union(*(d.keys() for d in data))
 
         self.check_if_table_exists(table_name, all_keys)
-
-        conn = self.sql_server_connection()
-        cursor = conn.cursor()
 
         if key_columns:
             query = 'SELECT * INTO #temp FROM ( VALUES {0} ) AS s ( {1} ) ' \
@@ -113,17 +109,9 @@ class SqlConnection:
                                                                          columns_statement(data),
                                                                          values_statement(data))
 
-        if debug:
-            print(query)
-            print(values_statement(data))
-            print(columns_statement(data))
-            print(table_name)
-            print(set_statement(data, key_columns))
-            print(source_columns_statement(data))
-            print(on_statement(data, key_columns))
 
-        cursor.execute(query)
-        conn.commit()
+        self.cursor.execute(query)
+        self.conn.commit()
         logging.info('{0}: {1} rows inserted'.format(table_name, len(data)))
 
         if verbose > 0:
@@ -133,6 +121,7 @@ class SqlConnection:
 def get_data(base_url, h=headers):
     try:
         rqst = requests.request('GET', base_url, headers=h)
+        print(rqst.status_code, base_url)
         return rqst.json()
     except ValueError as e:
         logging.info(e)

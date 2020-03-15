@@ -25,7 +25,8 @@ def get_schedule(url, logger, sql, offset=14):
     for i in game_rqst['lscd']:
         for j in i['mscd']['g']:
             game_date = datetime.strptime(j['gdte'], '%Y-%m-%d')
-            if date_offset_str < game_date < now:
+            # if date_offset_str < game_date < now:
+            if game_date < now:
                 games.append({
                     'game_id': j['gid'],
                     'game_code': j['gcode'],
@@ -82,7 +83,6 @@ def game_detail_stats(game_json, sql):
             sql.insert_data('game_stats', stats, upsert_keys['game_stats'])
         except Exception as e:
             print(e)
-            print(stats)
 
 
 def game_pbp_stats(game_json, sql):
@@ -105,13 +105,12 @@ def game_pbp_stats(game_json, sql):
             sql.insert_data('game_pbp', play_by_play, upsert_keys['game_pbp'])
         except Exception as e:
             print(e)
-            print(play_by_play)
 
 
 def update_stats(season, logger):
     logger.info(f'Season: {season}')
 
-    sql = SqlConnection('NBA')
+    sql = SqlConnection('nba')
 
     games = get_schedule(current_season_1.format(season), logger, sql)
 
@@ -124,12 +123,17 @@ def update_stats(season, logger):
     logging.info('Task completed')
 
 
+def bulk_load():
+    for season in range(2016, 2020):
+        update_stats(season=season, logger=logging)
+
+
 def main():
     create_logger(__file__)
-
     os.environ['TZ'] = 'US/Eastern'
 
-    update_stats(season='2019', logger=logging)
+    bulk_load()
+    # update_stats(season='2019', logger=logging)
 
 
 if __name__ == '__main__':
