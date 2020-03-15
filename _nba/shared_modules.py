@@ -42,6 +42,7 @@ class SqlConnection:
         self.cursor.execute(query)
 
         if not columns:
+            print('Command executed:', query)
             return
 
         rows = self.cursor.fetchall()
@@ -53,6 +54,10 @@ class SqlConnection:
         df = pd.DataFrame(sql_data, columns=columns)
 
         return df
+
+    def truncate_table(self, table_name):
+        if self.check_if_table_exists(table_name, create=False):
+            return self.load_data(f'TRUNCATE TABLE {table_name}')
 
     def create_table(self, table_name, table_columns):
         create_table_query = '''
@@ -82,8 +87,14 @@ class SqlConnection:
 
         if table_check['A'].loc[0] == 0 and create:
             self.create_table(table_name, table_columns)
+        else:
+            return True
 
     def insert_data(self, table_name, data, key_columns=None, verbose=1):
+        if type(data) != list:
+            print('Data must be a list of dicts')
+            return
+
         all_keys = set().union(*(d.keys() for d in data))
 
         self.check_if_table_exists(table_name, all_keys)
@@ -148,7 +159,7 @@ def create_logger(file_name):
 
 def create_table_columns_statement(lst):
     if lst:
-        return ', '.join(['[' + i + '] [varchar](255) NULL' for i in lst])
+        return ', '.join(['[' + i + '] [varchar](100) NULL' for i in lst])
 
 
 def convert_hex_to_rgba(team_colours):
