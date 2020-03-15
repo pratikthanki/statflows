@@ -80,7 +80,7 @@ def main():
     create_logger(__file__)
     logging.info('Task started')
 
-    sql = SqlConnection('NBA')
+    sql = SqlConnection('nba')
 
     headers['Referer'] = referer_default
 

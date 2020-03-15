@@ -148,7 +148,7 @@ def create_logger(file_name):
 
 def create_table_columns_statement(lst):
     if lst:
-        return ', '.join(['[' + i + '] [varchar](max) NULL' for i in lst])
+        return ', '.join(['[' + i + '] [varchar](255) NULL' for i in lst])
 
 
 def convert_hex_to_rgba(team_colours):
