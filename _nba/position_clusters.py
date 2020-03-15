@@ -4,7 +4,6 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
 from sklearn import cluster, metrics
@@ -119,34 +118,39 @@ SELECT
     g.[season]
     ,gs.[pid]
     ,r.[player]
-    ,r.[position] AS [position specific]
-    ,CASE WHEN r.[position] LIKE '%-%' THEN SUBSTRING(r.[position], 1, 1) ELSE r.[position] END AS [position group]
-    ,SUM([ast])
-    ,SUM([blk])
-    ,SUM([blka])
-    ,SUM([dreb])
-    ,SUM([fbpts])
-    ,SUM([fbptsa])
-    ,SUM([fbptsm])
-    ,SUM([fga])
-    ,SUM([fgm])
-    ,SUM([fta])
-    ,SUM([ftm])
-    ,SUM([oreb])
-    ,SUM([pf])
-    ,SUM([pip])
-    ,SUM([pipa])
-    ,SUM([pipm])
-    ,SUM([pm])
+    ,r.[position] AS [specific]
+    ,CASE WHEN r.[position] LIKE '%-%' THEN SUBSTRING(r.[position], 1, 1) ELSE r.[position] END AS [group]
+    ,AVG(CAST([ast] AS float)) ast
+    ,AVG(CAST([blk] AS float)) blk
+    ,AVG(CAST([blka] AS float)) blka
+    ,AVG(CAST([dreb] AS float)) dreb
+    ,AVG(CAST([fbpts] AS float)) fbpts
+    ,AVG(CAST([fbptsa] AS float)) fbptsa
+    ,AVG(CAST([fbptsm] AS float)) fbptsm
+    ,CASE WHEN AVG(CAST([fbptsa] AS float)) > 0 THEN ROUND(AVG(CAST([fbptsm] AS float)) / AVG(CAST([fbptsa] AS float)), 3) ELSE 0 END [fbpts%]
+    ,AVG(CAST([fga] AS float)) fga
+    ,AVG(CAST([fgm] AS float)) fgm
+    ,CASE WHEN AVG(CAST([fga] AS float)) > 0 THEN ROUND(AVG(CAST([fgm] AS float)) / AVG(CAST([fga] AS float)), 3) ELSE 0 END [fg%]
+    ,AVG(CAST([fta] AS float)) fta
+    ,AVG(CAST([ftm] AS float)) ftm
+    ,CASE WHEN AVG(CAST([fta] AS float)) > 0 THEN ROUND(AVG(CAST([ftm] AS float)) / AVG(CAST([fta] AS float)), 3) ELSE 0 END [ft%]
+    ,AVG(CAST([oreb] AS float)) oreb
+    ,AVG(CAST([pf] AS float)) pf
+    ,AVG(CAST([pip] AS float)) pip
+    ,AVG(CAST([pipa] AS float)) pipa
+    ,AVG(CAST([pipm] AS float)) pipm
+    ,CASE WHEN AVG(CAST([pipa] AS float)) > 0 THEN ROUND(AVG(CAST([pipm] AS float)) / AVG(CAST([pipa] AS float)), 3) ELSE 0 END [pip%]
+    ,AVG(CAST([pm] AS float)) pm
     ,SUM(CASE WHEN [pos] = '' THEN 0 ELSE 1 END) AS [starts]
-    ,SUM([pts])
-    ,SUM([reb])
-    ,SUM([stl])
-    ,SUM([tf])
-    ,SUM([totsec]) / 60.0
-    ,SUM([tov])
-    ,SUM([tpa])
-    ,SUM([tpm])
+    ,AVG(CAST([pts] AS float)) pts
+    ,AVG(CAST([reb] AS float)) reb
+    ,AVG(CAST([stl] AS float)) stl
+    ,AVG(CAST([tf] AS float)) tf
+    ,AVG(CAST([totsec] AS float)) / 60.0 game_mins
+    ,AVG(CAST([tov] AS float)) tov
+    ,AVG(CAST([tpa] AS float)) tpa
+    ,AVG(CAST([tpm] AS float)) tpm
+    ,CASE WHEN AVG(CAST([tpa] AS float)) > 0 THEN ROUND(AVG(CAST([tpm] AS float)) / AVG(CAST([tpa] AS float)), 3) ELSE 0 END [3p%]
 FROM [nba].[dbo].[game_stats] gs
 JOIN [nba].[dbo].[rosters] r ON r.player_id = gs.pid
 JOIN [nba].[dbo].[games] g ON g.game_id = gs.gid
@@ -170,8 +174,9 @@ GROUP BY
 '''
 
 columns = ['season', 'pid', 'player', 'position specific', 'position group', 'ast', 'blk', 'blka', 'dreb',
-           'fbpts', 'fbptsa', 'fbptsm', 'fga', 'fgm', 'fta', 'ftm', 'oreb', 'pf', 'pip', 'pipa', 'pipm',
-           'pm', 'starts', 'pts', 'reb', 'stl', 'tf', 'game_mins', 'tov', 'tpa', 'tpm']
+           'fbpts', 'fbptsa', 'fbptsm', 'fbpts%', 'fga', 'fgm', 'fg%', 'fta', 'ftm', 'ft%', 'oreb', 'pf', 
+           'pip', 'pipa', 'pipm', 'pip%', 'pm', 'starts', 'pts', 'reb', 'stl', 'tf', 'game_mins', 'tov', 
+           'tpa', 'tpm', '3p%']
 
 
 def main():
@@ -179,7 +184,7 @@ def main():
     data = sql.load_data(query, columns)
     print('Data loaded from SQL..')
 
-    dims = ['season', 'pid', 'player', 'position specific', 'position group']
+    dims = ['season', 'pid', 'player', 'position specific', 'position group', 'game_mins']
     X = data.drop(dims, axis=1)
     y = data['position specific']
 
@@ -197,7 +202,7 @@ def main():
 
     find_best_cluster(LDA_reduced_df, 5, 21)
 
-    k_means = kmeans(LDA_reduced_df, 10)
+    k_means = kmeans(LDA_reduced_df, 8)
     data['cluster'] = k_means['labels']
     print("Silhouette score:", k_means['silhouette_score'])
 
@@ -206,7 +211,7 @@ def main():
     plot_kmeans_cluster(LDA_reduced_df, k_clusters=8, plot_title="""KMeans Clustering on NBA Players in 2016-2019""")
 
     mask = (data['cluster'] == 7)
-    print(data[mask][['player', 'season']])
+    # print(data[mask][['player', 'season']])
     cluster_data = data[mask].drop(dims, axis=1)
     league_data = data.drop(dims, axis=1)
     feature_importance(cluster_data, league_data).reset_index().drop('index', axis=1)

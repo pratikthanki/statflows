@@ -1,4 +1,7 @@
 import pandas as pd
+from shared_modules import SqlConnection
+from nba_settings import team_img_url
+
 
 TEAMS = {
     '1610612737': {
@@ -9,7 +12,7 @@ TEAMS = {
         'displayAbbr': 'ATL',
         'displayConference': 'Eastern',
         'division': 'Southeast',
-        'id': '1610612737',
+        'team_id': '1610612737',
         'name': 'Hawks',
         'color': 'E2373E',
         'colors': ['E2373E', '002A5C', 'BAC4CA']
@@ -22,7 +25,7 @@ TEAMS = {
         'displayAbbr': 'BOS',
         'displayConference': 'Eastern',
         'division': 'Atlantic',
-        'id': '1610612738',
+        'team_id': '1610612738',
         'name': 'Celtics',
         'color': '007239',
         'colors': ['007239', 'AE8445', '982527', '000000']
@@ -35,7 +38,7 @@ TEAMS = {
         'displayAbbr': 'BKN',
         'displayConference': 'Eastern',
         'division': 'Atlantic',
-        'id': '1610612751',
+        'team_id': '1610612751',
         'name': 'Nets',
         'color': '000000',
         'colors': ['000000', 'FFFFFF']
@@ -48,7 +51,7 @@ TEAMS = {
         'displayAbbr': 'CHA',
         'displayConference': 'Eastern',
         'division': 'Southeast',
-        'id': '1610612766',
+        'team_id': '1610612766',
         'name': 'Hornets',
         'color': '00848E',
         'colors': ['00848E', '260F54', 'CCCCCC']
@@ -61,7 +64,7 @@ TEAMS = {
         'displayAbbr': 'CHI',
         'displayConference': 'Eastern',
         'division': 'Central',
-        'id': '1610612741',
+        'team_id': '1610612741',
         'name': 'Bulls',
         'color': 'C60033',
         'colors': ['C60033', '000000']
@@ -74,7 +77,7 @@ TEAMS = {
         'displayAbbr': 'CLE',
         'displayConference': 'Eastern',
         'division': 'Central',
-        'id': '1610612739',
+        'team_id': '1610612739',
         'name': 'Cavaliers',
         'color': '860038',
         'colors': ['860038', '002D62', 'FDBA31']
@@ -87,7 +90,7 @@ TEAMS = {
         'displayAbbr': 'DAL',
         'displayConference': 'Western',
         'division': 'Southwest',
-        'id': '1610612742',
+        'team_id': '1610612742',
         'name': 'Mavericks',
         'color': '0063AF',
         'colors': ['0063AF', 'BAC4CA', '000000']
@@ -100,7 +103,7 @@ TEAMS = {
         'displayAbbr': 'DEN',
         'displayConference': 'Western',
         'division': 'Northwest',
-        'id': '1610612743',
+        'team_id': '1610612743',
         'name': 'Nuggets',
         'color': '559FD6',
         'colors': ['559FD6', '006BB7', 'FEA927']
@@ -113,7 +116,7 @@ TEAMS = {
         'displayAbbr': 'DET',
         'displayConference': 'Eastern',
         'division': 'Central',
-        'id': '1610612765',
+        'team_id': '1610612765',
         'name': 'Pistons',
         'color': 'EC003D',
         'colors': ['EC003D', '0058A6', '001D4A']
@@ -126,7 +129,7 @@ TEAMS = {
         'displayAbbr': 'GSW',
         'displayConference': 'Western',
         'division': 'Pacific',
-        'id': '1610612744',
+        'team_id': '1610612744',
         'name': 'Warriors',
         'color': '0068B3',
         'colors': ['0068B3', 'FFC423']
@@ -139,7 +142,7 @@ TEAMS = {
         'displayAbbr': 'HOU',
         'displayConference': 'Western',
         'division': 'Southwest',
-        'id': '1610612745',
+        'team_id': '1610612745',
         'name': 'Rockets',
         'color': 'C60033',
         'colors': ['C60033', '000000']
@@ -152,7 +155,7 @@ TEAMS = {
         'displayAbbr': 'IND',
         'displayConference': 'Eastern',
         'division': 'Central',
-        'id': '1610612754',
+        'team_id': '1610612754',
         'name': 'Pacers',
         'color': '001D4A',
         'colors': ['001D4A', 'FEAC2D', 'B0B2B5']
@@ -165,7 +168,7 @@ TEAMS = {
         'displayAbbr': 'LAC',
         'displayConference': 'Western',
         'division': 'Pacific',
-        'id': '1610612746',
+        'team_id': '1610612746',
         'name': 'Clippers',
         'color': '00559A',
         'colors': ['00559A', 'EC003D']
@@ -178,7 +181,7 @@ TEAMS = {
         'displayAbbr': 'LAL',
         'displayConference': 'Western',
         'division': 'Pacific',
-        'id': '1610612747',
+        'team_id': '1610612747',
         'name': 'Lakers',
         'color': 'FEA927',
         'colors': ['FEA927', '42186E', '000000']
@@ -191,7 +194,7 @@ TEAMS = {
         'displayAbbr': 'MEM',
         'displayConference': 'Western',
         'division': 'Southwest',
-        'id': '1610612763',
+        'team_id': '1610612763',
         'name': 'Grizzlies',
         'color': '182A48',
         'colors': ['182A48', '4C78AD', 'FEA927', 'AAC8E5']
@@ -204,7 +207,7 @@ TEAMS = {
         'displayAbbr': 'MIA',
         'displayConference': 'Eastern',
         'division': 'Southeast',
-        'id': '1610612748',
+        'team_id': '1610612748',
         'name': 'Heat',
         'color': '98002E',
         'colors': ['98002E', 'F88D1D', '000000']
@@ -217,7 +220,7 @@ TEAMS = {
         'displayAbbr': 'MIL',
         'displayConference': 'Eastern',
         'division': 'Central',
-        'id': '1610612749',
+        'team_id': '1610612749',
         'name': 'Bucks',
         'color': 'C41230',
         'colors': ['C41230', '003815', 'BAC4CA']
@@ -230,7 +233,7 @@ TEAMS = {
         'displayAbbr': 'MIN',
         'displayConference': 'Western',
         'division': 'Northwest',
-        'id': '1610612750',
+        'team_id': '1610612750',
         'name': 'Timberwolves',
         'color': '#003F70',
         'colors': ['003F70', '006F42', 'BAC4CA', 'FFE211', 'DE2032', '000000']
@@ -243,7 +246,7 @@ TEAMS = {
         'displayAbbr': 'NOP',
         'displayConference': 'Western',
         'division': 'Southwest',
-        'id': '1610612740',
+        'team_id': '1610612740',
         'name': 'Pelicans',
         'color': '#002B5C',
         'colors': ['002B5C', 'B4975A', 'E13A3E']
@@ -256,7 +259,7 @@ TEAMS = {
         'displayAbbr': 'NYK',
         'displayConference': 'Eastern',
         'division': 'Atlantic',
-        'id': '1610612752',
+        'team_id': '1610612752',
         'name': 'Knicks',
         'color': 'F3571F',
         'colors': ['F3571F', '0067B2', 'BAC4CA']
@@ -269,7 +272,7 @@ TEAMS = {
         'displayAbbr': 'OKC',
         'displayConference': 'Western',
         'division': 'Northwest',
-        'id': '1610612760',
+        'team_id': '1610612760',
         'name': 'Thunder',
         'color': 'FDBB30',
         'colors': ['FDBB30', 'F05133', '007DC3', '002D62']
@@ -282,7 +285,7 @@ TEAMS = {
         'displayAbbr': 'ORL',
         'displayConference': 'Eastern',
         'division': 'Southeast',
-        'id': '1610612753',
+        'team_id': '1610612753',
         'name': 'Magic',
         'color': '006BB7',
         'colors': ['006BB7', 'BAC4CA', '000000']
@@ -295,7 +298,7 @@ TEAMS = {
         'displayAbbr': 'PHI',
         'displayConference': 'Eastern',
         'division': 'Atlantic',
-        'id': '1610612755',
+        'team_id': '1610612755',
         'name': 'Sixers',
         'color': 'EC003D',
         'colors': ['EC003D', '00559A', 'BAC4CA']
@@ -308,7 +311,7 @@ TEAMS = {
         'displayAbbr': 'PHX',
         'displayConference': 'Western',
         'division': 'Pacific',
-        'id': '1610612756',
+        'team_id': '1610612756',
         'name': 'Suns',
         'color': 'E45F1F',
         'colors': ['E45F1F', 'F89F1B', 'BAC4CA', '000000']
@@ -321,7 +324,7 @@ TEAMS = {
         'displayAbbr': 'POR',
         'displayConference': 'Western',
         'division': 'Northwest',
-        'id': '1610612757',
+        'team_id': '1610612757',
         'name': 'Trail Blazers',
         'color': 'DE2032',
         'colors': ['DE2032', 'BAC4CA', '000000']
@@ -334,7 +337,7 @@ TEAMS = {
         'displayAbbr': 'SAC',
         'displayConference': 'Western',
         'division': 'Pacific',
-        'id': '1610612758',
+        'team_id': '1610612758',
         'name': 'Kings',
         'color': '542E91',
         'colors': ['542E91', 'BAC4CA', '000000']
@@ -347,7 +350,7 @@ TEAMS = {
         'displayAbbr': 'SAS',
         'displayConference': 'Western',
         'division': 'Southwest',
-        'id': '1610612759',
+        'team_id': '1610612759',
         'name': 'Spurs',
         'color': '#BA24CA',
         'colors': ['BA24CA', '000000']
@@ -360,7 +363,7 @@ TEAMS = {
         'displayAbbr': 'TOR',
         'displayConference': 'Eastern',
         'division': 'Atlantic',
-        'id': '1610612761',
+        'team_id': '1610612761',
         'name': 'Raptors',
         'color': 'C60033',
         'colors': ['C60033', 'BAC4CA']
@@ -373,7 +376,7 @@ TEAMS = {
         'displayAbbr': 'UTA',
         'displayConference': 'Western',
         'division': 'Northwest',
-        'id': '1610612762',
+        'team_id': '1610612762',
         'name': 'Jazz',
         'color': '#002A5C',
         'colors': ['002A5C', '004812', 'FCB034', 'BACA4CA']
@@ -386,11 +389,27 @@ TEAMS = {
         'displayAbbr': 'WAS',
         'displayConference': 'Eastern',
         'division': 'Southeast',
-        'id': '1610612764',
+        'team_id': '1610612764',
         'name': 'Wizards',
         'color': '002A5B',
         'colors': ['002A5B', 'E21836', 'BAC4CA']
     }
 }
 
-teams = pd.DataFrame(TEAMS)
+
+def main():
+    teams = pd.DataFrame(TEAMS)
+
+    teams_ = []
+    for team in TEAMS.keys():
+        t = TEAMS[team]
+        t['colors'] = ', '.join(t['colors'])
+        t['teamLogo'] = team_img_url.format(t['abbr'])
+        teams_.append(t)
+
+    sql = SqlConnection('nba')
+    sql.insert_data('teams', teams_)
+
+
+if __name__ == "__main__":
+    main()

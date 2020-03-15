@@ -244,14 +244,14 @@ def shot_map(data):
 def division_image_header(conf, float, align):
     return html.Div(
         [dcc.Link(
-            html.Img(src=teams.loc[teams['id'] == i['id'], 'teamLogo'].iloc[0],
+            html.Img(src=teams.loc[teams['team_id'] == i['team_id'], 'teamLogo'].iloc[0],
                      style={'height': 'auto', 'width': '75px'},
                      className='team-overlay',
-                     id='team-logo-' + str(i['id'])),
-            href='/team/' + str(i['id']),
+                     id='team-logo-' + str(i['team_id'])),
+            href='/team/' + str(i['team_id']),
             style={'padding-{}'.format(align): '20px'})
             for i in teams.sort_values(by=['division', 'abbr']).to_dict('records') if
-            i['id'] is not None and i['conference'] == conf],
+            i['team_id'] is not None and i['conference'] == conf],
         style={'float': float, 'width': '50%',
                'text-align': align, 'padding': '0px 0px 0px 0px'}
     )
