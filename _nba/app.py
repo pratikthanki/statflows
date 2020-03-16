@@ -483,13 +483,9 @@ def update_layout():
                 type="default"
             ),
 
-            dcc.Loading(
-                id="loading-2",
-                children=html.Div(
-                    id='shot_plot',
-                    style={'padding': '10px'}
-                ),
-                type="default"
+            html.Div(
+                id='shot_plot',
+                style={'padding': '10px'}
             )
         ])
 

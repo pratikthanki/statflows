@@ -218,3 +218,17 @@ GROUP BY
 TEAM_STATS_COLUMNS = ['tid', 'season', 'ast', 'games', 'blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
                       'fbptsm', 'fga', 'fgm', 'fta', 'ftm', 'oreb', 'pf', 'pip', 'pipa', 'pipm',
                       'pts', 'reb', 'stl', 'tov', 'tpa', 'tpm']
+
+POSITION_CLUSTERS_COLUMNS = ['season', 'player_id', 'player_name', 'labels', 'tags', 'x1', 'x2']
+
+position_clusters_query = '''
+SELECT 
+[Season]
+,[Player_ID]
+,[Player]
+,[labels]
+,[tags]
+,[X1]
+,[X2]
+FROM [nba].[dbo].[position_clusters]
+'''

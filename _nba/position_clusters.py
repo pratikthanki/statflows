@@ -162,7 +162,7 @@ JOIN (
     FROM [nba].[dbo].[game_stats] gs
     JOIN games g ON g.game_id = gs.gid
     GROUP BY [season], [pid]
-    HAVING COUNT([gid]) > 10
+    HAVING COUNT([gid]) > 20
 ) a
     ON a.[season] = g.[season] AND a.pid = gs.pid
 
@@ -223,14 +223,14 @@ def main():
     df['Player'] = player_list
     df['Season'] = season_list
     df['Player_ID'] = playerid_list
-    df['tags'] = df['labels'].map({0: 'Defensive Centers',
-                                    1: '3-and-D Wings',
+    df['tags'] = df['labels'].map({0: 'Superstars',
+                                    1: '3-D Wings',
                                     2: 'Scoring Wings',
                                     3: 'Versatile Forwards',
                                     4: 'Floor Generals',
                                     5: 'Shooting Wings',
                                     6: 'Combo Guards',
-                                    7: 'Offensive Centers'})
+                                    7: 'Defensive Centers'})
 
     sql.load_data('''IF OBJECT_ID('position_clusters') IS NOT NULL 
                     TRUNCATE TABLE [position_clusters]''')
