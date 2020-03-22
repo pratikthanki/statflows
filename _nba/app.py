@@ -130,7 +130,7 @@ def build_table(df, table_setting='Player Summary'):
                                                  id='player-shots-' +
                                                  str(player),
                                                  style={'font-size': '12px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}),
-                                     href='/player/shots/' + str(player_id))
+                                     href='/player/' + str(player_id))
                 else:
                     value = df.iloc[i][col]
 
@@ -343,9 +343,12 @@ def player_cluster_scatter(season):
     clusters = position_clusters.tags.unique().tolist()
     data = []
     for cluster in clusters:
-        data_x = position_clusters[position_clusters['tags'] == cluster]['x1'].tolist()
-        data_y = position_clusters[position_clusters['tags'] == cluster]['x2'].tolist()
-        data_text = position_clusters[position_clusters['tags'] == cluster]['player_name'].tolist()
+        data_x = position_clusters[position_clusters['tags']
+                                   == cluster]['x1'].tolist()
+        data_y = position_clusters[position_clusters['tags']
+                                   == cluster]['x2'].tolist()
+        data_text = position_clusters[position_clusters['tags']
+                                      == cluster]['player_name'].tolist()
 
         data.append(
             go.Scatter(
@@ -372,7 +375,7 @@ def player_cluster_scatter(season):
             r=30,
             b=80,
             t=100,
-        ),        
+        ),
         legend={'x': 0, 'y': 1},
         paper_bgcolor='rgb(255, 255, 255)',
         plot_bgcolor='rgb(255, 255, 255)',
@@ -519,19 +522,15 @@ def update_stat_plot(value):
     [Input('team_url', 'pathname'), Input('div-tabs', 'value')]
 )
 def update_shot_plot(pathname, value):
-    if pathname:
+    if pathname and value == 'SHOTS':
         path = pathname.split('/')
-        if path[1] == 'player':
-            personnel = path[1]
-            stat_type = path[2]
-            player_id = path[3]
+        path.pop(0)
+    else:
+        return []
 
-            if personnel == 'player' and stat_type == 'shots':
-                player_shots = get_shots(player_id, 'player')
-                return shot_map(player_shots)
+    shots = get_shots(path[1], path[0])
 
-        else:
-            return html.P()
+    return shot_map(shots)
 
 
 if __name__ == '__main__':
