@@ -21,7 +21,7 @@ from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_ST
     SINGLE_TAB_STYLE, ALL_TAB_STYLE, EVENT_DEFINITIONS
 
 from sql_queries import team_roster_query, shot_chart_query, team_compare_query, team_trend_query, \
-    SHOT_PLOT_COLUMNS, TEAM_STATS_COLUMNS, CURRENT_ROSTER_COLUMNS, team_shot_chart_query, player_shooting_stats_query, \
+    SHOT_PLOT_COLUMNS, TEAM_STATS_COLUMNS, CURRENT_ROSTER_COLUMNS, player_shooting_stats_query, \
     SHOOTING_STATS_COLUMNS, position_clusters_query, POSITION_CLUSTERS_COLUMNS
 
 server = Flask(__name__)
@@ -110,81 +110,103 @@ def player_image(player):
 
 
 def build_table(df, table_setting='Player Summary'):
+    if df is None:
+        return []
+
     rows = []
-    if df is not None:
-        for i in range(len(df)):
-            row = []
-            for col in df.columns:
+    for i in range(len(df)):
+        row = []
+        for col in df.columns:
 
-                if table_setting == 'Player Summary':
-                    value = player_image(df.iloc[i][col])
+            if table_setting == 'Player Summary':
+                value = player_image(df.iloc[i][col])
 
-                elif table_setting == 'Shot Summary' and col == 'player':
-                    player = df.iloc[i][col]
+            elif table_setting == 'Shot Summary' and col == 'Player':
+                player = df.iloc[i][col]
 
-                    roster = get_roster()
-                    player_id = roster.loc[roster['Player']
-                                           == str(player), 'player_id'].iloc[0]
+                roster = get_roster()
+                player_id = roster.loc[roster['Player']
+                                       == str(player), 'player_id'].iloc[0]
 
-                    value = dcc.Link(html.Button(player,
-                                                 id='player-shots-' +
-                                                 str(player),
-                                                 style={'font-size': '12px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}),
-                                     href='/player/' + str(player_id))
-                else:
-                    value = df.iloc[i][col]
+                value = dcc.Link(html.Button(player,
+                                             id='player-shots-' +
+                                             str(player),
+                                             style={'font-size': '12px', 'color': 'darkgrey', 'font-weight': 'bold', 'border': 'none'}),
+                                 href='/player/' + str(player_id))
+            else:
+                value = df.iloc[i][col]
 
-                if table_setting == 'Shot Summary':
-                    style = {'align': 'center', 'padding': '3px',
-                             'text-align': 'center', 'font-size': '10px'}
-
+            if table_setting == 'Shot Summary':
                 style = {'align': 'center', 'padding': '3px',
-                         'text-align': 'center', 'font-size': '12px'}
-                row.append(html.Td(value, style=style))
+                         'text-align': 'center', 'font-size': '10px'}
 
-                if i % 2 == 0 and 'background-color' not in style:
-                    style['background-color'] = '#f2f2f2'
+            style = {'align': 'center', 'padding': '3px',
+                     'text-align': 'center', 'font-size': '12px'}
+            row.append(html.Td(value, style=style))
 
-            rows.append(html.Tr(row))
+            if i % 2 == 0 and 'background-color' not in style:
+                style['background-color'] = '#f2f2f2'
+
+        rows.append(html.Tr(row))
+
+    if table_setting == 'Shot Summary':
+        SHOT_HEADER_STYLE = {
+            'align': 'center',
+            'width': '80px',
+            'background-color': '#0f6db5',
+            'text-align': 'center',
+            'font-size': '14px',
+            'padding': '10px',
+            'color': '#ffffff'}
 
         return html.Table(
-            [html.Tr([html.Th(col, style=HEADER_STYLE) for col in df.columns])] + rows, style=TABLE_STYLE)
+            [html.Tr([html.Th(col, style=SHOT_HEADER_STYLE) for col in df.columns])] + rows, style=TABLE_STYLE)
+
+    return html.Table(
+        [html.Tr([html.Th(col, style=HEADER_STYLE) for col in df.columns])] + rows, style=TABLE_STYLE)
 
 
 def get_shots(stat_id, stat_type):
     if stat_type == 'player':
-        return sql.load_data(shot_chart_query.format(stat_id), SHOT_PLOT_COLUMNS)
+        return sql.load_data(shot_chart_query.format(stat_id, 'gp.[tid]'), SHOT_PLOT_COLUMNS)
     elif stat_type == 'team':
-        return sql.load_data(team_shot_chart_query.format(stat_id), SHOT_PLOT_COLUMNS)
+        return sql.load_data(shot_chart_query.format('gp.[pid]', stat_id), SHOT_PLOT_COLUMNS)
 
 
-def shot_map(data):
+def shot_map(data, stat_type):
     if data is None:
-        return html.Div()
+        return []
 
     made_x = data[data['EType'] == 1]['LocationX']
     made_y = data[data['EType'] == 1]['LocationY']
+    made_text = data[data['EType'] == 1]['Description']
 
     missed_x = data[data['EType'] == 2]['LocationX']
     missed_y = data[data['EType'] == 2]['LocationY']
+    missed_text = data[data['EType'] == 2]['Description']
 
-    player_id = data['PlayerID'].iloc[0]
+
     team_id = data['TeamID'].iloc[0]
-
     roster = get_roster(team_id)
-    player = roster.loc[roster['player_id']
-                        == str(player_id), 'Player'].iloc[0]
+
+    if stat_type == 'player':
+        player_id = data['PlayerID'].iloc[0]
+        player = roster.loc[roster['player_id']
+                            == str(player_id), 'Player'].iloc[0]
+
+    title = player if stat_type == 'player' else teams.loc[teams['team_id'] == str(
+        team_id), 'name'].iloc[0]
 
     shooting_stats = sql.load_data(
         player_shooting_stats_query.format(team_id), SHOOTING_STATS_COLUMNS)
-
-    shooting_stats = shooting_stats[['player', 'appearances', 'starts', 'fbpts', 'fbptsm', 'fbptsa', 'fbpts%', 'fgm', 'fga', 'fg%',
-                                     'ftm', 'fta', 'ft%', 'pip', 'pipm', 'pipa', 'pip%', 'pts', 'tpm', 'tpa', '3p%']]
+    shooting_stats = shooting_stats[['Player', 'G', 'GS', 'FGM', 'FGA', 'FG%', 'FTM', 'FTA', 'FT%', 'PIP', 'PIPM',
+                                     'PIPA', 'PIP%', 'PTS', '3PM', '3PA', '3P%']]
 
     data = [
         go.Scatter(
             x=made_x,
             y=made_y,
+            text=made_text,
             mode='markers',
             name='Made',
             opacity=0.7,
@@ -200,6 +222,7 @@ def shot_map(data):
         go.Scatter(
             x=missed_x,
             y=missed_y,
+            text=missed_text,
             mode='markers',
             name='Missed',
             opacity=0.7,
@@ -215,7 +238,7 @@ def shot_map(data):
     ]
 
     layout = go.Layout(
-        title=f'Shot Analysis: {player}',
+        title=f'Shooting Analysis: {title}',
         showlegend=True,
         xaxis=dict(
             showgrid=False,
@@ -232,6 +255,7 @@ def shot_map(data):
 
     return html.Div(
         children=[
+            html.H1(),
             dcc.Graph(
                 id='shot_plot',
                 figure={
@@ -396,7 +420,7 @@ def build_tabs():
         className="tabs",
         children=[
             dcc.Tabs(
-                id="div-tabs",
+                id="div_tabs",
                 value='ROSTER',
                 className='custom-tabs',
                 children=[
@@ -490,36 +514,36 @@ app.layout = update_layout()
 
 @app.callback(
     Output('team_roster_container', 'children'),
-    [Input('team_url', 'pathname'), Input('div-tabs', 'value')]
+    [Input('team_url', 'pathname'), Input('div_tabs', 'value')]
 )
 def update_team_roster_table(pathname, value):
     if pathname and value == 'ROSTER':
         path = pathname.split('/')
-        if path[1] == 'team':
-            team_id = path[2]
-            _teamdf = current_roster(team_id)
-
-            return build_table(_teamdf, 'Player Summary')
+        path.pop(0)
     else:
-        return html.P()
+        return []
+
+    if path[0] == 'team':
+        team_df = current_roster(path[1])
+
+        return build_table(team_df, 'Player Summary')
 
 
 @app.callback(
     Output('team_graph', 'children'),
-    [Input('div-tabs', 'value')]
+    [Input('div_tabs', 'value')]
 )
 def update_stat_plot(value):
     if value == 'STATS':
         season = '2019-2020'
         return team_box_plots(season)
-
     else:
         return []
 
 
 @app.callback(
     Output('shot_plot', 'children'),
-    [Input('team_url', 'pathname'), Input('div-tabs', 'value')]
+    [Input('team_url', 'pathname'), Input('div_tabs', 'value')]
 )
 def update_shot_plot(pathname, value):
     if pathname and value == 'SHOTS':
@@ -530,7 +554,7 @@ def update_shot_plot(pathname, value):
 
     shots = get_shots(path[1], path[0])
 
-    return shot_map(shots)
+    return shot_map(shots, path[0])
 
 
 if __name__ == '__main__':

@@ -23,33 +23,7 @@ SELECT TOP (1000)
 FROM [NBA].[dbo].[game_pbp] gp
 JOIN games g ON g.game_id = gp.gid
 WHERE gp.pid = {0} 
-AND g.season = '2019-2020'
-AND gp.etype IN (1,2) 
-AND [tid] IN (SELECT [team_id] FROM [nba].[dbo].[teams])
-END
-'''
-
-team_shot_chart_query = '''
-SET NOCOUNT ON;
-BEGIN
-SELECT TOP (1000)
-[cl]
-,[de]
-,[etype]
-,[evt]
-,[locX]
-,[locY]
-,[period]
-,[tid]
-,CASE WHEN tid = g.home_team_id THEN g.away_team_id ELSE home_team_id END [opp_tid]
-,[pid]
-,g.[game_id]
-,g.[date]
-,g.[season]
-,g.[venue]
-FROM [NBA].[dbo].[game_pbp] gp
-JOIN games g ON g.game_id = gp.gid
-WHERE gp.tid = {0} 
+AND gp.tid = {1} 
 AND g.season = '2019-2020'
 AND gp.etype IN (1,2) 
 AND [tid] IN (SELECT [team_id] FROM [nba].[dbo].[teams])
@@ -254,8 +228,8 @@ END
 '''
 
 
-SHOOTING_STATS_COLUMNS = ['season', 'player_id', 'player', 'appearances', 'starts', 'fbpts', 'fbptsm', 'fbptsa', 'fbpts%', 'fgm', 'fga',
-                          'fg%', 'ftm', 'fta', 'ft%', 'pip', 'pipm', 'pipa', 'pip%', 'pts', 'tpm', 'tpa', '3p%']
+SHOOTING_STATS_COLUMNS = ['season', 'player_id', 'Player', 'G', 'GS', 'FBPTS', 'FBPTSM', 'FBPTSA', 'FBPTS%', 'FGM', 'FGA',
+                          'FG%', 'FTM', 'FTA', 'FT%', 'PIP', 'PIPM', 'PIPA', 'PIP%', 'PTS', '3PM', '3PA', '3P%']
 
 player_shooting_stats_query = '''
 SET NOCOUNT ON;
