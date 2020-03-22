@@ -10,3 +10,4 @@ _nba/.env
 logs
 *.log
 _nba/nba_log
+_nba/position_clusters.twb

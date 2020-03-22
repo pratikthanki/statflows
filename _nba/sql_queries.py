@@ -3,6 +3,8 @@ SHOT_PLOT_COLUMNS = ['ClockTime', 'Description', 'EType', 'Evt', 'LocationX', 'L
                      'Opposition TeamID', 'PlayerID', 'GameID', 'Date', 'Season', 'Venue']
 
 shot_chart_query = '''
+SET NOCOUNT ON;
+BEGIN
 SELECT TOP (1000)
 [cl]
 ,[de]
@@ -23,9 +25,13 @@ JOIN games g ON g.game_id = gp.gid
 WHERE gp.pid = {0} 
 AND g.season = '2019-2020'
 AND gp.etype IN (1,2) 
+AND [tid] IN (SELECT [team_id] FROM [nba].[dbo].[teams])
+END
 '''
 
 team_shot_chart_query = '''
+SET NOCOUNT ON;
+BEGIN
 SELECT TOP (1000)
 [cl]
 ,[de]
@@ -46,12 +52,16 @@ JOIN games g ON g.game_id = gp.gid
 WHERE gp.tid = {0} 
 AND g.season = '2019-2020'
 AND gp.etype IN (1,2) 
+AND [tid] IN (SELECT [team_id] FROM [nba].[dbo].[teams])
+END
 '''
 
 CURRENT_ROSTER_COLUMNS = ['team_id', 'Season', 'league_id', 'Player', 'JerseyNumber', 'Position', 'Height', 'Weight',
                           'DoB', 'Age', 'Experience', 'School', 'player_id']
 
 team_roster_query = '''
+SET NOCOUNT ON;
+BEGIN
 SELECT 
 r.[teamid] 
 ,[season]
@@ -69,19 +79,21 @@ r.[teamid]
 FROM [NBA].[dbo].[rosters] r
 JOIN (
     SELECT 
-        [teamid]
-        ,[player_id]
+        [player_id]
         ,MAX([LastUpdated]) as Latest
     FROM [NBA].[dbo].[rosters]
     WHERE [season] = 2019
-    GROUP BY [teamid] ,[player_id]
+    AND [teamid] = {0}
+    GROUP BY [player_id]
 ) l 
     ON l.player_id = r.player_id
-    AND l.teamid = r.teamid
     AND l.Latest = r.LastUpdated
+END
 '''
 
 team_trend_query = '''
+SET NOCOUNT ON;
+BEGIN
 SELECT 
     [tid]
     ,g.[season]
@@ -136,17 +148,19 @@ FROM (
         ,SUM([tpa]) tpa
         ,SUM([tpm]) tpm
     FROM [NBA].[dbo].[game_stats]
-    WHERE LEN(tid) = 10
-    AND tid = {0}
+    WHERE [tid] = {0}
     GROUP BY [gid], [tid]
 ) gs
 JOIN games g ON g.game_id = gs.gid
 GROUP BY 
 [tid]
 ,g.season
+END
 '''
 
 team_compare_query = '''
+SET NOCOUNT ON;
+BEGIN
 SELECT 
     [tid]
     ,[season]
@@ -203,7 +217,7 @@ FROM (
         ,SUM([tpm]) tpm
     FROM [NBA].[dbo].[game_stats] gs
     JOIN games g ON g.game_id = gs.gid
-    WHERE LEN(tid) = 10
+    WHERE [tid] IN (SELECT [team_id] FROM [nba].[dbo].[teams])
     AND g.season = '{0}'
     GROUP BY 
         [tid]
@@ -213,15 +227,19 @@ FROM (
 GROUP BY 
     [tid]
     ,[season]
+END
 '''
 
 TEAM_STATS_COLUMNS = ['tid', 'season', 'ast', 'games', 'blk', 'blka', 'dreb', 'fbpts', 'fbptsa',
                       'fbptsm', 'fga', 'fgm', 'fta', 'ftm', 'oreb', 'pf', 'pip', 'pipa', 'pipm',
                       'pts', 'reb', 'stl', 'tov', 'tpa', 'tpm']
 
-POSITION_CLUSTERS_COLUMNS = ['season', 'player_id', 'player_name', 'labels', 'tags', 'x1', 'x2']
+POSITION_CLUSTERS_COLUMNS = ['season', 'player_id',
+                             'player_name', 'labels', 'tags', 'x1', 'x2']
 
 position_clusters_query = '''
+SET NOCOUNT ON;
+BEGIN
 SELECT 
 [Season]
 ,[Player_ID]
@@ -231,4 +249,55 @@ SELECT
 ,[X1]
 ,[X2]
 FROM [nba].[dbo].[position_clusters]
+END
+'''
+
+
+SHOOTING_STATS_COLUMNS = ['season', 'player_id', 'player', 'appearances', 'starts', 'fbpts', 'fbptsm', 'fbptsa', 'fbpts%', 'fgm', 'fga',
+                          'fg%', 'ftm', 'fta', 'ft%', 'pip', 'pipm', 'pipa', 'pip%', 'pts', 'tpm', 'tpa', '3p%']
+
+player_shooting_stats_query = '''
+SET NOCOUNT ON;
+BEGIN
+SELECT 
+    g.[season]
+    ,gs.[pid]
+    ,r.[player]
+    ,COUNT(gs.[gid]) [appearances]
+    ,SUM(CASE WHEN [pos] = '' THEN 0 ELSE 1 END) AS [starts]
+    ,SUM(CAST([fbpts] AS float)) fbpts
+    ,SUM(CAST([fbptsm] AS float)) fbptsm
+    ,SUM(CAST([fbptsa] AS float)) fbptsa
+    ,CASE WHEN SUM(CAST([fbptsa] AS float)) > 0 THEN ROUND(SUM(CAST([fbptsm] AS float)) / SUM(CAST([fbptsa] AS float)), 2) ELSE 0 END [fbpts%]
+    ,SUM(CAST([fgm] AS float)) fgm
+    ,SUM(CAST([fga] AS float)) fga
+    ,CASE WHEN SUM(CAST([fga] AS float)) > 0 THEN ROUND(SUM(CAST([fgm] AS float)) / SUM(CAST([fga] AS float)), 2) ELSE 0 END [fg%]
+    ,SUM(CAST([ftm] AS float)) ftm
+    ,SUM(CAST([fta] AS float)) fta
+    ,CASE WHEN SUM(CAST([fta] AS float)) > 0 THEN ROUND(SUM(CAST([ftm] AS float)) / SUM(CAST([fta] AS float)), 2) ELSE 0 END [ft%]
+    ,SUM(CAST([pip] AS float)) pip
+    ,SUM(CAST([pipm] AS float)) pipm
+    ,SUM(CAST([pipa] AS float)) pipa
+    ,CASE WHEN SUM(CAST([pipa] AS float)) > 0 THEN ROUND(SUM(CAST([pipm] AS float)) / SUM(CAST([pipa] AS float)), 2) ELSE 0 END [pip%]
+    ,SUM(CAST([pts] AS float)) pts
+    ,SUM(CAST([tpm] AS float)) tpm
+    ,SUM(CAST([tpa] AS float)) tpa
+    ,CASE WHEN SUM(CAST([tpa] AS float)) > 0 THEN ROUND(SUM(CAST([tpm] AS float)) / SUM(CAST([tpa] AS float)), 2) ELSE 0 END [3p%]
+FROM [nba].[dbo].[game_stats] gs
+JOIN [nba].[dbo].[rosters] r ON r.player_id = gs.pid
+JOIN [nba].[dbo].[games] g ON g.game_id = gs.gid
+JOIN (
+    SELECT 
+    [season]
+    ,[pid]
+    ,COUNT([gid]) AS [appearances]
+    FROM [nba].[dbo].[game_stats] gs
+    JOIN games g ON g.game_id = gs.gid
+    WHERE [tid] = {0}
+    AND [season] = '2019-2020'
+    GROUP BY [season], [pid]
+) a
+    ON a.[season] = g.[season] AND a.pid = gs.pid
+GROUP BY g.[season] ,gs.[pid] ,r.[player]
+END
 '''

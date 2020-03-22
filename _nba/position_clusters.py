@@ -17,6 +17,7 @@ pd.set_option('max_rows', 200)
 pd.set_option('max_columns', 100)
 pd.set_option('display.width', 200)
 
+
 def kmeans(reduced_data, n_clusters):
     """
     performs kmeans clustering and returns labels, centroids, inertia, and silhouette score
@@ -26,7 +27,8 @@ def kmeans(reduced_data, n_clusters):
     labels = kmeans.labels_
     centroids = kmeans.cluster_centers_
     inertia = kmeans.inertia_
-    sil_score = metrics.silhouette_score(reduced_data, kmeans.labels_, metric='euclidean')
+    sil_score = metrics.silhouette_score(
+        reduced_data, kmeans.labels_, metric='euclidean')
 
     data_dictionary = {
         "labels": labels,
@@ -174,8 +176,8 @@ GROUP BY
 '''
 
 columns = ['season', 'pid', 'player', 'position specific', 'position group', 'ast', 'blk', 'blka', 'dreb',
-           'fbpts', 'fbptsa', 'fbptsm', 'fbpts%', 'fga', 'fgm', 'fg%', 'fta', 'ftm', 'ft%', 'oreb', 'pf', 
-           'pip', 'pipa', 'pipm', 'pip%', 'pm', 'starts', 'pts', 'reb', 'stl', 'tf', 'game_mins', 'tov', 
+           'fbpts', 'fbptsa', 'fbptsm', 'fbpts%', 'fga', 'fgm', 'fg%', 'fta', 'ftm', 'ft%', 'oreb', 'pf',
+           'pip', 'pipa', 'pipm', 'pip%', 'pm', 'starts', 'pts', 'reb', 'stl', 'tf', 'game_mins', 'tov',
            'tpa', 'tpm', '3p%']
 
 
@@ -184,7 +186,8 @@ def main():
     data = sql.load_data(query, columns)
     print('Data loaded from SQL..')
 
-    dims = ['season', 'pid', 'player', 'position specific', 'position group', 'game_mins']
+    dims = ['season', 'pid', 'player',
+            'position specific', 'position group', 'game_mins']
     X = data.drop(dims, axis=1)
     y = data['position specific']
 
@@ -194,9 +197,11 @@ def main():
     pca = PCA(n_components=2)
     pca.fit(X_scaled)
     X_pca = pca.transform(X_scaled)
-    print("Cumulative Explained Variance:", pca.explained_variance_ratio_.sum())
+    print("Cumulative Explained Variance:",
+          pca.explained_variance_ratio_.sum())
 
-    LDA = LinearDiscriminantAnalysis(n_components=2, shrinkage='auto', solver='eigen')
+    LDA = LinearDiscriminantAnalysis(
+        n_components=2, shrinkage='auto', solver='eigen')
     LDA_reduced_df = LDA.fit(X_scaled, y).transform(X_scaled)
     print('LDA score:', LDA.score(X_scaled, y))
 
@@ -207,14 +212,17 @@ def main():
     print("Silhouette score:", k_means['silhouette_score'])
 
     y = k_means['labels']
-    df = pd.DataFrame({'X1':LDA_reduced_df[:,0],'X2':LDA_reduced_df[:,1], 'labels':y})
-    plot_kmeans_cluster(LDA_reduced_df, k_clusters=8, plot_title="""KMeans Clustering on NBA Players in 2016-2019""")
+    df = pd.DataFrame(
+        {'X1': LDA_reduced_df[:, 0], 'X2': LDA_reduced_df[:, 1], 'labels': y})
+    plot_kmeans_cluster(LDA_reduced_df, k_clusters=8,
+                        plot_title="""KMeans Clustering on NBA Players in 2016-2019""")
 
     mask = (data['cluster'] == 7)
     # print(data[mask][['player', 'season']])
     cluster_data = data[mask].drop(dims, axis=1)
     league_data = data.drop(dims, axis=1)
-    feature_importance(cluster_data, league_data).reset_index().drop('index', axis=1)
+    feature_importance(cluster_data, league_data).reset_index().drop(
+        'index', axis=1)
 
     player_list = list(data['player'])
     playerid_list = list(data['pid'])
@@ -223,14 +231,16 @@ def main():
     df['Player'] = player_list
     df['Season'] = season_list
     df['Player_ID'] = playerid_list
-    df['tags'] = df['labels'].map({0: 'Superstars',
-                                    1: '3-D Wings',
-                                    2: 'Scoring Wings',
-                                    3: 'Versatile Forwards',
-                                    4: 'Floor Generals',
-                                    5: 'Shooting Wings',
-                                    6: 'Combo Guards',
-                                    7: 'Defensive Centers'})
+    df['tags'] = df['labels'].map({
+        0: 'Combo Guards',
+        1: 'Scoring Bigs',
+        2: 'Rotation',
+        3: 'Versatile Bigs',
+        4: 'Floor Generals',
+        5: 'Defensive Centers',
+        6: 'Shooting Wings',
+        7: 'Defensive Wings'
+    })
 
     sql.load_data('''IF OBJECT_ID('position_clusters') IS NOT NULL 
                     TRUNCATE TABLE [position_clusters]''')

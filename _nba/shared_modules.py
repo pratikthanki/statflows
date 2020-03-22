@@ -39,13 +39,12 @@ class SqlConnection:
             logging.info(e)
 
     def load_data(self, query, columns=None):
-        self.cursor.execute(query)
-
         if not columns:
+            self.cursor.execute(query)
             print('Command executed:', query)
             return
 
-        rows = self.cursor.fetchall()
+        rows = self.cursor.execute(query).fetchall()
 
         sql_data = []
         for row in rows:
@@ -72,6 +71,8 @@ class SqlConnection:
             table_name,
             create_table_columns_statement(table_columns)
         ))
+
+        self.cursor.commit()
         print(f'Table created: {table_name}')
 
     def drop_table(self, table_name):
@@ -120,9 +121,9 @@ class SqlConnection:
                                                                          columns_statement(data),
                                                                          values_statement(data))
 
+        with self.conn:
+            self.cursor.execute(query)
 
-        self.cursor.execute(query)
-        self.conn.commit()
         logging.info('{0}: {1} rows inserted'.format(table_name, len(data)))
 
         if verbose > 0:
