@@ -243,21 +243,21 @@ SELECT
     ,SUM(CAST([fbpts] AS float)) fbpts
     ,SUM(CAST([fbptsm] AS float)) fbptsm
     ,SUM(CAST([fbptsa] AS float)) fbptsa
-    ,CASE WHEN SUM(CAST([fbptsa] AS float)) > 0 THEN ROUND(SUM(CAST([fbptsm] AS float)) / SUM(CAST([fbptsa] AS float)), 2) ELSE 0 END [fbpts%]
+    ,CASE WHEN SUM(CAST([fbptsa] AS float)) > 0 THEN ROUND(SUM(CAST([fbptsm] AS float)) / SUM(CAST([fbptsa] AS float)) * 100 , 1) ELSE 0 END [fbpts%]
     ,SUM(CAST([fgm] AS float)) fgm
     ,SUM(CAST([fga] AS float)) fga
-    ,CASE WHEN SUM(CAST([fga] AS float)) > 0 THEN ROUND(SUM(CAST([fgm] AS float)) / SUM(CAST([fga] AS float)), 2) ELSE 0 END [fg%]
+    ,CASE WHEN SUM(CAST([fga] AS float)) > 0 THEN ROUND(SUM(CAST([fgm] AS float)) / SUM(CAST([fga] AS float)) * 100 , 1) ELSE 0 END [fg%]
     ,SUM(CAST([ftm] AS float)) ftm
     ,SUM(CAST([fta] AS float)) fta
-    ,CASE WHEN SUM(CAST([fta] AS float)) > 0 THEN ROUND(SUM(CAST([ftm] AS float)) / SUM(CAST([fta] AS float)), 2) ELSE 0 END [ft%]
+    ,CASE WHEN SUM(CAST([fta] AS float)) > 0 THEN ROUND(SUM(CAST([ftm] AS float)) / SUM(CAST([fta] AS float)) * 100 , 1) ELSE 0 END [ft%]
     ,SUM(CAST([pip] AS float)) pip
     ,SUM(CAST([pipm] AS float)) pipm
     ,SUM(CAST([pipa] AS float)) pipa
-    ,CASE WHEN SUM(CAST([pipa] AS float)) > 0 THEN ROUND(SUM(CAST([pipm] AS float)) / SUM(CAST([pipa] AS float)), 2) ELSE 0 END [pip%]
+    ,CASE WHEN SUM(CAST([pipa] AS float)) > 0 THEN ROUND(SUM(CAST([pipm] AS float)) / SUM(CAST([pipa] AS float)) * 100 , 1) ELSE 0 END [pip%]
     ,SUM(CAST([pts] AS float)) pts
     ,SUM(CAST([tpm] AS float)) tpm
     ,SUM(CAST([tpa] AS float)) tpa
-    ,CASE WHEN SUM(CAST([tpa] AS float)) > 0 THEN ROUND(SUM(CAST([tpm] AS float)) / SUM(CAST([tpa] AS float)), 2) ELSE 0 END [3p%]
+    ,CASE WHEN SUM(CAST([tpa] AS float)) > 0 THEN ROUND(SUM(CAST([tpm] AS float)) / SUM(CAST([tpa] AS float)) * 100 , 1) ELSE 0 END [3p%]
 FROM [nba].[dbo].[game_stats] gs
 JOIN [nba].[dbo].[rosters] r ON r.player_id = gs.pid
 JOIN [nba].[dbo].[games] g ON g.game_id = gs.gid
