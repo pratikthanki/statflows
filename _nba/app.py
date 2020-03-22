@@ -22,7 +22,7 @@ from app_styles import DEFAULT_IMAGE, HEADER_STYLE, TABLE_STYLE, SELECTED_TAB_ST
 
 from sql_queries import team_roster_query, shot_chart_query, team_compare_query, team_trend_query, \
     SHOT_PLOT_COLUMNS, TEAM_STATS_COLUMNS, CURRENT_ROSTER_COLUMNS, team_shot_chart_query, player_shooting_stats_query, \
-    SHOOTING_STATS_COLUMNS
+    SHOOTING_STATS_COLUMNS, position_clusters_query, POSITION_CLUSTERS_COLUMNS
 
 server = Flask(__name__)
 sql = SqlConnection('NBA')
@@ -259,7 +259,7 @@ def division_image_header(conf, float, align):
     )
 
 
-def team_box_plots(season='2019-2020'):
+def team_box_plots(season):
     query = team_compare_query.format(season)
     teams = generate_teams_df()
 
@@ -291,7 +291,7 @@ def team_box_plots(season='2019-2020'):
 
     layout = go.Layout(
         title=f'Team Box Score Stats Comparison: {season}',
-        height=700,
+        height=500,
         yaxis=dict(
             autorange=True,
             showgrid=True,
@@ -315,17 +315,76 @@ def team_box_plots(season='2019-2020'):
 
     fig = go.Figure(data=data, layout=layout)
 
-    return html.Div(
-        children=[
-            dcc.RadioItems(
-                id='season-option',
-                options=[{'label': i, 'value': i} for i in
-                         ['2014-2015', '2015-2016', '2016-2017', '2017-2018', '2018-2019', '2019-2020']],
-                value='2019-2020',
-                labelStyle={'display': 'inline-block', 'padding': '5px'}
-            ),
-            dcc.Graph(figure=fig, id='box-plot-2')
-        ])
+    return [
+        dcc.RadioItems(
+            id='season_option',
+            options=[{'label': i, 'value': i} for i in
+                     ['2016-2017', '2017-2018', '2018-2019', '2019-2020']],
+            value='2019-2020',
+            labelStyle={
+                'display': 'inline-block', 'padding': '5px'}
+        ),
+
+        dcc.Graph(
+            figure=fig,
+            id='box-plot'
+        ),
+
+        player_cluster_scatter(season)
+
+    ]
+
+
+def player_cluster_scatter(season):
+
+    position_clusters = sql.load_data(position_clusters_query.format(
+        season), POSITION_CLUSTERS_COLUMNS).sort_values(by='tags')
+
+    clusters = position_clusters.tags.unique().tolist()
+    data = []
+    for cluster in clusters:
+        data_x = position_clusters[position_clusters['tags'] == cluster]['x1'].tolist()
+        data_y = position_clusters[position_clusters['tags'] == cluster]['x2'].tolist()
+        data_text = position_clusters[position_clusters['tags'] == cluster]['player_name'].tolist()
+
+        data.append(
+            go.Scatter(
+                x=data_x,
+                y=data_y,
+                text=data_text,
+                name=cluster,
+                mode='markers',
+                marker={
+                    'size': 15,
+                    'line': {'width': 0.5, 'color': 'white'}
+                },
+            )
+        )
+
+    layout = dict(
+        title=f'Player KMeans Clusters: {season}',
+        xaxis={'title': 'X1'},
+        yaxis={'title': 'X2'},
+        height=500,
+
+        margin=dict(
+            l=40,
+            r=30,
+            b=80,
+            t=100,
+        ),        
+        legend={'x': 0, 'y': 1},
+        paper_bgcolor='rgb(255, 255, 255)',
+        plot_bgcolor='rgb(255, 255, 255)',
+        hovermode='closest'
+    )
+
+    fig = go.Figure(data=data, layout=layout)
+
+    return dcc.Graph(
+        id='player-cluster-scatter',
+        figure=fig
+    )
 
 
 def build_tabs():
@@ -403,6 +462,10 @@ def update_layout():
                 type="default"
             ),
 
+            html.Div(
+                id='season_option',
+            ),
+
             dcc.Loading(
                 id="loading-2",
                 children=[html.Div(
@@ -411,8 +474,6 @@ def update_layout():
                 )],
                 type="default"
             ),
-
-            dcc.Location(id='player_shot_url', refresh=False),
 
             html.Div(
                 id='shot_plot',
@@ -442,30 +503,22 @@ def update_team_roster_table(pathname, value):
 
 @app.callback(
     Output('team_graph', 'children'),
-    [Input('team_url', 'pathname'), Input('div-tabs', 'value')]
+    [Input('div-tabs', 'value')]
 )
-def update_stat_plot(pathname, value):
-    if pathname:
-        path = pathname.split('/')
-        if path[1] == 'team' and value == 'STATS':
-            team_id = path[2]
-            return team_box_plots()
+def update_stat_plot(value):
+    if value == 'STATS':
+        season = '2019-2020'
+        return team_box_plots(season)
 
-        elif path[1] == 'team' and value == 'SHOTS':
-            team_id = path[2]
-            team_shots = get_shots(team_id, 'team')
-            return shot_map(team_shots)
-
-        else:
-            return html.P()
+    else:
+        return []
 
 
 @app.callback(
     Output('shot_plot', 'children'),
-    [Input('team_url', 'pathname'),
-     Input('player_shot_url', 'pathname')]
+    [Input('team_url', 'pathname'), Input('div-tabs', 'value')]
 )
-def update_shot_plot(pathname, player_path):
+def update_shot_plot(pathname, value):
     if pathname:
         path = pathname.split('/')
         if path[1] == 'player':

@@ -249,6 +249,7 @@ SELECT
 ,[X1]
 ,[X2]
 FROM [nba].[dbo].[position_clusters]
+WHERE [Season] = '{0}'
 END
 '''
 
