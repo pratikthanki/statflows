@@ -31,8 +31,57 @@ app = dash.Dash(
     name='nba_app',
     server=server,
     url_base_pathname='/',
-    external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'],
     suppress_callback_exceptions=True)
+
+# for local development
+# server = app.server
+
+# Google Annlytic and buymeacoffee
+app.index_string = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="https://codepen.io/chriddyp/pen/bWLwgP.css"/>
+
+        <script 
+            data-name="BMC-Widget" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" 
+            data-id="McEtbLx" 
+            data-description="Support me with some coffee to keep the analytics coming!" 
+            data-message="More coffee, more basketball!!" 
+            data-color="#0F6DB5" data-position="right" 
+            data-x_margin="18" data-y_margin="18">
+        </script>
+
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-118874438-1"></script>
+
+        <script>
+            window.dataLayer = window.dataLayer || [];
+
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+
+            gtag('config', 'UA-118874438-1');
+            ga('create', 'UA-118874438-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+    
+    </head>
+
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+
+</html>
+"""
+
 
 POSITIONS = [
     ['C-F', 'Center'],
